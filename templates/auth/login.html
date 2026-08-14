@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — PUMUB Digital Library</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #095456 0%, #0d7377 50%, #14919b 100%);
+      display: flex; flex-direction: column;
+    }
+    .login-wrapper {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .login-box {
+      width: 100%; max-width: 420px;
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    }
+    .login-header {
+      background: linear-gradient(135deg, #095456, #0d7377);
+      padding: 2.2rem 2rem;
+      text-align: center; color: #fff;
+    }
+    .login-logo {
+      width: 72px; height: 72px;
+      background: rgba(23,184,190,.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+      border: 2px solid rgba(23,184,190,.4);
+    }
+    .login-header h4 { font-weight: 800; margin: 0 0 .3rem; font-size: 1.3rem; }
+    .login-header p  { opacity: .75; font-size: .85rem; margin: 0; }
+    .login-body { padding: 2rem; }
+    .form-label { font-weight: 600; font-size: .85rem; color: #2d3748; margin-bottom: .35rem; }
+    .input-group-text {
+      background: #f8fafc; border: 1.5px solid #e2e8f0;
+      border-right: none; color: #0d7377;
+    }
+    .form-control {
+      border: 1.5px solid #e2e8f0;
+      border-left: none;
+      border-radius: 0 8px 8px 0 !important;
+      padding: .65rem 1rem;
+      font-size: .9rem;
+      transition: all .2s;
+    }
+    .form-control:focus {
+      border-color: #0d7377;
+      box-shadow: 0 0 0 3px rgba(13,115,119,.1);
+    }
+    .input-group:focus-within .input-group-text {
+      border-color: #0d7377;
+    }
+    .btn-login-submit {
+      background: linear-gradient(135deg, #0d7377, #14919b);
+      border: none; color: #fff;
+      font-weight: 700; font-size: .95rem;
+      border-radius: 10px; padding: .75rem;
+      letter-spacing: .3px;
+      transition: all .2s;
+      width: 100%;
+    }
+    .btn-login-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(13,115,119,.4);
+      color: #fff;
+    }
+    .divider { text-align: center; margin: 1.2rem 0; color: #a0aec0; font-size: .82rem; position: relative; }
+    .divider::before, .divider::after {
+      content: ''; position: absolute; top: 50%;
+      width: 42%; height: 1px; background: #e2e8f0;
+    }
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+    .demo-box {
+      background: #f0fdfa; border-radius: 10px;
+      padding: .9rem 1rem; border: 1px solid #ccfbf1;
+      font-size: .82rem;
+    }
+    .demo-box strong { color: #0d7377; }
+    .demo-credential {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: .3rem 0;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .demo-credential:last-child { border-bottom: none; padding-bottom: 0; }
+    .demo-credential code {
+      background: #e0f7f8; color: #095456;
+      padding: .15rem .5rem; border-radius: 5px; font-size: .8rem;
+    }
+    .login-footer { text-align: center; padding: 0 2rem 1.8rem; }
+    .login-footer a { color: #0d7377; font-weight: 600; }
+    .login-footer a:hover { color: #14919b; }
+    /* Back link */
+    .back-link { color: rgba(255,255,255,.7); font-size:.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:.35rem; margin-bottom:1rem; }
+    .back-link:hover { color:#fff; }
+  </style>
+</head>
+<body>
+<div class="login-wrapper">
+  <div>
+    <div class="text-center mb-3">
+      <a href="{{ url_for('home') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Home
+      </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" style="border-radius:10px;">
+          <i class="bi bi-exclamation-circle me-2"></i>{{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="login-box">
+      <!-- Header -->
+      <div class="login-header">
+        <div class="login-logo"><i class="bi bi-book" style="color: #17b8be;"></i></div>
+        <h4>Welcome Back!</h4>
+        <p>Digital Library Management System<br>Polytechnic University (Maubin)</p>
+      </div>
+
+      <!-- Body -->
+      <div class="login-body">
+        <form method="POST" action="{{ url_for('auth.login') }}">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" name="username" class="form-control"
+                     placeholder="Enter your username" required autofocus>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" name="password" id="pwdInput" class="form-control"
+                     placeholder="Enter your password" required>
+              <button type="button" class="btn btn-outline-secondary border-start-0"
+                      style="border:1.5px solid #e2e8f0; border-left:none; border-radius:0 8px 8px 0;"
+                      onclick="togglePwd()">
+                <i class="bi bi-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-login-submit">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+          </button>
+        </form>
+
+        <div class="divider">OR</div>
+
+
+      <!-- Footer -->
+      <div class="login-footer">
+        <span class="text-muted" style="font-size:.85rem;">Account မရှိသေးပါသလား? </span>
+        <a href="{{ url_for('auth.register') }}">Register ပြုလုပ်ပါ</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePwd() {
+  const input = document.getElementById('pwdInput');
+  const icon  = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+}
+</script>
+</body>
+</html>

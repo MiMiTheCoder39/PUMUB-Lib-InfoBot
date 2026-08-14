@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Digital Library{% endblock %} | Polytechnic University (Maubin)</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS (Teal/Cyan Theme — Pann Satt Lann Inspired) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% if session.get('user_id') and session.get('role') != 'admin' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css') }}">
+    {% endif %}
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% block navbar %}
+<!-- ═══════════════════ DEFAULT NAVBAR (for non-dashboard pages) ═══════════════════
+     No more schoolbg header — Logo (📚 PUMUB Digital Library) + Navbar only.
+     Home page (home.html) overrides this block with its own hero header. -->
+<nav class="psl-navbar">
+    <div class="nav-container">
+        <a href="{{ url_for('home') }}" class="nav-brand-link">
+            <span class="brand-emoji" style="font-size: 1.3rem;">📚</span>
+            <span class="brand-mini">PUMUB Digital Library</span>
+        </a>
+        <ul class="nav-links">
+            {% if session.get('user_id') %}
+                {% if session.get('role') == 'admin' %}
+                    <li><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('admin.books') }}">Books</a></li>
+                    <li><a href="{{ url_for('admin.borrows') }}">Borrows</a></li>
+                    <li><a href="{{ url_for('admin.users') }}">Users</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('student.dashboard') }}">Home</a></li>
+                    <li><a href="{{ url_for('student.dashboard') }}#announcement-section">Announcement</a></li>
+                    <li><a href="{{ url_for('student.dashboard') }}#top-score-section">Top Score</a></li>
+                {% endif %}
+            {% else %}
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('home') }}#announcement-section">Announcement</a></li>
+                <li><a href="{{ url_for('home') }}#top-score-section">Top Score</a></li>
+            {% endif %}
+        </ul>
+        <div class="nav-right">
+            {% if session.get('user_id') %}
+                {% if session.get('role') != 'admin' %}
+                <div class="profile-dropdown">
+                    <div class="profile-avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="profile-dropdown-menu">
+                        <div class="dropdown-header">{{ session.get('name', 'User') }}</div>
+                        <a href="{{ url_for('student.dashboard') }}"><i class="bi bi-person"></i> Profile</a>
+                        <a href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark"></i> Borrow History</a>
+                        <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i> Clearance</a>
+                        <a href="{{ url_for('student.notifications') }}"><i class="bi bi-bell"></i> Notifications</a>
+                        <a href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark"></i> My Bookmarks</a>
+                        <a href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history"></i> View History</a>
+                        <a href="{{ url_for('student.downloads') }}"><i class="bi bi-download"></i> Downloads</a>
+                        <div class="divider"></div>
+                        <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="profile-dropdown">
+                    <div class="profile-avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="profile-dropdown-menu">
+                        <div class="dropdown-header">Admin</div>
+                        <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin Panel</a>
+                        <div class="divider"></div>
+                        <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="profile-dropdown">
+                    <span class="nav-link-btn" style="padding: 14px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">MY ACCOUNT <i class="bi bi-chevron-down" style="font-size: 0.7rem;"></i></span>
+                    <div class="profile-dropdown-menu">
+                        <a href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+                        <a href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus"></i> Register</a>
+                    </div>
+                </div>
+                <div class="profile-avatar" onclick="window.location.href='{{ url_for('auth.login') }}'">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+<!-- ═══════════════════ FLASH MESSAGES ═══════════════════ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+                <div class="flash-msg {{ category }}">
+                    {% if category == 'danger' %}
+                        <i class="bi bi-exclamation-circle"></i>
+                    {% elif category == 'success' %}
+                        <i class="bi bi-check-circle"></i>
+                    {% elif category == 'warning' %}
+                        <i class="bi bi-exclamation-triangle"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle"></i>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ═══════════════════ DEFAULT FOOTER (Teal) ═══════════════════ -->
+{% block footer %}
+<footer class="psl-footer">
+    <div class="footer-grid">
+        <div class="footer-col">
+            <h4>Quick Links</h4>
+            <a href="{{ url_for('home') }}">Home</a>
+            {% if session.get('user_id') and session.get('role') != 'admin' %}
+            <a href="{{ url_for('student.search') }}">Browse Books</a>
+            <a href="{{ url_for('student.borrow_history') }}">My Borrowings</a>
+            <a href="{{ url_for('student.clearance') }}">Library Clearance</a>
+            {% endif %}
+        </div>
+        <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="#">Textbooks</a>
+            <a href="#">Reference Books</a>
+            <a href="#">Journals</a>
+            <a href="#">Thesis Papers</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contact Us</h4>
+            <p><i class="bi bi-geo-alt me-2"></i>Polytechnic University (Maubin)<br>Maubin, Ayeyarwady Region, Myanmar</p>
+            <p><i class="bi bi-telephone me-2"></i>+95 45 30123</p>
+            <p><i class="bi bi-envelope me-2"></i>library@pumub.edu.mm</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        &copy; 2026 PUMUB Digital Library. All rights reserved.
+    </div>
+</footer>
+{% endblock %}
+
+{% include 'partials/libinfobot.html' %}
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+{% if session.get('user_id') and session.get('role') != 'admin' %}
+<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>
+{% endif %}
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

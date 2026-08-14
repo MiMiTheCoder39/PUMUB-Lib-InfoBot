@@ -1,0 +1,97 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Author Management{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-person-badge"></i> Author Management</h4>
+    <button class="btn btn-library" data-bs-toggle="modal" data-bs-target="#addAuthorModal">
+        <i class="bi bi-plus-circle"></i> Add Author
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead style="background:#095456;color:white;">
+                <tr><th>#</th><th>Author Name</th><th>Bio</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for a in authors %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ a.author_name }}</td>
+                    <td><small class="text-muted">{{ a.bio[:60] + '...' if a.bio and a.bio|length > 60 else (a.bio or '—') }}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#editAuthor{{ a.author_id }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('admin.author_delete', author_id=a.author_id) }}" class="d-inline"
+                              onsubmit="return confirm('{{ a.author_name }} ကို ဖျက်မှာ သေချာပါသလား?')">
+                            <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                <!-- Edit Modal -->
+                <div class="modal fade" id="editAuthor{{ a.author_id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background:#095456;color:white;">
+                                <h5 class="modal-title">Edit Author</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST" action="{{ url_for('admin.author_edit', author_id=a.author_id) }}">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Author Name</label>
+                                        <input type="text" name="name" class="form-control" value="{{ a.author_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Bio</label>
+                                        <textarea name="bio" class="form-control" rows="3">{{ a.bio or '' }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-library">Update</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted py-3">Author မရှိသေးပါ။</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Author Modal -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#095456;color:white;">
+                <h5 class="modal-title">Add Author</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.author_add') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Author Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bio</label>
+                        <textarea name="bio" class="form-control" rows="3" placeholder="Optional"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-library">Add</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

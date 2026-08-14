@@ -1,0 +1,109 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Edit' if book else 'Add' }} Book{% endblock %}
+
+{% block admin_content %}
+<h4><i class="bi bi-book"></i> {{ 'Edit' if book else 'Add New' }} Book</h4>
+<div class="card shadow-sm mt-3">
+    <div class="card-body p-4">
+        <form method="POST"
+              action="{{ url_for('admin.book_edit', book_id=book.book_id) if book else url_for('admin.book_add') }}"
+              enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" value="{{ book.title if book else '' }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">ISBN</label>
+                            <input type="text" name="isbn" class="form-control" value="{{ book.isbn if book else '' }}" placeholder="e.g. 978-3-16-148410-0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Author Name</label>
+                            <input type="text" name="author_name" class="form-control" value="{{ book.author_name if book else '' }}" placeholder="e.g. Dr. Aung Kyaw">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">— None —</option>
+                                {% for c in categories %}
+                                    <option value="{{ c.category_id }}" {% if book and book.category_id==c.category_id %}selected{% endif %}>{{ c.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Faculty</label>
+                            <select name="faculty_id" class="form-select">
+                                <option value="">— None —</option>
+                                {% for f in faculties %}
+                                    <option value="{{ f.faculty_id }}" {% if book and book.faculty_id==f.faculty_id %}selected{% endif %}>{{ f.faculty_name }} ({{ f.department }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Resource Type</label>
+                            <select name="resource_type" class="form-select">
+                                {% for t in ['book','ebook','thesis','journal','research_paper','reference_book','teachers_guide'] %}
+                                    <option value="{{ t }}" {% if book and book.resource_type==t %}selected{% endif %}>{{ t|replace('_',' ')|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Publish Date</label>
+                            <input type="date" name="publish_date" class="form-control" value="{{ book.publish_date if book else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Total Copies (Physical)</label>
+                            <input type="number" name="total_copies" class="form-control" value="{{ book.total_copies if book else 0 }}" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="4">{{ book.description if book else '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">PDF File {% if not book %}<span class="text-danger">*</span>{% endif %}</label>
+                        {% if book and book.pdf_file %}
+                            <p class="small text-success"><i class="bi bi-file-pdf"></i> {{ book.pdf_file }}</p>
+                        {% endif %}
+                        <input type="file" name="pdf_file" class="form-control" accept=".pdf" {% if not book %}required{% endif %}>
+                        {% if book %}<small class="text-muted">File အသစ်ရွေးမှသာ Replace ဖြစ်မည်</small>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cover Image</label>
+                        {% if book and book.cover_image %}
+                            <div class="mb-2">
+                                <img src="{{ url_for('static', filename='uploads/covers/'+book.cover_image) }}" style="height:100px;" class="rounded border">
+                            </div>
+                        {% endif %}
+                        <input type="file" name="cover_image" class="form-control" accept="image/*">
+                    </div>
+                    {% if book and book.qr_code %}
+                    <div class="mb-3">
+                        <label class="form-label">QR Code (Auto-generated)</label>
+                        <img src="{{ url_for('static', filename='uploads/qrcodes/'+book.qr_code) }}" style="width:120px;" class="d-block border rounded p-1">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-library">
+                    <i class="bi bi-save"></i> {{ 'Update Book' if book else 'Add Book (QR auto-generate)' }}
+                </button>
+                <a href="{{ url_for('admin.books') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

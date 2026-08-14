@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} | Digital Library{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('student.search') }}">Search</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ book.title[:50] }}...</li>
+        </ol>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Left Column: Book Cover & QR -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-md sticky-top" style="top: 20px;">
+                <!-- Book Cover -->
+                <div class="card-body p-0">
+                    {% if book.cover_image %}
+                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}"
+                             class="img-fluid rounded-top" 
+                             style="width: 100%; height: 350px; object-fit: cover;"
+                             alt="{{ book.title }}">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded-top"
+                             style="height: 350px;">
+                            <div class="text-center">
+                                <i class="bi bi-journal-bookmark" style="font-size: 4rem; color: #cbd5e0;"></i>
+                                <p class="text-muted small mt-2">No Cover Image</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Book QR Code (if available) -->
+                {% if book.qr_code %}
+                    <div class="card-body text-center border-top">
+                        <p class="small text-muted mb-2">Book QR Code</p>
+                        <img src="{{ url_for('static', filename='uploads/qrcodes/' + book.qr_code) }}"
+                             class="img-fluid rounded"
+                             style="max-width: 120px;"
+                             alt="Book QR Code">
+                    </div>
+                {% endif %}
+
+                <!-- Availability Status -->
+                {% if book.total_copies > 0 %}
+                    <div class="card-body border-top">
+                        <p class="small text-muted mb-2">Physical Availability</p>
+                        {% if book.available_copies > 0 %}
+                            <div class="alert alert-success mb-0 py-2">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>{{ book.available_copies }}</strong> of <strong>{{ book.total_copies }}</strong> available
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger mb-0 py-2">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Currently unavailable
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Book Details & Actions -->
+        <div class="col-lg-9">
+            <!-- Book Header -->
+            <div class="mb-4">
+                <h1 class="h2 fw-bold mb-2" style="color: var(--primary-dark);">
+                    {{ book.title }}
+                </h1>
+                <p class="text-muted mb-3">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <strong>{{ book.author_name or 'Unknown Author' }}</strong>
+                </p>
+
+                <!-- Badges -->
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {% if book.category_name %}
+                        <span class="badge bg-primary">
+                            <i class="bi bi-tag me-1"></i>{{ book.category_name }}
+                        </span>
+                    {% endif %}
+                    {% if book.faculty_name %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-building me-1"></i>{{ book.faculty_name }}
+                        </span>
+                    {% endif %}
+                    <span class="badge bg-secondary">
+                        <i class="bi bi-file-earmark me-1"></i>{{ book.resource_type | replace('_', ' ') | title }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Book Information Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Book Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p class="text-muted small mb-1">ISBN</p>
+                            {% if book.isbn %}
+                                <p class="fw-bold font-monospace">{{ book.isbn }}</p>
+                            {% else %}
+                                <p class="text-muted">Not available</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="text-muted small mb-1">Publication Date</p>
+                            <p class="fw-bold">{{ book.publish_date or 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="text-muted small mb-1">Views</p>
+                            <p class="fw-bold">
+                                <i class="bi bi-eye me-1"></i>{{ book.view_count or 0 }}
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="text-muted small mb-1">Downloads</p>
+                            <p class="fw-bold">
+                                <i class="bi bi-download me-1"></i>{{ book.download_count or 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if book.description %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>Description</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted" style="line-height: 1.8;">
+                            {{ book.description }}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Access Control & Actions -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if can_access %}
+                        <!-- Digital Access (Read & Download) -->
+                        <div class="mb-3">
+                            <p class="small text-muted mb-2">Digital Access</p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="{{ url_for('student.read_book', book_id=book.book_id) }}"
+                                   class="btn btn-primary">
+                                    <i class="bi bi-book me-2"></i>Read Online
+                                </a>
+                                <a href="{{ url_for('student.download_book', book_id=book.book_id) }}"
+                                   class="btn btn-success">
+                                    <i class="bi bi-download me-2"></i>Download PDF
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Physical Borrow -->
+                        {% if book.total_copies > 0 %}
+                            <hr>
+                            <div>
+                                <p class="small text-muted mb-2">Physical Borrowing</p>
+                                {% if book.available_copies > 0 %}
+                                    <form method="POST"
+                                          action="{{ url_for('student.borrow_request', book_id=book.book_id) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Submit a borrow request for this book?\n\nYou will receive a Borrow ID after admin approval.')">
+                                        <button type="submit" class="btn btn-warning fw-bold">
+                                            <i class="bi bi-journal-arrow-down me-2"></i>Request to Borrow
+                                            <br><small style="font-weight: 400; opacity: 0.9;">{{ book.available_copies }} of {{ book.total_copies }} available</small>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <button class="btn btn-secondary fw-bold" disabled title="No copies available">
+                                        <i class="bi bi-journal-x me-2"></i>Request to Borrow
+                                        <br><small style="font-weight: 400; opacity: 0.9;">Not available</small>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Restricted Access Warning -->
+                        <div class="alert alert-warning border-0 mb-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-lock-fill me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <strong>Restricted Material</strong>
+                                    <p class="mb-0 small mt-1">This resource is available to Teachers only. Please log in with a teacher account to access.</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Bookmark Action -->
+            <div class="mb-4">
+                {% if bookmarked %}
+                    <form method="POST"
+                          action="{{ url_for('student.bookmark_remove', book_id=book.book_id) }}"
+                          class="d-inline">
+                        <button type="submit" class="btn btn-outline-warning">
+                            <i class="bi bi-bookmark-fill me-2"></i>Remove from Bookmarks
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST"
+                          action="{{ url_for('student.bookmark_add', book_id=book.book_id) }}"
+                          class="d-inline">
+                        <button type="submit" class="btn btn-outline-warning">
+                            <i class="bi bi-bookmark me-2"></i>Add to Bookmarks
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- Borrow Workflow Info -->
+            {% if book.total_copies > 0 %}
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">
+                            <i class="bi bi-info-circle me-2" style="color: var(--primary);"></i>
+                            How to Borrow
+                        </h6>
+                        <ol class="small mb-0">
+                            <li class="mb-2">Click <strong>"Request to Borrow"</strong> above</li>
+                            <li class="mb-2">Wait for admin approval (you'll receive a notification)</li>
+                            <li class="mb-2">You'll receive a <strong>Borrow ID</strong> and QR code</li>
+                            <li class="mb-2">Visit the library counter with your QR code or Borrow ID</li>
+                            <li>Collect the book from the librarian</li>
+                        </ol>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

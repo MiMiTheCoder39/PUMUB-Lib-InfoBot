@@ -1,0 +1,270 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Borrow Management{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Borrow & Circulation</h2>
+        <p class="text-muted small mb-0">Manage book issuances, returns, and overdue tracking</p>
+    </div>
+    <div class="mt-3 mt-md-0">
+        <button type="button" class="btn btn-primary shadow-sm" onclick="startScanner()">
+            <i class="bi bi-qr-code-scan me-2"></i>Open QR Scanner
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    {% for label, val, color_class in [
+        ('Pending', stats.pending, 'bg-warning'),
+        ('Approved', stats.approved, 'bg-primary'),
+        ('Borrowed', stats.borrowed, 'bg-success'),
+        ('Overdue', stats.overdue, 'bg-danger'),
+        ('Returned', stats.returned, 'bg-secondary')
+    ] %}
+    <div class="col-md-2 col-6">
+        <div class="card border-0 shadow-sm h-100 text-center py-3">
+            <h3 class="fw-bold mb-0 {{ 'text-warning' if label == 'Pending' else 'text-primary' if label == 'Approved' else 'text-success' if label == 'Borrowed' else 'text-danger' if label == 'Overdue' else 'text-muted' }}">
+                {{ val }}
+            </h3>
+            <div class="small text-muted">{{ label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="col-md-2 col-12">
+        <div class="card border-0 shadow-sm h-100 bg-soft-danger text-center py-3">
+            <h4 class="fw-bold mb-0 text-danger">{{ "{:,.0f}".format(fine_total) }}</h4>
+            <div class="smaller text-danger fw-bold">Unpaid Fines</div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Search & Scanner Section -->
+<div class="card border-0 shadow-sm mb-4 overflow-hidden">
+    <div class="card-header bg-dark text-white py-3 border-0">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-search me-2"></i>
+            <h6 class="mb-0 fw-bold">Manual Borrow Lookup</h6>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('admin.borrow_lookup') }}" class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-upc-scan"></i></span>
+                    <input type="text" name="borrow_id_code" class="form-control border-start-0 ps-0" 
+                           placeholder="Enter Borrow ID (e.g., BR-2026-0001)" required style="font-family: monospace;">
+                </div>
+                <div class="form-text small mt-2">
+                    <i class="bi bi-info-circle me-1"></i> Enter the ID from the student's ticket or use the QR scanner above.
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-dark w-100 fw-bold">
+                    Retrieve Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Requests Table -->
+<div class="card border-0 shadow-sm mb-4"><div class="card-body py-3"><form method="GET" action="{{ url_for('admin.borrows') }}" class="row g-2 align-items-end"><div class="col-12 col-md-5"><label class="form-label small text-muted mb-1">Search</label><input name="search" value="{{ search or '' }}" class="form-control" placeholder="Student, book, or borrow ID"></div><div class="col-12 col-md-4"><label class="form-label small text-muted mb-1">Status</label><select name="status" class="form-select"><option value="">All statuses</option>{% for value, label in [('pending','Pending'),('approved','Approved'),('borrowed','Borrowed'),('overdue','Overdue'),('returned','Returned'),('rejected','Rejected')] %}<option value="{{ value }}" {{ 'selected' if status_filter == value else '' }}>{{ label }}</option>{% endfor %}</select></div><div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-filter me-1"></i>Filter</button></div><div class="col-6 col-md-1"><a class="btn btn-outline-secondary w-100" href="{{ url_for('admin.borrows') }}" title="Clear filters"><i class="bi bi-x-lg"></i></a></div></form></div></div>
+<div class="card border-0 shadow-sm mb-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light border-bottom">
+                <tr>
+                    <th class="ps-4">Ticket ID</th>
+                    <th>Student / Member</th>
+                    <th>Book Title</th>
+                    <th>Timeline</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests %}
+                <tr class="{{ 'bg-soft-danger' if r.status == 'overdue' else '' }}">
+                    <td class="ps-4">
+                        {% if r.borrow_id_code %}
+                            <div class="borrow-ticket-id-sm">{{ r.borrow_id_code }}</div>
+                        {% else %}
+                            <span class="text-muted smaller italic">Pending ID</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ r.student_name }}</div>
+                        <div class="text-muted smaller">{{ r.student_id or 'N/A' }}</div>
+                    </td>
+                    <td>
+                        <div class="text-truncate fw-500" style="max-width: 200px;" title="{{ r.book_title }}">
+                            {{ r.book_title }}
+                        </div>
+                        <div class="smaller text-muted">{{ r.available_copies }} copies available</div>
+                    </td>
+                    <td>
+                        <div class="smaller">
+                            <div class="mb-1"><span class="text-muted">Req:</span> {{ r.request_date.strftime('%d %b') if r.request_date else '—' }}</div>
+                            {% if r.due_date %}
+                                <div>
+                                    <span class="text-muted">Due:</span> 
+                                    <span class="{{ 'text-danger fw-bold' if r.status == 'overdue' else '' }}">
+                                        {{ r.due_date.strftime('%d %b') }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% set badge_map = {
+                            'pending':  ('status-pending',  'Pending'),
+                            'approved': ('status-approved', 'Approved'),
+                            'borrowed': ('status-borrowed', 'Borrowed'),
+                            'overdue':  ('status-overdue',  'Overdue'),
+                            'returned': ('status-returned', 'Returned'),
+                            'rejected': ('status-rejected', 'Rejected'),
+                        } %}
+                        {% set bc = badge_map.get(r.status, ('status-pending','—')) %}
+                        <span class="status-badge {{ bc[0] }}">{{ bc[1] }}</span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group">
+                            {% if r.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('admin.borrow_approve', borrow_id=r.borrow_id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-success border-0" title="Approve Request" onclick="return confirm('Approve this borrow request?')">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.borrow_reject', borrow_id=r.borrow_id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-danger border-0" title="Reject Request" onclick="return confirm('Reject this borrow request?')">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                </form>
+                            {% elif r.status == 'approved' %}
+                                <a href="{{ url_for('admin.borrow_scan', borrow_id_code=r.borrow_id_code) }}" 
+                                   class="btn btn-sm btn-warning fw-bold px-3 rounded-pill">
+                                    Issue Book
+                                </a>
+                            {% elif r.status in ('borrowed', 'overdue') %}
+                                <form method="POST" action="{{ url_for('admin.borrow_return', borrow_id=r.borrow_id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-primary fw-bold px-3 rounded-pill" onclick="return confirm('Mark this book as returned?')">
+                                        Return Book
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted smaller">—</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="bi bi-inbox fs-1 opacity-25 d-block mb-3"></i>
+                            No borrow requests found.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2"></i>Borrow QR Scanner</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopScanner()"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div id="reader" style="width: 100%; min-height: 300px; background: #f8fafc; border-radius: 12px; overflow: hidden;" class="border mb-3"></div>
+                <div class="alert alert-info border-0 smaller py-2 mb-0">
+                    <i class="bi bi-info-circle me-1"></i> Point the student's borrow QR code at the camera.
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" onclick="stopScanner()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+let html5QrCode;
+
+function startScanner() {
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    modal.show();
+    
+    html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch(err => {
+            console.error(err);
+            alert("Camera access denied or unavailable.");
+            modal.hide();
+        });
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Expected format: http://.../admin/borrows/scan/BR-XXXX-XXXX or just BR-XXXX-XXXX
+    let code = decodedText;
+    if (code.includes('/scan/')) {
+        code = code.split('/scan/').pop();
+    }
+    
+    stopScanner();
+    bootstrap.Modal.getInstance(document.getElementById('scannerModal')).hide();
+    
+    // Redirect to lookup or scan route
+    window.location.href = `/admin/borrows/scan/${code}`;
+}
+
+function stopScanner() {
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            console.log("Scanner stopped.");
+        }).catch(err => console.error(err));
+    }
+}
+</script>
+
+<style>
+.borrow-ticket-id-sm {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-approved { background: #dcfce7; color: #166534; }
+.status-borrowed { background: #dbeafe; color: #1e40af; }
+.status-overdue { background: #fee2e2; color: #991b1b; }
+.status-returned { background: #f1f5f9; color: #475569; }
+.status-rejected { background: #1e293b; color: #ffffff; }
+
+.bg-soft-danger { background-color: rgba(153, 27, 27, 0.05); }
+.smaller { font-size: 0.75rem; }
+.fw-500 { font-weight: 500; }
+</style>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Faculty Management{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-building"></i> Faculty Management</h4>
+    <button class="btn btn-library" data-bs-toggle="modal" data-bs-target="#addFacultyModal">
+        <i class="bi bi-plus-circle"></i> Add Faculty
+    </button>
+</div>
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead style="background:#095456;color:white;">
+                <tr><th>#</th><th>Faculty Name</th><th>Department</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for f in faculties %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ f.faculty_name }}</td>
+                    <td>{{ f.department or '—' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#editFaculty{{ f.faculty_id }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('admin.faculty_delete', faculty_id=f.faculty_id) }}" class="d-inline"
+                              onsubmit="return confirm('Faculty ကို ဖျက်မှာ သေချာပါသလား?')">
+                            <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                <div class="modal fade" id="editFaculty{{ f.faculty_id }}" tabindex="-1">
+                    <div class="modal-dialog"><div class="modal-content">
+                        <div class="modal-header" style="background:#095456;color:white;">
+                            <h5 class="modal-title">Edit Faculty</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin.faculty_edit', faculty_id=f.faculty_id) }}">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Faculty Name</label>
+                                    <input type="text" name="faculty_name" class="form-control" value="{{ f.faculty_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Department</label>
+                                    <input type="text" name="department" class="form-control" value="{{ f.department or '' }}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-library">Update</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div></div>
+                </div>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted py-3">Faculty မရှိသေးပါ။</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addFacultyModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header" style="background:#095456;color:white;">
+            <h5 class="modal-title">Add Faculty</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.faculty_add') }}">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Faculty Name</label>
+                    <input type="text" name="faculty_name" class="form-control" placeholder="e.g. Faculty of Computing" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Department</label>
+                    <input type="text" name="department" class="form-control" placeholder="e.g. Computer Science (CS)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-library">Add</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

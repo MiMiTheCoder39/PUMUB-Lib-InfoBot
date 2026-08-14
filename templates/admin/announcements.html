@@ -1,0 +1,89 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Announcements{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-megaphone"></i> Announcements</h4>
+    <button class="btn btn-library" data-bs-toggle="modal" data-bs-target="#addAnnModal">
+        <i class="bi bi-plus-circle"></i> Add Announcement
+    </button>
+</div>
+
+{% for ann in announcements %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="mb-1">{{ ann.title }}</h5>
+                <small class="text-muted"><i class="bi bi-clock"></i> {{ ann.date.strftime('%Y-%m-%d %H:%M') if ann.date else '' }} | By {{ ann.created_by_name or 'Admin' }}</small>
+                <p class="mt-2 mb-0">{{ ann.content }}</p>
+            </div>
+            <div class="d-flex gap-1 ms-3">
+                <button class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal" data-bs-target="#editAnn{{ ann.announcement_id }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <form method="POST" action="{{ url_for('admin.announcement_delete', ann_id=ann.announcement_id) }}"
+                      onsubmit="return confirm('Announcement ဖျက်မည်?')">
+                    <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editAnn{{ ann.announcement_id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header" style="background:#095456;color:white;">
+            <h5 class="modal-title">Edit Announcement</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.announcement_edit', ann_id=ann.announcement_id) }}">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" name="title" class="form-control" value="{{ ann.title }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <textarea name="content" class="form-control" rows="4" required>{{ ann.content }}</textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-library">Update</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+{% else %}
+<div class="alert alert-info">Announcement မရှိသေးပါ။</div>
+{% endfor %}
+
+<!-- Add Announcement Modal -->
+<div class="modal fade" id="addAnnModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header" style="background:#095456;color:white;">
+            <h5 class="modal-title"><i class="bi bi-megaphone"></i> Add Announcement</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.announcement_add') }}">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" name="title" class="form-control" placeholder="Announcement Title" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <textarea name="content" class="form-control" rows="5" placeholder="Announcement content..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-library">Post</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

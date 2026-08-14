@@ -1,0 +1,37 @@
+{% if session.get('user_id') and session.get('role') != 'admin' %}
+<div class="libinfobot" data-libinfobot>
+    <button class="libinfobot-launcher" type="button" data-libinfobot-toggle aria-controls="libinfobot-panel" aria-expanded="false" aria-label="Open LibInfoBot">
+        <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <span class="libinfobot-launcher-label">Ask LibInfoBot</span>
+    </button>
+
+    <section class="libinfobot-panel" id="libinfobot-panel" data-libinfobot-panel hidden aria-label="LibInfoBot chat">
+        <header class="libinfobot-header">
+            <div class="libinfobot-identity">
+                <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+                <div>
+                    <strong>LibInfoBot</strong>
+                    <small><span class="libinfobot-status-dot"></span> Library assistant</small>
+                </div>
+            </div>
+            <button class="libinfobot-close" type="button" data-libinfobot-toggle aria-label="Minimize LibInfoBot"><i class="bi bi-dash-lg"></i></button>
+        </header>
+
+        <div class="libinfobot-messages" data-libinfobot-messages aria-live="polite">
+            <div class="libinfobot-message bot">
+                <span class="libinfobot-message-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+                <div class="libinfobot-bubble">Hi! I'm LibInfoBot 🤖<br>I can help you find books, understand library resources, summarize PDFs, and answer questions about your library.</div>
+            </div>
+        </div>
+
+        <div class="libinfobot-typing" data-libinfobot-typing hidden><span></span><span></span><span></span><em>LibInfoBot is thinking…</em></div>
+        <div class="libinfobot-error" data-libinfobot-error role="alert" hidden></div>
+        <form class="libinfobot-form" data-libinfobot-form>
+            <label class="visually-hidden" for="libinfobot-input">Message LibInfoBot</label>
+            <textarea id="libinfobot-input" data-libinfobot-input rows="1" maxlength="2000" placeholder="Ask about books or library resources…"></textarea>
+            <button type="submit" data-libinfobot-send aria-label="Send message"><i class="bi bi-send-fill"></i></button>
+        </form>
+        <p class="libinfobot-disclaimer">Answers use your library’s authorized data.</p>
+    </section>
+</div>
+{% endif %}

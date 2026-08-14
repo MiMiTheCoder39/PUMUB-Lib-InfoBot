@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-shell d-flex" style="min-height:85vh;">
+
+    <button class="btn btn-primary admin-mobile-toggle d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar"><i class="bi bi-list fs-4"></i><span class="visually-hidden">Open admin navigation</span></button>
+
+    <!-- Sidebar -->
+    <nav id="adminSidebarDesktop" class="admin-sidebar d-none d-md-flex flex-column flex-shrink-0 p-3 text-white"
+         style="width:230px; background:#095456; min-height:85vh;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.2);">
+            <span style="font-size:1.6rem;">📚</span>
+            <span class="fs-6 fw-bold">Lib InfoBot<br><small style="font-weight:500; font-size:0.75rem;">Admin Panel</small></span>
+        </div>
+        <ul class="nav nav-pills flex-column mb-auto gap-1">
+            <li><a href="{{ url_for('admin.dashboard') }}"      class="nav-link text-white {% if request.endpoint=='admin.dashboard' %}active bg-white text-dark{% endif %}"><i class="bi bi-house"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.users') }}"          class="nav-link text-white {% if 'user' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-people"></i> Users</a></li>
+            <li><a href="{{ url_for('admin.books') }}"          class="nav-link text-white {% if request.endpoint in ['admin.books','admin.book_add','admin.book_edit'] %}active bg-white text-dark{% endif %}"><i class="bi bi-book"></i> Books</a></li>
+            <li><a href="{{ url_for('admin.categories') }}"     class="nav-link text-white {% if 'categor' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-tags"></i> Categories</a></li>
+            <li><a href="{{ url_for('admin.faculties') }}"      class="nav-link text-white {% if 'facult' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-building"></i> Faculties</a></li>
+            <li><a href="{{ url_for('admin.borrows') }}"        class="nav-link text-white {% if 'borrow' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-arrow-left-right"></i> Borrows</a></li>
+            <li><a href="{{ url_for('admin.fines') }}"          class="nav-link text-white {% if 'fine' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-cash"></i> Fines</a></li>
+            <li><a href="{{ url_for('admin.charts') }}"         class="nav-link text-white {% if request.endpoint=='admin.charts' %}active bg-white text-dark{% endif %}"><i class="bi bi-graph-up"></i> Charts</a></li>
+            <li><a href="{{ url_for('admin.reports') }}"        class="nav-link text-white {% if 'report' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-bar-chart"></i> Reports</a></li>
+            <li><a href="{{ url_for('admin.announcements') }}"  class="nav-link text-white {% if 'announcement' in request.endpoint %}active bg-white text-dark{% endif %}"><i class="bi bi-megaphone"></i> Announcements</a></li>
+        </ul>
+        <hr class="text-white">
+        <a href="{{ url_for('auth.logout') }}" class="nav-link text-white"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </nav>
+    <div class="offcanvas offcanvas-start text-white d-md-none" tabindex="-1" id="adminSidebar" style="background:#095456;width:270px;"><div class="offcanvas-header"><h5 class="mb-0">PUMUB Digital Library</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button></div><div class="offcanvas-body p-0"><nav class="p-3">{% include 'admin/_mobile_nav.html' %}</nav></div></div>
+
+    <!-- Main Content -->
+    <main class="admin-main flex-grow-1 p-4">
+        {% block admin_content %}{% endblock %}
+    </main>
+</div>
+<style>.admin-mobile-toggle{position:fixed;z-index:1030;top:76px;left:12px}.admin-main{min-width:0}@media(max-width:767.98px){.admin-main{padding:4.5rem 1rem 1.25rem!important}.table-responsive{font-size:.85rem}.dashboard-header h2{font-size:1.35rem}.card-body{padding:1rem}.nav-tabs{overflow-x:auto;flex-wrap:nowrap}.nav-tabs .nav-link{white-space:nowrap}}</style>
+
+{% endblock %}

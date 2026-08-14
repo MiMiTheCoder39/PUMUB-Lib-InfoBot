@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Profile Header -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px; overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#095456,#0d7377); padding:2rem;">
+      <div class="d-flex align-items-center gap-3">
+        {% if user.profile_image %}
+          <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}"
+               style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);">
+        {% else %}
+          <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);
+                      display:flex;align-items:center;justify-content:center;font-size:2rem;
+                      border:3px solid rgba(255,255,255,.3); color:#fff;">
+            {{ user.name[0].upper() }}
+          </div>
+        {% endif %}
+        <div class="text-white">
+          <h4 class="mb-1 fw-bold">{{ user.name }}</h4>
+          <p class="mb-1 opacity-75" style="font-size:.88rem;">
+            <i class="bi bi-envelope me-1"></i>{{ user.email }}
+          </p>
+          <p class="mb-0 opacity-75" style="font-size:.85rem;">
+            <i class="bi bi-person-badge me-1"></i>{{ user.student_id or '—' }}
+            &nbsp;|&nbsp;
+            <span class="badge" style="background:rgba(13,115,119,.12);color:#0d7377;">Student</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Update Profile -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm h-100" style="border-radius:14px;">
+        <div class="card-header border-0 fw-bold py-3 px-4"
+             style="background:#095456;color:#fff;border-radius:14px 14px 0 0;font-size:.95rem;">
+          <i class="bi bi-person-gear me-2"></i>Update Profile
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('student.profile') }}" enctype="multipart/form-data">
+
+            <div class="mb-3">
+              <label class="form-label fw-600">Student ID</label>
+              <input type="text" class="form-control" value="{{ user.student_id or '—' }}"
+                     disabled style="background:#f8fafc;">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-600">Full Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ user.name }}" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-600">Email <span class="text-danger">*</span></label>
+              <input type="email" name="email" class="form-control"
+                     value="{{ user.email }}" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-600">Faculty</label>
+              <select name="faculty_id" class="form-select">
+                <option value="">— Select Faculty —</option>
+                {% for f in faculties %}
+                  <option value="{{ f.faculty_id }}"
+                    {% if user.faculty_id == f.faculty_id %}selected{% endif %}>
+                    {{ f.faculty_name }} ({{ f.department }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-600">Profile Picture</label>
+              {% if user.profile_image %}
+                <div class="mb-2">
+                  <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}"
+                       style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
+                </div>
+              {% endif %}
+              <input type="file" name="profile_image" class="form-control" accept="image/*">
+              <small class="text-muted">PNG, JPG, JPEG (Max 5MB)</small>
+            </div>
+
+            <button type="submit" class="btn btn-library px-4">
+              <i class="bi bi-save me-2"></i>Save Changes
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-header border-0 fw-bold py-3 px-4"
+             style="background:#095456;color:#fff;border-radius:14px 14px 0 0;font-size:.95rem;">
+          <i class="bi bi-lock me-2"></i>Change Password
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('student.change_password') }}">
+            <div class="mb-3">
+              <label class="form-label fw-600">Current Password</label>
+              <input type="password" name="current_password" class="form-control"
+                     placeholder="Current password" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-600">New Password</label>
+              <input type="password" name="new_password" class="form-control"
+                     placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-600">Confirm New Password</label>
+              <input type="password" name="confirm_password" class="form-control"
+                     placeholder="Repeat new password" required>
+            </div>
+            <button type="submit" class="btn btn-warning px-4 fw-bold w-100">
+              <i class="bi bi-key me-2"></i>Change Password
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="card border-0 shadow-sm mt-3" style="border-radius:14px;">
+        <div class="card-body p-3">
+          <p class="fw-bold mb-2" style="font-size:.9rem; color:#095456;">Quick Links</p>
+          <div class="d-flex flex-column gap-2">
+            <a href="{{ url_for('student.bookmarks') }}" class="btn btn-outline-warning btn-sm text-start">
+              <i class="bi bi-bookmark-star me-2"></i>My Bookmarks
+            </a>
+            <a href="{{ url_for('student.history') }}" class="btn btn-outline-secondary btn-sm text-start">
+              <i class="bi bi-clock-history me-2"></i>View History
+            </a>
+            <a href="{{ url_for('student.recommendations') }}" class="btn btn-outline-primary btn-sm text-start">
+              <i class="bi bi-stars me-2"></i>Recommendations
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

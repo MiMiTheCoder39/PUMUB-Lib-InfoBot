@@ -1,0 +1,45 @@
+{% macro book_card(book) %}
+<div class="col-6 col-sm-4 col-md-3 col-lg-3 mb-4">
+  <div class="card h-100 border-0 shadow-sm book-card" style="border-radius:12px; overflow:hidden; transition:transform .2s, box-shadow .2s;">
+    <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="text-decoration-none">
+      {% if book.cover_image %}
+        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}"
+             class="card-img-top" style="height:190px; object-fit:cover;" alt="{{ book.title }}">
+      {% else %}
+        <div class="d-flex align-items-center justify-content-center"
+             style="height:190px; background:linear-gradient(135deg,#e8f0fe,#c5d8f5);">
+          <i class="bi bi-journal-bookmark-fill" style="font-size:3.5rem; color:#095456; opacity:.5;"></i>
+        </div>
+      {% endif %}
+    </a>
+    <div class="card-body p-3 d-flex flex-column">
+      <h6 class="card-title mb-1" style="font-size:.88rem; font-weight:700; line-height:1.35; color:#2d3748;">
+        <a href="{{ url_for('student.book_details', book_id=book.book_id) }}"
+           class="text-decoration-none text-dark stretched-link">{{ book.title }}</a>
+      </h6>
+      <small class="text-muted mb-1" style="font-size:.78rem;">
+        <i class="bi bi-person me-1"></i>{{ book.author_name or "Unknown" }}
+      </small>
+      {% if book.isbn %}
+      <small class="text-primary mb-2 d-block" style="font-size:.72rem; font-weight:600;">
+        ISBN: {{ book.isbn }}
+      </small>
+      {% endif %}
+      <div class="mt-auto d-flex flex-wrap gap-1">
+        {% if book.category_name %}
+          <span class="badge" style="background:#e0f0ff; color:#1a56a0; font-size:.7rem;">{{ book.category_name }}</span>
+        {% endif %}
+        <span class="badge" style="background:#f0fff4; color:#276749; font-size:.7rem;">
+          {{ book.resource_type | replace('_',' ') | title }}
+        </span>
+      </div>
+    </div>
+    <div class="card-footer bg-white border-0 pt-0 pb-3 px-3 d-flex justify-content-between align-items-center">
+      <small class="text-muted" style="font-size:.75rem;">
+        <i class="bi bi-eye me-1"></i>{{ book.view_count or 0 }}
+        <i class="bi bi-download ms-2 me-1"></i>{{ book.download_count or 0 }}
+      </small>
+    </div>
+  </div>
+</div>
+{% endmacro %}

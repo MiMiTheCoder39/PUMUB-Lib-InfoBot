@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Book Management{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-book"></i> Book Management</h4>
+    <a href="{{ url_for('admin.book_add') }}" class="btn btn-library">
+        <i class="bi bi-plus-circle"></i> Add Book
+    </a>
+</div>
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background:#095456;color:white;">
+                    <tr><th>#</th><th>Cover</th><th>Title</th><th>Author</th><th>Category</th><th>Type</th><th>Views</th><th>Downloads</th><th>QR</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for b in books %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            {% if b.cover_image %}
+                                <img src="{{ url_for('static', filename='uploads/covers/'+b.cover_image) }}" style="height:40px;width:30px;object-fit:cover;" class="rounded">
+                            {% else %}<i class="bi bi-journal"></i>{% endif %}
+                        </td>
+                        <td class="text-truncate" style="max-width:160px;">{{ b.title }}</td>
+                        <td><small>{{ b.author_name or '—' }}</small></td>
+                        <td><small>{{ b.category_name or '—' }}</small></td>
+                        <td><span class="badge bg-info text-dark">{{ b.resource_type }}</span></td>
+                        <td>{{ b.view_count }}</td>
+                        <td>{{ b.download_count }}</td>
+                        <td>
+                            {% if b.qr_code %}
+                                <img src="{{ url_for('static', filename='uploads/qrcodes/'+b.qr_code) }}" style="height:35px;">
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin.book_edit', book_id=b.book_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('admin.book_delete', book_id=b.book_id) }}" class="d-inline"
+                                  onsubmit="return confirm('{{ b.title }} ကို ဖျက်မှာ သေချာပါသလား?')">
+                                <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center text-muted py-3">Book မရှိသေးပါ။</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

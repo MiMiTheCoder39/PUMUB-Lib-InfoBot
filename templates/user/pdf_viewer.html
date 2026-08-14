@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Reading: {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="bi bi-book"></i> {{ book.title }}</h5>
+        <div>
+            <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Back to Details
+            </a>
+            <a href="{{ url_for('student.download_book', book_id=book.book_id) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-download"></i> Download
+            </a>
+        </div>
+    </div>
+
+    <div class="ratio ratio-4x3" style="--bs-aspect-ratio: 130%;">
+        <embed src="{{ url_for('student.serve_book_file', book_id=book.book_id) }}" type="application/pdf" style="width:100%; height:100%; border:1px solid #ddd; border-radius:8px;">
+    </div>
+
+    <p class="text-muted small mt-2">
+        <i class="bi bi-info-circle"></i> PDF မပြရင် Browser ထဲမှာ PDF Viewer plugin ပိတ်ထားနိုင်ပါသည် —
+        <a href="{{ url_for('student.serve_book_file', book_id=book.book_id) }}" target="_blank">ဒီနေရာတွင် Tab အသစ်ဖွင့်ကြည့်ပါ</a>။
+    </p>
+</div>
+{% endblock %}

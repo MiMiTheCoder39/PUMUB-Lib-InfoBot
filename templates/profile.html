@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <h3><i class="bi bi-person-gear"></i> My Profile</h3>
+
+    <div class="row">
+        <!-- Update Profile -->
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background:#095456; color:white;">
+                    <i class="bi bi-person"></i> Update Profile
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('student.profile') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Student ID</label>
+                            <input type="text" class="form-control" value="{{ user.student_id or '—' }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Faculty</label>
+                            <select name="faculty_id" class="form-select">
+                                <option value="">-- ရွေးပါ --</option>
+                                {% for f in faculties %}
+                                    <option value="{{ f.faculty_id }}" {% if user.faculty_id == f.faculty_id %}selected{% endif %}>
+                                        {{ f.faculty_name }} ({{ f.department }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profile Picture</label>
+                            {% if user.profile_image %}
+                                <div class="mb-2">
+                                    <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}" style="height:70px; width:70px; object-fit:cover;" class="rounded-circle border">
+                                </div>
+                            {% endif %}
+                            <input type="file" name="profile_image" class="form-control" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-library">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background:#095456; color:white;">
+                    <i class="bi bi-lock"></i> Change Password
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('student.change_password') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" name="current_password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">New Password</label>
+                            <input type="password" name="new_password" class="form-control" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" name="confirm_password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-key"></i> Change Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

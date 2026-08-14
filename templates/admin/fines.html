@@ -1,0 +1,49 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Fine Management{% endblock %}
+
+{% block admin_content %}
+<h4 class="mb-3"><i class="bi bi-cash"></i> Fine Management</h4>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background:#095456;color:white;">
+                    <tr><th>#</th><th>Student</th><th>Book</th><th>Amount</th><th>Reason</th><th>Status</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for f in fines %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ f.student_name }}</strong><br><small class="text-muted">{{ f.student_id }}</small></td>
+                        <td class="text-truncate" style="max-width:130px;">{{ f.book_title }}</td>
+                        <td><strong class="text-danger">{{ "{:,.0f}".format(f.amount) }} Ks</strong></td>
+                        <td><small>{{ f.reason }}</small></td>
+                        <td>
+                            {% if f.is_paid %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-danger">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ f.created_at.strftime('%Y-%m-%d') if f.created_at else '—' }}</small></td>
+                        <td>
+                            {% if not f.is_paid %}
+                                <form method="POST" action="{{ url_for('admin.fine_paid', fine_id=f.fine_id) }}"
+                                      onsubmit="return confirm('Fine ပေးချေပြီးဟု မှတ်တမ်းတင်မည်?')">
+                                    <button class="btn btn-sm btn-success"><i class="bi bi-check-circle"></i> Mark Paid</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted small">{{ f.paid_at.strftime('%Y-%m-%d') if f.paid_at else '—' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-3">Fine မရှိသေးပါ။</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}My Downloads{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 30px auto; padding: 0 20px;">
+    <h2 class="section-title">My Downloads</h2>
+    <p class="section-subtitle">ကျွန်ုပ် Download ရယူထားသော စာအုပ်များ</p>
+
+    {% if download_history %}
+    <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--primary-lighter); border-bottom: 2px solid var(--primary);">
+                    <th style="padding: 12px 16px; text-align: left; font-size: 0.85rem; color: var(--text-dark);">#</th>
+                    <th style="padding: 12px 16px; text-align: left; font-size: 0.85rem; color: var(--text-dark);">Book Title</th>
+                    <th style="padding: 12px 16px; text-align: left; font-size: 0.85rem; color: var(--text-dark);">Downloaded At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in download_history %}
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding: 12px 16px; font-size: 0.85rem; color: var(--text-muted);">{{ loop.index }}</td>
+                    <td style="padding: 12px 16px;">
+                        <a href="{{ url_for('student.book_details', book_id=item.book_id) }}" style="color: var(--text-dark); font-weight: 600; text-decoration: none;">
+                            {{ item.title }}
+                        </a>
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 0.85rem; color: var(--text-muted);">
+                        {{ item.downloaded_at.strftime('%Y-%m-%d %H:%M') if item.downloaded_at else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <i class="bi bi-download" style="font-size: 3rem; color: var(--text-muted); opacity: 0.3;"></i>
+        <p style="color: var(--text-muted); margin-top: 15px;">Download မှတ်တမ်း မရှိသေးပါ။</p>
+        <a href="{{ url_for('student.search') }}" class="btn-view-more">Browse Books</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

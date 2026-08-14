@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard - PUMUB Digital Library{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<!-- ═══════════════════════════════════════════════════════════
+     HERO HEADER — School Image Background + Teal Overlay
+═══════════════════════════════════════════════════════════ -->
+<header class="psl-hero">
+    <div class="psl-hero-inner">
+        <div class="brand-row">
+            <span class="brand-emoji">📚</span>
+            <h1 class="brand-title">Lib InfoBot</h1>
+        </div>
+        <p class="brand-subtitle">Access thousands of academic resources, research papers, and textbooks from your university's official digital repository.</p>
+        <form class="psl-search-bar" action="{{ url_for('auth.login') }}" method="GET">
+            <input type="text" name="q" placeholder="Search title, author, or ISBN..." disabled>
+            <button type="button" onclick="window.location.href='{{ url_for('auth.login') }}'" aria-label="Search">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+</header>
+<!-- ═══════════════════════════════════════════════════════════
+     STICKY NAVIGATION BAR (White + Teal Border)
+     Items: Home | ရွေးချယ်ရန်ဌာနများ ▼ | Announcement | Top Score | Profile Dropdown
+═══════════════════════════════════════════════════════════ -->
+<nav class="psl-navbar">
+    <div class="nav-container">
+        <a href="{{ url_for('student.dashboard') }}" class="nav-brand-link">
+            <span class="brand-emoji" style="font-size: 1.3rem;">📚</span>
+            <span class="brand-mini">Lib InfoBot</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('student.dashboard') }}" class="active">Home</a></li>
+            <li>
+                <span class="nav-link-btn">ရွေးချယ်ရန်ဌာနများ <i class="bi bi-chevron-down" style="font-size: 0.7rem;"></i></span>
+                <div class="nav-dropdown">
+                    {% for faculty in faculties %}
+                    <a href="#faculty-{{ faculty.faculty_id }}">{{ faculty.faculty_name }} ({{ faculty.department }})</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="#announcement-section">Announcement</a></li>
+            <li><a href="#top-score-section">Top Score</a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="profile-dropdown">
+                <div class="profile-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="profile-dropdown-menu">
+                    <div class="dropdown-header">{{ session.get('name', 'User') }}</div>
+                    <a href="{{ url_for('student.profile') }}"><i class="bi bi-person"></i> Profile</a>
+                    <a href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark"></i> Borrow History</a>
+                    <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i> Clearance</a>
+                    <a href="{{ url_for('student.notifications') }}"><i class="bi bi-bell"></i> Notifications
+                        {% if unread_count %}<span class="notif-badge">{{ unread_count }}</span>{% endif %}
+                    </a>
+                    <a href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark"></i> My Bookmarks</a>
+                    <a href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history"></i> View History</a>
+                    <a href="{{ url_for('student.downloads') }}"><i class="bi bi-download"></i> Downloads</a>
+                    <div class="divider"></div>
+                    <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     QUICK STATS (Role-Based)
+═══════════════════════════════════════════════════════════ -->
+<div class="stats-row">
+    <div class="stat-card border-teal">
+        <div>
+            <div class="stat-label">Borrowed Books</div>
+            <div class="stat-value">{{ active_borrows_count or 0 }}</div>
+            <div class="stat-hint">Limit: {{ 5 if session.get('role') == 'teacher' else 3 }} books</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-journal-bookmark"></i></div>
+    </div>
+    <div class="stat-card border-blue">
+        <div>
+            <div class="stat-label">Pending Requests</div>
+            <div class="stat-value">{{ pending_requests_count or 0 }}</div>
+            <div class="stat-hint">Awaiting Admin approval</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+    </div>
+    <div class="stat-card border-red">
+        <div>
+            <div class="stat-label">Overdue Books</div>
+            <div class="stat-value">{{ overdue_count or 0 }}</div>
+            <div class="stat-hint">{% if session.get('role') == 'teacher' %}30-day borrow period{% else %}1,000 MMK/day fine{% endif %}</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+    </div>
+    <div class="stat-card border-green">
+        <div>
+            <div class="stat-label">Unread Notifications</div>
+            <div class="stat-value">{{ unread_count or 0 }}</div>
+            <a href="{{ url_for('student.notifications') }}" class="stat-hint" style="color: var(--accent-blue);">View all notifications →</a>
+        </div>
+        <div class="stat-icon"><i class="bi bi-bell"></i></div>
+    </div>
+</div>
+
+<!-- Teacher Privileges Banner -->
+{% if session.get('role') == 'teacher' %}
+<div class="privilege-banner">
+    <div class="inner">
+        <i class="bi bi-shield-check"></i>
+        <div>
+            <h4>Teacher Privileges Active</h4>
+            <p>As a Teacher, you can borrow up to <strong>5 books</strong> for <strong>30 days</strong> each. You also have exclusive access to Teacher's Guides and Reference materials.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════════
+     MOST BORROWED BOOKS — 3D Shelf Display (5 per row, 2 rows)
+═══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="top-score-section">အငှားအများဆုံးစာအုပ်များ</h2>
+<p class="section-subtitle">Most Borrowed Books — Top Score Selection</p>
+
+<div class="book-shelf-container">
+    <div class="book-shelf">
+        <!-- Row 1: First 5 books -->
+        <div class="book-shelf-row">
+            {% for book in most_borrowed_books[:5] %}
+            <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="shelf-book">
+                <div class="book-cover-wrapper">
+                    {% if book.cover_image %}
+                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
+                    {% else %}
+                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
+                    {% endif %}
+                </div>
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="book-shelf-plank"></div>
+
+        <!-- Row 2: Next 5 books -->
+        {% if most_borrowed_books|length > 5 %}
+        <div class="book-shelf-row" style="margin-top: 25px;">
+            {% for book in most_borrowed_books[5:10] %}
+            <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="shelf-book">
+                <div class="book-cover-wrapper">
+                    {% if book.cover_image %}
+                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
+                    {% else %}
+                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
+                    {% endif %}
+                </div>
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="book-shelf-plank"></div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section-view-more">
+    <a href="{{ url_for('student.search', sort='borrowed') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ANNOUNCEMENT SECTION (Admin announcements)
+═══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="announcement-section">ကြေညာချက်များ</h2>
+<p class="section-subtitle">Announcement</p>
+
+<div class="announcement-grid">
+    {% for ann in announcements %}
+    <div class="announcement-card">
+        <div class="ann-date-badge"><i class="bi bi-megaphone-fill"></i></div>
+        <h4 class="ann-title">{{ ann.title }}</h4>
+        <p class="ann-body">{{ ann.content[:150] }}{% if ann.content|length > 150 %}...{% endif %}</p>
+        <span class="ann-date"><i class="bi bi-calendar3 me-1"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
+    </div>
+    {% else %}
+    <div class="announcement-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        <i class="bi bi-megaphone" style="font-size: 2rem; opacity: .5;"></i>
+        <p class="mt-2">No announcements yet.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     BOOK CATEGORIES — Category Cards WITH book covers (photo5 style)
+═══════════════════════════════════════════════════════════ -->
+<h2 class="section-title">စာအုပ်အမျိုးအစားများ</h2>
+<p class="section-subtitle">Book Categories</p>
+
+<div class="category-grid category-grid-shelves">
+    {% for category in categories %}
+    <a href="{{ url_for('student.search', category=category.category_id) }}" class="category-card category-card-shelf">
+        <div class="cat-shelf-books">
+            {% for book in (category.get('books', []) or [])[:3] %}
+                {% if book.cover_image %}
+                    <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" alt="{{ book.title }}" class="cat-shelf-img" style="background: none;">
+                {% endif %}
+            {% endfor %}
+            {% if not category.get('books', []) %}
+            <div class="cat-shelf-empty"><i class="bi bi-book"></i></div>
+            {% endif %}
+        </div>
+        <div class="cat-name">{{ category.category_name }}</div>
+        {% if category.book_count is defined %}
+        <div class="cat-count">{{ category.book_count }} စာအုပ်</div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FACULTY BOOK SHELVES — 4 books per row per faculty
+═══════════════════════════════════════════════════════════ -->
+<h2 class="section-title">ဌာနအလိုက် စာအုပ်စဉ်များ</h2>
+<p class="section-subtitle">Faculty Book Shelves</p>
+
+{% for faculty in faculties %}
+<div class="book-shelf-container" id="faculty-{{ faculty.faculty_id }}">
+    <h3 class="faculty-shelf-title">{{ faculty.faculty_name }} ({{ faculty.department }})</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); padding: 0 20px; margin-bottom: 15px;">{{ faculty.department or '' }} Books - Selection</p>
+    
+    <div class="book-grid">
+        {% for book in faculty.books[:4] %}
+        <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="book-grid-item">
+            {% if book.cover_image %}
+                <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="cover-img" alt="{{ book.title }}">
+            {% else %}
+                <div class="cover-img" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%); display: flex; align-items: center; justify-content: center; height: 250px;">
+                    <i class="bi bi-journal" style="font-size: 2rem; color: #fff;"></i>
+                </div>
+            {% endif %}
+            <div class="book-info">
+                <div class="title">{{ book.title }}</div>
+                <div class="author">{{ book.author_name or '—' }}</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    
+    <div class="section-view-more">
+        <a href="{{ url_for('student.search', faculty=faculty.faculty_id) }}" class="btn-view-more">ပိုမိုရှာရန်</a>
+    </div>
+</div>
+{% endfor %}
+
+<div class="section-view-more">
+    <a href="{{ url_for('student.search') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER (TEAL)
+═══════════════════════════════════════════════════════════ -->
+<footer class="psl-footer">
+    <div class="footer-grid">
+        <div class="footer-col">
+            <h4>Quick Links</h4>
+            <a href="{{ url_for('student.search') }}">Browse All Books</a>
+            <a href="{{ url_for('student.borrow_history') }}">My Borrowings</a>
+            <a href="{{ url_for('student.bookmarks') }}">My Bookmarks</a>
+            <a href="{{ url_for('student.clearance') }}">Library Clearance</a>
+        </div>
+        <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="{{ url_for('student.search', resource_type='textbook') }}">Textbooks</a>
+            <a href="{{ url_for('student.search', resource_type='reference_book') }}">Reference Books</a>
+            <a href="{{ url_for('student.search', resource_type='journal') }}">Journals</a>
+            <a href="{{ url_for('student.search', resource_type='thesis') }}">Thesis Papers</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contact Us</h4>
+            <p><i class="bi bi-geo-alt me-2"></i>Polytechnic University (Maubin)<br>Maubin, Ayeyarwady Region, Myanmar</p>
+            <p><i class="bi bi-telephone me-2"></i>+95 45 30123</p>
+            <p><i class="bi bi-envelope me-2"></i>library@pumub.edu.mm</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        &copy; 2026 PUMUB Digital Library. All rights reserved.
+    </div>
+</footer>
+{% endblock %}

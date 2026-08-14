@@ -1,0 +1,41 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block admin_content %}
+<div class="dashboard-header d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div><h2 class="mb-1">Library Insights</h2><p class="text-muted small mb-0">Overview of collection, members, and circulation status</p></div>
+  <div class="mt-3 mt-md-0 d-flex gap-2"><a href="{{ url_for('admin.book_add') }}" class="btn btn-outline-primary"><i class="bi bi-plus-lg me-2"></i>Add Book</a><a href="{{ url_for('admin.borrows') }}" class="btn btn-primary"><i class="bi bi-qr-code-scan me-2"></i>Counter Workflow</a></div>
+</div>
+<div class="row g-3 mb-4">
+  {% for label, value, icon, color in [('Total Books', stats.total_books, 'bi-book', 'primary'), ('Total Users', stats.total_users, 'bi-people', 'info'), ('Active Borrows', stats.active_borrows, 'bi-arrow-left-right', 'success'), ('Pending Requests', stats.pending_requests, 'bi-hourglass-split', 'warning')] %}
+  <div class="col-12 col-sm-6 col-xl-3"><div class="card border-0 shadow-sm h-100 border-bottom border-{{ color }} border-4"><div class="card-body"><div class="d-flex justify-content-between mb-2"><span class="text-muted small text-uppercase fw-bold">{{ label }}</span><i class="bi {{ icon }} text-{{ color }} fs-4"></i></div><h2 class="mb-0 fw-bold">{{ value }}</h2></div></div></div>
+  {% endfor %}
+</div>
+<div class="row g-4">
+  {% set chart_specs = [
+    ('Most Borrowed Books', 'mostBorrowedChart', most_borrowed, 'bar', 'borrow_count', 'No borrowing data available yet.'),
+    ('Books per Category', 'categoryChart', category_counts, 'doughnut', 'book_count', 'No category data available yet.'),
+    ('Users by Role', 'roleChart', role_stats, 'doughnut', 'cnt', 'No user-role data available yet.'),
+    ('Borrow Status', 'statusChart', status_stats, 'doughnut', 'cnt', 'No borrowing status data available yet.'),
+    ('Monthly Downloads', 'downloadChart', months, 'line', 'monthly', 'No download data available yet.')
+  ] %}
+  <div class="col-12 col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Most Borrowed Books</h5></div><div class="card-body"><div class="chart-box" data-empty="{{ 'true' if not most_borrowed else 'false' }}"><canvas id="mostBorrowedChart"></canvas><div class="chart-empty">No borrowing data available yet.</div></div></div></div></div>
+  <div class="col-12 col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Books per Category</h5></div><div class="card-body"><div class="chart-box" data-empty="{{ 'true' if not category_counts else 'false' }}"><canvas id="categoryChart"></canvas><div class="chart-empty">No category data available yet.</div></div></div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Users by Role</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not role_stats else 'false' }}"><canvas id="roleChart"></canvas><div class="chart-empty">No user-role data available yet.</div></div></div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Borrow Status</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not status_stats else 'false' }}"><canvas id="statusChart"></canvas><div class="chart-empty">No borrowing status data available yet.</div></div></div></div></div>
+  <div class="col-12 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Monthly Downloads</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not months else 'false' }}"><canvas id="downloadChart"></canvas><div class="chart-empty">No download data available yet.</div></div></div></div></div>
+</div>
+<style>.chart-box{position:relative;height:300px}.chart-box-sm{height:260px}.chart-empty{display:none;height:100%;align-items:center;justify-content:center;color:#64748b;font-size:.9rem;text-align:center}.chart-box[data-empty="true"] canvas{display:none}.chart-box[data-empty="true"] .chart-empty{display:flex}</style>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const teal='#0b7375', navy='#16324f', palette=['#0b7375','#e8a838','#2563eb','#dc3545','#6f42c1','#198754','#fd7e14'];
+const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}};
+function draw(id,type,labels,data,label,extra={}){const el=document.getElementById(id); if(!el || !data.length)return; new Chart(el,{type,data:{labels,datasets:[{label,data,backgroundColor:type==='line'?'rgba(11,115,117,.16)':palette,borderColor:type==='line'?teal:palette,borderWidth:2,fill:type==='line',tension:.35}]},options:{...common,...extra}})}
+draw('mostBorrowedChart','bar',{{ most_borrowed|map(attribute='title')|list|tojson }},{{ most_borrowed|map(attribute='borrow_count')|list|tojson }},'Borrow records',{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}}});
+draw('categoryChart','doughnut',{{ category_counts|map(attribute='category_name')|list|tojson }},{{ category_counts|map(attribute='book_count')|list|tojson }},'Books');
+draw('roleChart','doughnut',{{ role_stats|map(attribute='role')|list|tojson }},{{ role_stats|map(attribute='cnt')|list|tojson }},'Users');
+draw('statusChart','doughnut',{{ status_stats|map(attribute='status')|list|tojson }},{{ status_stats|map(attribute='cnt')|list|tojson }},'Borrow requests');
+draw('downloadChart','line',{{ months|tojson }},{{ dl_data|tojson }},'Downloads',{scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
+</script>
+{% endblock %}

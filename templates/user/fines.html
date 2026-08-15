@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My Fines{% endblock %}
+{% block content %}
+<div class="py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div><h2 class="mb-1">My Fines</h2><p class="text-muted small mb-0">Final fines and current estimated overdue amounts</p></div>
+    <a href="{{ url_for('student.borrow_history') }}" class="btn btn-outline-primary">My Borrowings</a>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm p-3"><div class="small text-muted">All Final Fines</div><div class="h4 mb-0">{{ "{:,.0f}".format(summary.total) }} MMK</div></div></div>
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm p-3"><div class="small text-muted">Unpaid</div><div class="h4 mb-0 text-danger">{{ "{:,.0f}".format(summary.unpaid) }} MMK</div></div></div>
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm p-3"><div class="small text-muted">Paid</div><div class="h4 mb-0 text-success">{{ "{:,.0f}".format(summary.paid) }} MMK</div></div></div>
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm p-3"><div class="small text-muted">Current Estimated</div><div class="h4 mb-0 text-warning">{{ "{:,.0f}".format(summary.estimated) }} MMK</div></div></div>
+  </div>
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body py-3"><div class="btn-group" role="group"><a class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }}" href="{{ url_for('student.fines') }}">All</a><a class="btn btn-sm {{ 'btn-primary' if status_filter == 'unpaid' else 'btn-outline-primary' }}" href="{{ url_for('student.fines', status='unpaid') }}">Unpaid</a><a class="btn btn-sm {{ 'btn-primary' if status_filter == 'paid' else 'btn-outline-primary' }}" href="{{ url_for('student.fines', status='paid') }}">Paid</a></div></div></div>
+  <div class="card border-0 shadow-sm overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="bg-light"><tr><th class="ps-4">Borrow ID</th><th>Book</th><th>Late Days</th><th>Amount</th><th>Status</th><th>Date / Payment</th></tr></thead><tbody>
+  {% for f in fines %}<tr><td class="ps-4"><code>{{ f.borrow_id_code or f.borrow_id }}</code></td><td><strong>{{ f.book_title }}</strong><div class="small text-muted">{{ f.reason }}</div></td><td>{{ f.late_days }}</td><td class="text-danger fw-bold">{{ "{:,.0f}".format(f.amount) }} MMK</td><td>{% if f.is_paid %}<span class="badge bg-success">Paid</span>{% else %}<span class="badge bg-danger">Unpaid</span>{% endif %}</td><td><div>{{ f.created_at.strftime('%Y-%m-%d') if f.created_at else '—' }}</div>{% if f.is_paid %}<small class="text-success">Paid {{ f.paid_at.strftime('%Y-%m-%d') if f.paid_at else '' }}{% if f.payment_method %} ({{ f.payment_method }}){% endif %}</small>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted py-5">No finalized fines found.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+</div>
+{% endblock %}

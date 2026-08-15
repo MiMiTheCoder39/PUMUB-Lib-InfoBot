@@ -58,6 +58,7 @@
                         <div class="dropdown-header">{{ session.get('name', 'User') }}</div>
                         <a href="{{ url_for('student.dashboard') }}"><i class="bi bi-person"></i> Profile</a>
                         <a href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark"></i> Borrow History</a>
+                        <a href="{{ url_for('student.fines') }}"><i class="bi bi-cash-stack"></i> My Fines</a>
                         <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i> Clearance</a>
                         <a href="{{ url_for('student.notifications') }}"><i class="bi bi-bell"></i> Notifications</a>
                         <a href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark"></i> My Bookmarks</a>

@@ -45,9 +45,12 @@ from models.borrow_model import (
     create_borrow_request,
     get_student_borrow_history,
     get_student_borrow_stats,
+    get_student_fines,
+    mark_overdue_records,
 )
 from models.notification_model import (
     get_user_notifications, get_unread_count, mark_all_read, mark_one_read,
+    notify_borrow_request_submitted,
 )
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
@@ -416,6 +419,12 @@ def borrow_request(book_id):
     elif result == "duplicate":
         flash("ဤစာအုပ်ကို ငှားယူရန် တောင်းဆိုထားပြီး (သို့မဟုတ်) လက်ဝယ်ရှိနေပြီး ဖြစ်ပါသည်။", "warning")
     else:
+        book = get_book_by_id(book_id)
+        notify_borrow_request_submitted(
+            session["user_id"],
+            book["title"] if book else str(book_id),
+            result,
+        )
         flash("Borrow Request ပေးပို့ပြီးပါပြီ။ Admin Approve ပြုလုပ်ရန် စောင့်ပါ။", "success")
     return redirect(url_for("student.book_details", book_id=book_id))
 
@@ -428,8 +437,26 @@ def borrow_request(book_id):
 @library_user_required
 def borrow_history():
     from datetime import datetime
+    mark_overdue_records()
     history = get_student_borrow_history(session["user_id"])
     return render_template("user/borrow_history.html", history=history, now=datetime.now())
+
+
+@student_bp.route("/fines")
+@login_required
+@library_user_required
+def fines():
+    status_filter = request.args.get("status")
+    mark_overdue_records()
+    fine_rows = get_student_fines(session["user_id"], status_filter)
+    history = get_student_borrow_history(session["user_id"])
+    summary = {
+        "total": sum(float(row.get("amount") or 0) for row in fine_rows),
+        "unpaid": sum(float(row.get("amount") or 0) for row in fine_rows if not row.get("is_paid")),
+        "paid": sum(float(row.get("amount") or 0) for row in fine_rows if row.get("is_paid")),
+        "estimated": sum(float(row.get("estimated_fine") or 0) for row in history if row.get("status") in ("borrowed", "overdue")),
+    }
+    return render_template("user/fines.html", fines=fine_rows, summary=summary, status_filter=status_filter)
 
 # ============================================================
 # CLEARANCE / NO-DUES

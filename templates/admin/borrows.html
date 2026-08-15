@@ -81,6 +81,7 @@
                     <th>Book Title</th>
                     <th>Timeline</th>
                     <th>Status</th>
+                    <th>Late / Fine</th>
                     <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
@@ -129,6 +130,17 @@
                         {% set bc = badge_map.get(r.status, ('status-pending','—')) %}
                         <span class="status-badge {{ bc[0] }}">{{ bc[1] }}</span>
                     </td>
+                    <td>
+                        {% if r.status in ('borrowed', 'overdue') and r.estimated_fine %}
+                            <div class="text-danger fw-bold">{{ "{:,.0f}".format(r.estimated_fine) }} MMK est.</div>
+                            <small class="text-muted">{{ r.late_days }} late day{{ 's' if r.late_days != 1 else '' }}</small>
+                        {% elif r.fine_amount %}
+                            <div class="text-danger fw-bold">{{ "{:,.0f}".format(r.fine_amount) }} MMK final</div>
+                            <small class="{{ 'text-success' if r.fine_paid else 'text-danger' }}">{{ 'Paid' if r.fine_paid else 'Unpaid' }}</small>
+                        {% else %}
+                            <span class="text-muted smaller">—</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end pe-4">
                         <div class="btn-group">
                             {% if r.status == 'pending' %}
@@ -161,7 +173,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-5">
+                    <td colspan="7" class="text-center py-5">
                         <div class="text-muted">
                             <i class="bi bi-inbox fs-1 opacity-25 d-block mb-3"></i>
                             No borrow requests found.

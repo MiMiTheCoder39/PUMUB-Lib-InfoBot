@@ -44,10 +44,8 @@ from models.db import mysql
 from models.borrow_model import (
     get_all_borrow_requests, get_borrow_by_id, get_borrow_by_code,
     approve_borrow, reject_borrow, return_book, issue_book,
-    mark_overdue_records,     calculate_fine,
+    mark_overdue_records, calculate_fine,
     get_all_fines, add_fine, mark_fine_paid, get_fine_total,
-    get_fine_summary, get_monthly_fine_report,
-
     get_borrow_stats,
 )
 from models.notification_model import (
@@ -432,7 +430,7 @@ def borrow_approve(borrow_id):
         borrow_id_code = approve_borrow(borrow_id, qr_folder, request.host_url.rstrip('/'))
         br = get_borrow_by_id(borrow_id)
         if br:
-            notify_borrow_approved(br["user_id"], br["student_name"], br["book_title"], borrow_id_code, br["borrow_id"])
+            notify_borrow_approved(br["user_id"], br["student_name"], br["book_title"], borrow_id_code)
         flash(f"Borrow Request ကို Approve လုပ်ပြီးပါပြီ။ ID: {borrow_id_code}", "success")
     except Exception as exc:
         mysql.connection.rollback()
@@ -484,7 +482,7 @@ def borrow_issue(borrow_id):
     try:
         issue_book(borrow_id, borrowed_date, due_date)
         br = get_borrow_by_id(borrow_id)
-        notify_borrow_issued(br["user_id"], br["student_name"], br["book_title"], br["borrow_id_code"], borrowed_date, due_date, br["borrow_id"])
+        notify_borrow_issued(br["user_id"], br["student_name"], br["book_title"], br["borrow_id_code"], borrowed_date, due_date)
         flash("စာအုပ် ထုတ်ပေးမှု (Issue) အောင်မြင်ပါသည်။", "success")
     except Exception as exc:
         mysql.connection.rollback()
@@ -505,21 +503,29 @@ def borrow_reject(borrow_id):
 @login_required
 @admin_required
 def borrow_return(borrow_id):
+    br = get_borrow_by_id(borrow_id)
     try:
-        result = return_book(borrow_id)
+        return_book(borrow_id)
     except Exception as exc:
         mysql.connection.rollback()
         flash(f"Return မအောင်မြင်ပါ: {exc}", "danger")
         return redirect(url_for("admin.borrows"))
 
-    if result["fine_amount"] > 0:
-        flash(
-            f"Book ပြန်အပ်ပြီး — Late {result['late_days']} days, "
-            f"Final Fine: {result['fine_amount']:,.0f} MMK ထည့်ထားပါသည်။",
-            "warning",
-        )
+    # Late return ဆိုရင် fine အလိုအလျောက် ထည့်
+    if br and br["due_date"] and br["due_date"] < datetime.now().date():
+        days_late, fine_amount = calculate_fine(borrow_id)
+        if fine_amount > 0:
+            add_fine(borrow_id, br["user_id"], fine_amount,
+                     f"Late Return ({days_late} days)")
+            notify_fine_added(br["user_id"], br["student_name"], br["book_title"], 
+                              br["borrow_id_code"], days_late, fine_amount)
+            flash(f"Book ပြန်အပ်ပြီး — Late {days_late} days, Fine: {fine_amount} Ks ထည့်ထားပါသည်။","warning")
+        else:
+            notify_borrow_returned(br["user_id"], br["student_name"], br["book_title"], br["borrow_id_code"])
+            flash("Book ပြန်အပ်မှု မှတ်တမ်းတင်ပြီးပါပြီ။","success")
     else:
-        flash("Book ပြန်အပ်မှု၊ stock restoration နှင့် notification ကို transaction တစ်ခုအတွင်း မှတ်တမ်းတင်ပြီးပါပြီ။", "success")
+        notify_borrow_returned(br["user_id"], br["student_name"], br["book_title"], br["borrow_id_code"])
+        flash("Book ပြန်အပ်မှု မှတ်တမ်းတင်ပြီးပါပြီ။","success")
     return redirect(url_for("admin.borrows"))
 
 
@@ -530,29 +536,16 @@ def borrow_return(borrow_id):
 @login_required
 @admin_required
 def fines():
-    status_filter = request.args.get("status")
-    all_fines = get_all_fines(status_filter)
-    fine_summary = get_fine_summary()
-    monthly_fines = get_monthly_fine_report(12)
-    return render_template("admin/fines.html", fines=all_fines,
-                           status_filter=status_filter,
-                           fine_summary=fine_summary,
-                           monthly_fines=monthly_fines)
+    all_fines = get_all_fines()
+    return render_template("admin/fines.html", fines=all_fines)
 
 
 @admin_bp.route("/fines/paid/<int:fine_id>", methods=["POST"])
 @login_required
 @admin_required
 def fine_paid(fine_id):
-    try:
-        result = mark_fine_paid(fine_id, request.form.get("payment_method", "Cash"))
-        if result.get("already_paid"):
-            flash("ဒီ Fine ကို အရင်ကပင် Paid အဖြစ် မှတ်တမ်းတင်ထားပြီးပါပြီ။", "info")
-        else:
-            flash("Fine ကို ပေးချေပြီးကြောင်း payment method နှင့်အတူ မှတ်တမ်းတင်ပြီးပါပြီ။", "success")
-    except Exception as exc:
-        mysql.connection.rollback()
-        flash(f"Fine payment မအောင်မြင်ပါ: {exc}", "danger")
+    mark_fine_paid(fine_id)
+    flash("Fine ကို ပေးချေပြီးဟု မှတ်တမ်းတင်ပြီးပါပြီ။","success")
     return redirect(url_for("admin.fines"))
 
 

@@ -9,9 +9,10 @@
             <p class="text-muted small mb-0">Track your physical book requests and active borrowings</p>
         </div>
         <div class="mt-3 mt-md-0">
-            <a href="{{ url_for('student.clearance') }}" class="btn btn-outline-success shadow-sm">
-                <i class="bi bi-shield-check me-2"></i>Check Clearance
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('student.fines') }}" class="btn btn-outline-danger shadow-sm"><i class="bi bi-cash-stack me-2"></i>My Fines</a>
+                <a href="{{ url_for('student.clearance') }}" class="btn btn-outline-success shadow-sm"><i class="bi bi-shield-check me-2"></i>Check Clearance</a>
+            </div>
         </div>
     </div>
 
@@ -103,10 +104,13 @@
                         <td>
                             {% if item.status == 'overdue' %}
                                 <div class="alert alert-danger alert-sm mb-2 py-1 px-2" style="font-size: 0.75rem;">
-                                    <i class="bi bi-exclamation-circle me-1"></i> Overdue!
+                                    <i class="bi bi-exclamation-circle me-1"></i> Overdue · {{ item.late_days }} day{{ 's' if item.late_days != 1 else '' }}
                                 </div>
                             {% endif %}
-                            {% if item.fine_amount and item.fine_amount > 0 %}
+                            {% if item.status in ('borrowed', 'overdue') and item.estimated_fine > 0 %}
+                                <div class="fw-bold text-warning">{{ "{:,.0f}".format(item.estimated_fine) }} MMK</div>
+                                <small class="text-muted">Current Estimated · {{ item.fine_rate }} MMK/day</small>
+                            {% elif item.fine_amount and item.fine_amount > 0 %}
                                 <div class="fw-bold text-danger">{{ "{:,.0f}".format(item.fine_amount) }} MMK</div>
                                 {% if item.fine_paid %}
                                     <span class="badge bg-soft-success text-success smaller px-2">Paid</span>

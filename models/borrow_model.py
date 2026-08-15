@@ -10,18 +10,6 @@ Status values: pending, approved, borrowed, overdue, returned, rejected
 from models.db import mysql
 from datetime import datetime, date
 
-FINE_RATE_MMK_PER_DAY = 1000
-
-
-def _coerce_date(value):
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        return date.fromisoformat(value)
-    return value
-
 
 # ─── HELPERS ─────────────────────────────────────────────────
 
@@ -142,121 +130,47 @@ def get_borrow_by_code(borrow_id_code):
 
 def issue_book(borrow_id, borrowed_date, due_date):
     """Move an approved request to borrowed and decrement one available copy."""
-    borrowed = _coerce_date(borrowed_date)
-    due = _coerce_date(due_date)
-    if not borrowed or not due:
-        raise ValueError("Borrowed date and due date are required")
-    if due < borrowed:
-        raise ValueError("Due date cannot be earlier than borrowed date")
-
     cur = mysql.connection.cursor()
-    try:
-        cur.execute("""
-            SELECT br.book_id, br.status, b.available_copies
-            FROM borrow_requests br JOIN books b ON b.book_id=br.book_id
-            WHERE br.borrow_id=%s FOR UPDATE
-        """, (borrow_id,))
-        row = cur.fetchone()
-        if not row or row["status"] != "approved":
-            raise ValueError("Only approved requests can be issued")
-        if int(row["available_copies"] or 0) < 1:
-            raise ValueError("No available copies remain")
-        cur.execute("""
-            UPDATE borrow_requests
-            SET status='borrowed', borrowed_date=%s, due_date=%s, issued_date=%s
-            WHERE borrow_id=%s AND status='approved'
-        """, (borrowed, due, datetime.now(), borrow_id))
-        cur.execute("UPDATE books SET available_copies=available_copies-1 WHERE book_id=%s AND available_copies>0", (row["book_id"],))
-        if cur.rowcount != 1:
-            raise ValueError("Unable to reserve a copy")
-        mysql.connection.commit()
-    except Exception:
-        mysql.connection.rollback()
-        raise
-    finally:
+    cur.execute("""
+        SELECT br.book_id, br.status, b.available_copies
+        FROM borrow_requests br JOIN books b ON b.book_id=br.book_id
+        WHERE br.borrow_id=%s FOR UPDATE
+    """, (borrow_id,))
+    row = cur.fetchone()
+    if not row or row["status"] != "approved":
         cur.close()
+        raise ValueError("Only approved requests can be issued")
+    if int(row["available_copies"] or 0) < 1:
+        cur.close()
+        raise ValueError("No available copies remain")
+    cur.execute("""
+        UPDATE borrow_requests
+        SET status='borrowed', borrowed_date=%s, due_date=%s, issued_date=%s
+        WHERE borrow_id=%s AND status='approved'
+    """, (borrowed_date, due_date, datetime.now(), borrow_id))
+    cur.execute("UPDATE books SET available_copies=available_copies-1 WHERE book_id=%s AND available_copies>0", (row["book_id"],))
+    if cur.rowcount != 1:
+        mysql.connection.rollback()
+        cur.close()
+        raise ValueError("Unable to reserve a copy")
+    mysql.connection.commit()
+    cur.close()
 
 
 # ─── STEP 5: Return Book ─────────────────────────────────────
 
 def return_book(borrow_id):
-    """Return a book, restore stock, create one final fine, and notify atomically."""
+    """Return a borrowed/overdue book once and restore exactly one copy."""
     cur = mysql.connection.cursor()
-    try:
-        cur.execute("""
-            SELECT br.*, u.name AS student_name, u.role, b.title AS book_title
-            FROM borrow_requests br
-            JOIN users u ON u.user_id = br.user_id
-            JOIN books b ON b.book_id = br.book_id
-            WHERE br.borrow_id=%s FOR UPDATE
-        """, (borrow_id,))
-        row = cur.fetchone()
-        if not row or row["status"] not in ("borrowed", "overdue"):
-            raise ValueError("Only borrowed or overdue books can be returned")
-
-        returned_at = datetime.now()
-        due = _coerce_date(row.get("due_date"))
-        late_days = max(0, (returned_at.date() - due).days) if due else 0
-        fine_amount = 0 if row.get("role") == "teacher" else late_days * FINE_RATE_MMK_PER_DAY
-
-        cur.execute("""
-            UPDATE borrow_requests
-            SET status='returned', return_date=%s
-            WHERE borrow_id=%s AND status IN ('borrowed','overdue')
-        """, (returned_at, borrow_id))
-        if cur.rowcount != 1:
-            raise ValueError("This borrow was already returned")
-
-        cur.execute("""
-            UPDATE books SET available_copies=available_copies+1
-            WHERE book_id=%s AND available_copies < total_copies
-        """, (row["book_id"],))
-        if cur.rowcount != 1:
-            raise ValueError("Unable to restore book stock safely")
-
-        fine_id = None
-        if fine_amount > 0:
-            cur.execute("SELECT fine_id FROM fines WHERE borrow_id=%s FOR UPDATE", (borrow_id,))
-            existing = cur.fetchone()
-            if existing:
-                fine_id = existing["fine_id"]
-            else:
-                cur.execute("""
-                    INSERT INTO fines (borrow_id, user_id, amount, reason, is_paid, paid_at)
-                    VALUES (%s, %s, %s, %s, 0, NULL)
-                """, (borrow_id, row["user_id"], fine_amount, f"Late Return ({late_days} days)"))
-                fine_id = cur.lastrowid
-
-        if fine_amount > 0:
-            title = f"Fine Created — {row['borrow_id_code'] or borrow_id}"
-            message = (f"{row['book_title']} ကို ပြန်အပ်ပြီးပါပြီ။ "
-                       f"Late {late_days} days အတွက် {fine_amount:,.0f} MMK final fine ရှိပါသည်။")
-            ntype = "fine_added"
-        else:
-            title = f"Book Returned — {row['book_title']}"
-            message = f"{row['book_title']} ({row['borrow_id_code'] or borrow_id}) ကို ပြန်အပ်ပြီးကြောင်း မှတ်တမ်းတင်ပြီးပါပြီ။"
-            ntype = "borrow_returned"
-        cur.execute("""
-            INSERT INTO notifications (user_id, borrow_id, title, message, type)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (row["user_id"], borrow_id, title, message, ntype))
-        mysql.connection.commit()
-        return {
-            "borrow_id": borrow_id,
-            "user_id": row["user_id"],
-            "student_name": row["student_name"],
-            "book_title": row["book_title"],
-            "borrow_id_code": row["borrow_id_code"],
-            "late_days": late_days,
-            "fine_amount": fine_amount,
-            "fine_id": fine_id,
-            "return_date": returned_at,
-        }
-    except Exception:
-        mysql.connection.rollback()
-        raise
-    finally:
+    cur.execute("SELECT book_id, status FROM borrow_requests WHERE borrow_id=%s FOR UPDATE", (borrow_id,))
+    row = cur.fetchone()
+    if not row or row["status"] not in ("borrowed", "overdue"):
         cur.close()
+        raise ValueError("Only borrowed or overdue books can be returned")
+    cur.execute("UPDATE borrow_requests SET status='returned', return_date=%s WHERE borrow_id=%s", (datetime.now(), borrow_id))
+    cur.execute("UPDATE books SET available_copies=available_copies+1 WHERE book_id=%s", (row["book_id"],))
+    mysql.connection.commit()
+    cur.close()
 
 
 # ─── OVERDUE: Mark overdue records ───────────────────────────
@@ -300,15 +214,13 @@ def get_all_borrow_requests(status=None, search=None):
     """
     query = """
         SELECT br.*, u.name AS student_name, u.student_id,
-               u.email AS student_email, u.role,
+               u.email AS student_email,
                b.title AS book_title, b.available_copies,
-               fac.faculty_name, fac.department,
-               fn.amount AS fine_amount, fn.is_paid AS fine_paid
+               f.faculty_name, f.department
         FROM borrow_requests br
         JOIN users u ON br.user_id = u.user_id
         JOIN books b ON br.book_id = b.book_id
-        LEFT JOIN faculties fac ON u.faculty_id = fac.faculty_id
-        LEFT JOIN fines fn ON br.borrow_id = fn.borrow_id
+        LEFT JOIN faculties f ON u.faculty_id = f.faculty_id
         WHERE 1=1
     """
     params = []
@@ -327,24 +239,6 @@ def get_all_borrow_requests(status=None, search=None):
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
     cur.close()
-    return _enrich_fine_fields(rows)
-
-
-def _enrich_fine_fields(rows):
-    """Attach the same current estimated/final fine fields to every borrow row."""
-    today = date.today()
-    for row in rows:
-        due = _coerce_date(row.get("due_date"))
-        returned = _coerce_date(row.get("return_date"))
-        end = returned or today
-        late_days = max(0, (end - due).days) if due else 0
-        if row.get("role") == "teacher":
-            late_days = 0
-        row["late_days"] = late_days
-        row["estimated_fine"] = late_days * FINE_RATE_MMK_PER_DAY
-        row["fine_rate"] = FINE_RATE_MMK_PER_DAY
-        row["days_remaining"] = (due - today).days if due and row.get("status") in ("borrowed", "approved") else 0
-        row["fine_status"] = "paid" if row.get("fine_paid") else ("unpaid" if row.get("fine_amount") else None)
     return rows
 
 
@@ -360,17 +254,16 @@ def get_borrow_by_id(borrow_id):
     """, (borrow_id,))
     row = cur.fetchone()
     cur.close()
-    return _enrich_fine_fields([row])[0] if row else None
+    return row
 
 
 def get_student_borrow_history(user_id):
     cur = mysql.connection.cursor()
     cur.execute("""
-        SELECT br.*, u.role, b.title AS book_title, b.cover_image,
+        SELECT br.*, b.title AS book_title, b.cover_image,
                a.author_name,
                f.amount AS fine_amount, f.is_paid AS fine_paid
         FROM borrow_requests br
-        JOIN users u ON u.user_id = br.user_id
         JOIN books b ON br.book_id = b.book_id
         LEFT JOIN authors a ON b.author_id = a.author_id
         LEFT JOIN fines f ON br.borrow_id = f.borrow_id
@@ -379,32 +272,6 @@ def get_student_borrow_history(user_id):
     """, (user_id,))
     rows = cur.fetchall()
     cur.close()
-    return _enrich_fine_fields(rows)
-
-
-def get_student_fines(user_id, status=None):
-    cur = mysql.connection.cursor()
-    query = """
-        SELECT f.*, b.title AS book_title, b.cover_image,
-               br.due_date, br.return_date, br.borrow_id_code
-        FROM fines f
-        JOIN borrow_requests br ON br.borrow_id=f.borrow_id
-        JOIN books b ON b.book_id=br.book_id
-        WHERE f.user_id=%s
-    """
-    params = [user_id]
-    if status == "unpaid":
-        query += " AND f.is_paid=0"
-    elif status == "paid":
-        query += " AND f.is_paid=1"
-    query += " ORDER BY f.created_at DESC"
-    cur.execute(query, tuple(params))
-    rows = cur.fetchall()
-    cur.close()
-    for row in rows:
-        due = _coerce_date(row.get("due_date"))
-        returned = _coerce_date(row.get("return_date"))
-        row["late_days"] = max(0, (returned - due).days) if due and returned else 0
     return rows
 
 
@@ -437,8 +304,12 @@ def get_borrow_stats():
 
 # ─── FINES ───────────────────────────────────────────────────
 
-def calculate_fine(borrow_id, as_of=None):
-    """Return current estimated or final fine as (late_days, amount)."""
+def calculate_fine(borrow_id):
+    """
+    Calculate fine for overdue book: 1000 MMK per day.
+    Returns (days_late, amount) tuple.
+    Teachers have NO fines.
+    """
     cur = mysql.connection.cursor()
     cur.execute("""
         SELECT br.due_date, br.return_date, br.status, u.role
@@ -448,21 +319,23 @@ def calculate_fine(borrow_id, as_of=None):
     """, (borrow_id,))
     br = cur.fetchone()
     cur.close()
+    
     if not br or not br["due_date"] or br["role"] == "teacher":
         return 0, 0
-    due = _coerce_date(br["due_date"])
-    end = _coerce_date(br["return_date"]) or as_of or date.today()
-    if isinstance(end, datetime):
-        end = end.date()
+        
+    end = br["return_date"].date() if br["return_date"] else date.today()
+    due = br["due_date"]
+    if isinstance(due, str):
+        due = date.fromisoformat(due)
     if end <= due:
         return 0, 0
     days = (end - due).days
-    return days, days * FINE_RATE_MMK_PER_DAY
+    return days, days * 1000
 
 
-def get_all_fines(status=None):
+def get_all_fines():
     cur = mysql.connection.cursor()
-    query = """
+    cur.execute("""
         SELECT f.*, u.name AS student_name, u.student_id,
                b.title AS book_title,
                br.due_date, br.return_date, br.borrow_id_code,
@@ -471,130 +344,47 @@ def get_all_fines(status=None):
         JOIN users u ON f.user_id = u.user_id
         JOIN borrow_requests br ON f.borrow_id = br.borrow_id
         JOIN books b ON br.book_id = b.book_id
-        WHERE 1=1
-    """
-    if status == "paid":
-        query += " AND f.is_paid=1"
-    elif status == "unpaid":
-        query += " AND f.is_paid=0"
-    query += " ORDER BY f.created_at DESC"
-    cur.execute(query)
+        ORDER BY f.created_at DESC
+    """)
     rows = cur.fetchall()
     cur.close()
     return rows
 
 
 def add_fine(borrow_id, user_id, amount, reason="Late Return"):
-    """Create at most one final fine per borrow; DB migration adds a unique guard."""
+    """Create one unpaid fine per borrow record; repeated returns are harmless."""
     cur = mysql.connection.cursor()
-    try:
-        cur.execute("SELECT fine_id FROM fines WHERE borrow_id=%s FOR UPDATE", (borrow_id,))
-        existing = cur.fetchone()
-        if existing:
-            return existing["fine_id"]
-        cur.execute("INSERT INTO fines (borrow_id, user_id, amount, reason) VALUES (%s, %s, %s, %s)", (borrow_id, user_id, amount, reason))
-        fine_id = cur.lastrowid
-        mysql.connection.commit()
-        return fine_id
-    except Exception:
-        mysql.connection.rollback()
-        raise
-    finally:
+    cur.execute("SELECT fine_id FROM fines WHERE borrow_id=%s AND is_paid=0 LIMIT 1", (borrow_id,))
+    existing = cur.fetchone()
+    if existing:
         cur.close()
+        return existing["fine_id"]
+    cur.execute("INSERT INTO fines (borrow_id, user_id, amount, reason) VALUES (%s, %s, %s, %s)", (borrow_id, user_id, amount, reason))
+    mysql.connection.commit()
+    fine_id = cur.lastrowid
+    cur.close()
+    return fine_id
 
 
-def mark_fine_paid(fine_id, payment_method="Cash"):
-    """Mark an unpaid fine paid once and create a student notification."""
+def mark_fine_paid(fine_id):
     cur = mysql.connection.cursor()
-    try:
-        cur.execute("""
-            SELECT f.*, br.borrow_id_code, b.title
-            FROM fines f
-            JOIN borrow_requests br ON br.borrow_id=f.borrow_id
-            JOIN books b ON b.book_id=br.book_id
-            WHERE f.fine_id=%s FOR UPDATE
-        """, (fine_id,))
-        fine = cur.fetchone()
-        if not fine:
-            raise ValueError("Fine not found")
-        if fine["is_paid"]:
-            return {"already_paid": True, "fine": fine}
-        cur.execute("""
-            UPDATE fines SET is_paid=1, paid_at=%s, payment_method=%s
-            WHERE fine_id=%s AND is_paid=0
-        """, (datetime.now(), payment_method or "Cash", fine_id))
-        if cur.rowcount != 1:
-            raise ValueError("Fine was already paid")
-        cur.execute("""
-            INSERT INTO notifications (user_id, borrow_id, title, message, type)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (fine["user_id"], fine["borrow_id"], "Fine Paid", f"{fine['title']} အတွက် {fine['amount']:,.0f} MMK payment မှတ်တမ်းတင်ပြီးပါပြီ။", "fine_paid"))
-        mysql.connection.commit()
-        return {"already_paid": False, "fine": fine}
-    except Exception:
-        mysql.connection.rollback()
-        raise
-    finally:
-        cur.close()
+    cur.execute(
+        "UPDATE fines SET is_paid=1, paid_at=%s WHERE fine_id=%s",
+        (datetime.now(), fine_id)
+    )
+    mysql.connection.commit()
+    cur.close()
 
 
 def get_fine_total():
     """Total unpaid fines amount."""
     cur = mysql.connection.cursor()
-    cur.execute("SELECT COALESCE(SUM(amount),0) AS total FROM fines WHERE is_paid=0")
+    cur.execute(
+        "SELECT COALESCE(SUM(amount),0) AS total FROM fines WHERE is_paid=0"
+    )
     row = cur.fetchone()
     cur.close()
     return float(row["total"] if row else 0)
-
-
-def get_fine_summary():
-    """Return auditable fine totals for today, month, paid and outstanding states."""
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT
-          COALESCE(SUM(amount),0) AS all_time_total,
-          COALESCE(SUM(CASE WHEN is_paid=0 THEN amount ELSE 0 END),0) AS unpaid_total,
-          COALESCE(SUM(CASE WHEN is_paid=1 THEN amount ELSE 0 END),0) AS paid_total,
-          COALESCE(SUM(CASE WHEN DATE(created_at)=CURDATE() THEN amount ELSE 0 END),0) AS today_generated,
-          COALESCE(SUM(CASE WHEN YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE()) THEN amount ELSE 0 END),0) AS month_generated,
-          COALESCE(SUM(CASE WHEN is_paid=1 AND YEAR(paid_at)=YEAR(CURDATE()) AND MONTH(paid_at)=MONTH(CURDATE()) THEN amount ELSE 0 END),0) AS month_paid
-        FROM fines
-    """)
-    row = cur.fetchone() or {}
-    cur.close()
-    return {key: float(row.get(key) or 0) for key in (
-        "all_time_total", "unpaid_total", "paid_total", "today_generated", "month_generated", "month_paid"
-    )}
-
-
-def get_monthly_fine_report(months=12):
-    """Return monthly generated, paid, and outstanding fine totals."""
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT DATE_FORMAT(created_at, '%%Y-%%m') AS month,
-               COALESCE(SUM(amount),0) AS generated,
-               COALESCE(SUM(CASE WHEN is_paid=1 THEN amount ELSE 0 END),0) AS paid,
-               COALESCE(SUM(CASE WHEN is_paid=0 THEN amount ELSE 0 END),0) AS outstanding
-        FROM fines
-        WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%%Y-%%m-01'), INTERVAL %s MONTH)
-        GROUP BY DATE_FORMAT(created_at, '%%Y-%%m')
-        ORDER BY month ASC
-    """, (months - 1,))
-    rows = {row["month"]: row for row in cur.fetchall()}
-    cur.close()
-    current = date.today().replace(day=1)
-    result = []
-    for offset in range(months - 1, -1, -1):
-        month_index = current.year * 12 + current.month - 1 - offset
-        key = date(month_index // 12, month_index % 12 + 1, 1).strftime("%Y-%m")
-        row = rows.get(key, {})
-        result.append({
-            "month": key,
-            "generated": float(row.get("generated") or 0),
-            "paid": float(row.get("paid") or 0),
-            "outstanding": float(row.get("outstanding") or 0),
-        })
-    return result
 
 # ─── CLEARANCE ────────────────────────────────────────────────
 

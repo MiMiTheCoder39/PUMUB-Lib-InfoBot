@@ -19,13 +19,7 @@
 
       <!-- Icon -->
       <div class="flex-shrink-0">
-        {% if n.type == 'borrow_request' %}
-          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:#e0f2fe;"><i class="bi bi-send-check text-info"></i></div>
-        {% elif n.type == 'due_reminder' %}
-          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:#fef3c7;"><i class="bi bi-calendar-event text-warning"></i></div>
-        {% elif n.type == 'fine_paid' %}
-          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:#dcfce7;"><i class="bi bi-cash-stack text-success"></i></div>
-        {% elif n.type == 'borrow_approved' %}
+        {% if n.type == 'borrow_approved' %}
           <div class="rounded-circle d-flex align-items-center justify-content-center"
                style="width:42px;height:42px;background:#dbeafe;">
             <i class="bi bi-check-circle-fill text-primary"></i>

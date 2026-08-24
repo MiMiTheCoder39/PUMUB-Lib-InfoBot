@@ -155,7 +155,7 @@ def ai_pdf_summary():
     if limited:
         return limited
     try:
-        return jsonify(summarize_pdf(book_id, session.get("role"), payload.get("mode", "medium")))
+        return jsonify(summarize_pdf(book_id, session.get("role"), payload.get("mode", "medium"), language=detect_message_language(payload.get("question") or "")))
     except LookupError as exc:
         return jsonify({"error": str(exc)}), 404
     except PermissionError as exc:
@@ -186,7 +186,7 @@ def ai_pdf_question():
     if limited:
         return limited
     try:
-        return jsonify(answer_pdf_question(book_id, session.get("role"), question))
+        return jsonify(answer_pdf_question(book_id, session.get("role"), question, language=detect_message_language(question)))
     except LookupError as exc:
         return jsonify({"error": str(exc)}), 404
     except PermissionError as exc:

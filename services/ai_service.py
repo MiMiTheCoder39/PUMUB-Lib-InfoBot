@@ -164,9 +164,10 @@ def summarize_text(text: str, *, max_output_tokens: Optional[int] = None) -> str
         text,
         system_prompt=(
             "Summarize the supplied text accurately and concisely. "
-            "Do not invent facts. Return only the summary."
+            "Do not invent facts. Answer the main point first, then give 3-6 short sentences or bullet points. "
+            "Return only the summary."
         ),
-        max_output_tokens=max_output_tokens,
+        max_output_tokens=(max_output_tokens or 500),
     )
 
 

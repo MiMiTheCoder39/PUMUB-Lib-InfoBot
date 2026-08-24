@@ -90,6 +90,11 @@ def _resolve_book(question: str, book_id: int | None) -> tuple[dict[str, Any] | 
     return None, matches
 
 
+def resolve_book_reference(question: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Resolve a user-mentioned title/ISBN against library records only."""
+    return _resolve_book(question, None)
+
+
 def answer_book_information(
     question: str,
     *,
@@ -156,9 +161,11 @@ def answer_book_information(
     answer = answer_from_context(
         question,
         context,
-        max_output_tokens=1000,
+        max_output_tokens=600,
         system_prompt=(
             "Use only the supplied authoritative library record. Do not add facts. "
+            "Answer directly in 2-5 short bullet points or short sentences. "
+            "Do not write a long introduction unless the user asks for detail. "
             + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
         ),
     )

@@ -23,7 +23,7 @@ from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is
 RESTRICTED_TYPES = {"thesis", "research_paper", "reference_book", "teachers_guide"}
 SUMMARY_MODES = {
     "short": "Produce a short summary in 3-5 sentences.",
-    "medium": "Produce a medium summary in 2-4 concise paragraphs.",
+    "medium": "Produce a concise summary in 4-6 short sentences or bullet points.",
     "detailed": "Produce a detailed, structured summary covering the main ideas, scope, and important facts.",
 }
 
@@ -97,7 +97,7 @@ def _relevant_chunks(question: str, chunks: list[str], top_k: int) -> list[str]:
     return selected or chunks[:top_k]
 
 
-def summarize_pdf(book_id: int, role: str | None, mode: str = "medium") -> dict[str, Any]:
+def summarize_pdf(book_id: int, role: str | None, mode: str = "medium", *, language: str = "my") -> dict[str, Any]:
     mode = (mode or "medium").lower().strip()
     if mode not in SUMMARY_MODES:
         raise ValueError("mode must be short, medium, or detailed")
@@ -108,7 +108,11 @@ def summarize_pdf(book_id: int, role: str | None, mode: str = "medium") -> dict[
             "status": "no_text",
             "mode": mode,
             "book": {"book_id": book.get("book_id"), "title": book.get("title")},
-            "summary": "No extractable text was found in this PDF.",
+            "summary": (
+                "ဒီ PDF ထဲက စာသားကို အကျဉ်းချုပ်ရန် ထုတ်ယူမရပါ။"
+                if str(language).lower().startswith("my") else
+                "No extractable text was found in this PDF."
+            ),
             "warnings": extracted.get("warnings", []),
         }
 
@@ -129,6 +133,11 @@ def summarize_pdf(book_id: int, role: str | None, mode: str = "medium") -> dict[
         SUMMARY_MODES[mode],
         final_context,
         max_output_tokens=300 if mode == "short" else (600 if mode == "medium" else 1000),
+        system_prompt=(
+            "Write a natural, readable summary using only the supplied PDF excerpts and intermediate summaries. "
+            "Do not invent facts. Keep it concise: answer the main point first, then give 3-6 key points or short sentences. "
+            + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
+        ),
     )
     return {
         "status": "ok",
@@ -141,7 +150,7 @@ def summarize_pdf(book_id: int, role: str | None, mode: str = "medium") -> dict[
     }
 
 
-def answer_pdf_question(book_id: int, role: str | None, question: str) -> dict[str, Any]:
+def answer_pdf_question(book_id: int, role: str | None, question: str, *, language: str = "my") -> dict[str, Any]:
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question is required")
     max_question_chars = int(current_app.config.get("AI_MAX_QUESTION_CHARS", 2000))
@@ -153,7 +162,11 @@ def answer_pdf_question(book_id: int, role: str | None, question: str) -> dict[s
         return {
             "status": "no_text",
             "book": {"book_id": book.get("book_id"), "title": book.get("title")},
-            "answer": "No extractable text was found in this PDF.",
+            "answer": (
+                "ဒီ PDF ထဲက စာသားကို ဖတ်ရှုရန် ထုတ်ယူမရပါ။"
+                if str(language).lower().startswith("my") else
+                "No extractable text was found in this PDF."
+            ),
             "warnings": extracted.get("warnings", []),
         }
     top_k = int(current_app.config.get("PDF_QA_TOP_K", 6))
@@ -166,6 +179,10 @@ def answer_pdf_question(book_id: int, role: str | None, question: str) -> dict[s
             *relevant,
         ],
         max_output_tokens=700,
+        system_prompt=(
+            "Answer naturally using only the supplied PDF excerpts. If the answer is not present, say so clearly. "
+            + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
+        ),
     )
     return {
         "status": "ok",

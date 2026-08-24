@@ -14,9 +14,10 @@ Features:
 """
 
 import os
+from io import BytesIO
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
-    session, flash, send_from_directory, current_app, abort
+    session, flash, send_file, send_from_directory, current_app, abort
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -36,10 +37,7 @@ from models.bookmark_model import add_bookmark, remove_bookmark, is_bookmarked, 
 from models.history_model import (
     log_read_history, get_read_history,
 )
-from models.user_model import (
-    get_user_by_id, get_user_by_username, update_password,
-    update_profile, get_all_faculties,
-)
+from models.user_model import get_user_by_id, update_password, update_profile, get_all_faculties
 from models.report_model import (
     get_all_announcements,
     get_announcement_by_id,
@@ -58,6 +56,7 @@ from models.notification_model import (
     get_user_notifications, get_unread_count, mark_all_read, mark_one_read,
     notify_borrow_request_submitted,
 )
+from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is_enabled
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -284,9 +283,21 @@ def serve_book_file(book_id):
     if book['resource_type'] in restricted_types and session.get("role") != "teacher":
         abort(403)
 
-    resp = send_from_directory(
-        current_app.config["UPLOAD_FOLDER_BOOKS"], book["pdf_file"], as_attachment=False
-    )
+    if r2_is_enabled():
+        try:
+            pdf_bytes, content_type = download_bytes("books", book["pdf_file"])
+        except R2StorageError:
+            abort(404)
+        resp = send_file(
+            BytesIO(pdf_bytes),
+            mimetype=content_type or "application/pdf",
+            download_name=book["pdf_file"],
+            as_attachment=False,
+        )
+    else:
+        resp = send_from_directory(
+            current_app.config["UPLOAD_FOLDER_BOOKS"], book["pdf_file"], as_attachment=False
+        )
     # Defense-in-depth: never offer the PDF as a saved attachment (already
     # guaranteed by as_attachment=False), block proxy/content-sniffing
     # reuse, and keep it out of shared caches.
@@ -348,63 +359,28 @@ def profile():
     faculties = get_all_faculties()
 
     if request.method == "POST":
-        # Name/email/faculty are official-record fields in this UI and are
-        # therefore read-only; retain the stored values when the form omits them.
-        name = request.form.get("name", user.get("name", "")).strip()
-        email = request.form.get("email", user.get("email", "")).strip().lower()
-        faculty_id = request.form.get("faculty_id") if "faculty_id" in request.form else user.get("faculty_id")
-        username = request.form.get("username", "").strip()
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        faculty_id = request.form.get("faculty_id") or None
 
-        if not name or not email or not username:
-            flash(translate("profile_required_fields"), "danger")
-            return redirect(url_for("student.profile"))
-
-        if not (3 <= len(username) <= 50) or not all(
-            ch.isalnum() or ch == "_" for ch in username
-        ):
-            flash(translate("profile_username_invalid"), "danger")
-            return redirect(url_for("student.profile"))
-
-        existing_username = get_user_by_username(username)
-        if existing_username and int(existing_username["user_id"]) != int(session["user_id"]):
-            flash(translate("profile_username_taken"), "danger")
+        if not name or not email:
+            flash("Name နှင့် Email ကို ဖြည့်ပါ။", "danger")
             return redirect(url_for("student.profile"))
 
         profile_image_filename = None
         if "profile_image" in request.files:
-            uploaded = request.files["profile_image"]
-            if uploaded and uploaded.filename:
-                profile_image_filename = save_uploaded_file(
-                    uploaded,
-                    current_app.config["LIBRARY_STORAGE_PROFILES"],
-                    current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
-                )
-                if not profile_image_filename:
-                    flash(translate("profile_image_invalid"), "danger")
-                    return redirect(url_for("student.profile"))
-
-        try:
-            update_profile(
-                session["user_id"], name, email, faculty_id,
-                profile_image=profile_image_filename,
-                username=username,
+            saved = save_uploaded_file(
+                request.files["profile_image"],
+                current_app.config["LIBRARY_STORAGE_PROFILES"],
+                current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
             )
-        except Exception as exc:
-            # MySQL duplicate-key protection remains the final guard in case
-            # another account claims the username between the pre-check and update.
-            if getattr(exc, "args", [None])[0] == 1062:
-                flash(translate("profile_username_taken"), "danger")
-                return redirect(url_for("student.profile"))
-            raise
+            if saved:
+                profile_image_filename = saved
 
-        session["name"] = name
-        session["username"] = username
-        if profile_image_filename:
-            session["profile_image"] = profile_image_filename
-        else:
-            session.setdefault("profile_image", user.get("profile_image"))
+        update_profile(session["user_id"], name, email, faculty_id, profile_image_filename)
+        session["name"] = name  # navbar ထဲက name ကို update လုပ်ပါ
 
-        flash(translate("profile_update_success"), "success")
+        flash("Profile ကို အောင်မြင်စွာ Update လုပ်ပြီးပါပြီ။", "success")
         return redirect(url_for("student.profile"))
 
     return render_template("user/profile.html", user=user, faculties=faculties)

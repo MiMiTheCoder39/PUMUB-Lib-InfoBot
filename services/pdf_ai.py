@@ -7,8 +7,10 @@ unauthorized documents to the AI provider.
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 from flask import current_app
@@ -16,6 +18,7 @@ from flask import current_app
 from models.book_model import get_book_by_id
 from services.ai_service import AIServiceError, answer_from_context, summarize_text
 from services.pdf_text import PDFExtractionError, extract_and_chunk_pdf
+from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is_enabled
 
 RESTRICTED_TYPES = {"thesis", "research_paper", "reference_book", "teachers_guide"}
 SUMMARY_MODES = {
@@ -33,11 +36,13 @@ def _assert_pdf_access(book: dict[str, Any] | None, role: str | None) -> dict[st
     filename = (book.get("pdf_file") or "").strip()
     if not filename:
         raise PDFExtractionError("This book has no PDF file.")
+    if r2_is_enabled():
+        return {"book": book, "filename": filename}
     upload_folder = Path(current_app.config["UPLOAD_FOLDER_BOOKS"]).resolve()
     pdf_path = (upload_folder / filename).resolve()
     if upload_folder not in pdf_path.parents:
         raise PDFExtractionError("Invalid PDF path.")
-    return {"book": book, "pdf_path": pdf_path}
+    return {"book": book, "filename": filename, "pdf_path": pdf_path}
 
 
 def _limits() -> dict[str, int]:
@@ -52,6 +57,22 @@ def _limits() -> dict[str, int]:
 
 def _extract(book_id: int, role: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
     access = _assert_pdf_access(get_book_by_id(book_id), role)
+    if r2_is_enabled():
+        temp_path = None
+        try:
+            pdf_bytes, _ = download_bytes("books", access["filename"])
+            with NamedTemporaryFile(prefix="libinfo-r2-", suffix=".pdf", delete=False) as temp:
+                temp.write(pdf_bytes)
+                temp_path = temp.name
+            return access["book"], extract_and_chunk_pdf(temp_path, **_limits())
+        except R2StorageError as exc:
+            raise PDFExtractionError("PDF file could not be read from storage.") from exc
+        finally:
+            if temp_path:
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
     extracted = extract_and_chunk_pdf(access["pdf_path"], **_limits())
     return access["book"], extracted
 

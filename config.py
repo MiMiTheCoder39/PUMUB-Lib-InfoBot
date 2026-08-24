@@ -76,6 +76,18 @@ class Config:
     # crash ဖြစ်စေသည်။ Railway တွင် MYSQL_CHARSET=utf8mb4 env var ထည့်ပေးပါ။
     MYSQL_CHARSET = os.environ.get("MYSQL_CHARSET", "utf8mb4")
 
+    # ---------------- Cloudflare R2 Object Storage (optional) ----------------
+    # Keep the bucket private; the Flask app reads/writes objects through the
+    # S3-compatible API. R2 is enabled only when explicitly configured.
+    R2_ENABLED = os.environ.get("R2_ENABLED", "false").lower() == "true"
+    R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID", "")
+    R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "")
+    R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")
+    R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+    R2_ENDPOINT = os.environ.get("R2_ENDPOINT") or (
+        f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com" if R2_ACCOUNT_ID else ""
+    )
+
     # ---------------- File Upload Configuration (External Library Storage) ----------------
     # LIBRARY_STORAGE_ROOT ကို environment variable ဖြင့် configure လုပ်ပါ။
     # App source tree အပြင် ဖြစ်ရန် — static/uploads/ အတွင်း ထည့်လျှင် source

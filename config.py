@@ -23,14 +23,14 @@ class Config:
     # Secrets are read only from the environment/.env and never sent to templates.
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE")
-    OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+    OPENAI_MODEL = os.environ.get("OPENAI_MODEL") or os.environ.get(
+        "GROQ_MODEL", "openai/gpt-oss-120b"
+    )
     # Convenience aliases: if a .env uses GROQ_API_KEY / GROQ_MODEL instead of
     # the OPENAI_* names, fall back to them automatically. This keeps the
     # chatbot working even when the example template names are used.
     if not OPENAI_API_KEY:
         OPENAI_API_KEY = os.environ.get("GROQ_API_KEY")
-    if OPENAI_MODEL in (None, "gpt-5-mini"):
-        OPENAI_MODEL = os.environ.get("GROQ_MODEL", OPENAI_MODEL)
     if not OPENAI_API_BASE:
         OPENAI_API_BASE = os.environ.get("GROQ_API_BASE", "https://api.groq.com/openai/v1")
 

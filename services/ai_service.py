@@ -22,11 +22,46 @@ def _client() -> OpenAI:
     api_key = current_app.config.get("OPENAI_API_KEY")
     if not api_key:
         raise AIServiceError("OpenAI is not configured: OPENAI_API_KEY is missing.")
+    client_kwargs = {
+        "api_key": api_key,
+        "timeout": float(current_app.config.get("OPENAI_TIMEOUT_SECONDS", 20)),
+        "max_retries": 1,
+    }
+    base_url = current_app.config.get("OPENAI_API_BASE")
+    if base_url:
+        client_kwargs["base_url"] = str(base_url).rstrip("/")
+    return OpenAI(**client_kwargs)
+
+
+def _gemini_client() -> OpenAI:
+    """Gemini secondary provider (key2) — OpenAI-compatible endpoint."""
+    api_key = current_app.config.get("GEMINI_API_KEY")
+    if not api_key:
+        raise AIServiceError("Gemini is not configured: GEMINI_API_KEY is missing.")
     return OpenAI(
         api_key=api_key,
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai",
         timeout=float(current_app.config.get("OPENAI_TIMEOUT_SECONDS", 20)),
         max_retries=1,
     )
+
+
+def _active_client():
+    provider = current_app.config.get("AI_PROVIDER", "primary").lower()
+    if provider == "gemini":
+        return _gemini_client(), "gemini"
+    return _client(), "primary"
+
+
+def _supports_responses_api() -> bool:
+    """Return whether the configured provider should use Responses API.
+
+    The primary provider in this project is Groq's OpenAI-compatible endpoint.
+    Groq is reliably compatible with chat.completions, while Responses API
+    support is not guaranteed across Groq models. Keep chat.completions as the
+    safe default; enable Responses only explicitly for a native provider.
+    """
+    return current_app.config.get("AI_USE_RESPONSES_API", False) is True
 
 
 def generate_response(
@@ -50,29 +85,66 @@ def generate_response(
     requested_output = configured_output_limit if max_output_tokens is None else int(max_output_tokens)
     bounded_output = max(1, min(requested_output, configured_output_limit))
     instructions = system_prompt or "You are a helpful assistant for a digital library."
-    request_kwargs: dict[str, Any] = {
-        "model": current_app.config.get("OPENAI_MODEL", "gpt-5-mini"),
-        "instructions": instructions,
-        "input": prompt,
-        "max_output_tokens": bounded_output,
-    }
-    if response_schema:
-        request_kwargs["text"] = {
-            "format": {
-                "type": "json_schema",
-                "name": schema_name,
-                "schema": response_schema,
-                "strict": True,
-            }
-        }
-    try:
-        response = _client().responses.create(**request_kwargs)
-    except OpenAIError as exc:
-        raise AIServiceError("OpenAI request failed.") from exc
 
-    text = (getattr(response, "output_text", None) or "").strip()
+    client, provider = _active_client()
+
+    if _supports_responses_api():
+        # Primary path (Groq / OpenAI-native): Responses API
+        model = current_app.config.get("OPENAI_MODEL", "gpt-5-mini")
+        request_kwargs: dict[str, Any] = {
+            "model": model,
+            "instructions": instructions,
+            "input": prompt,
+            "max_output_tokens": bounded_output,
+        }
+        if response_schema:
+            request_kwargs["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    "name": schema_name,
+                    "schema": response_schema,
+                    "strict": True,
+                }
+            }
+        try:
+            response = client.responses.create(**request_kwargs)
+            text = (getattr(response, "output_text", None) or "").strip()
+        except OpenAIError as exc:
+            msg = getattr(exc, "message", None) or str(exc)
+            raise AIServiceError(f"AI request failed: {msg}") from exc
+    else:
+        # Gemini fallback: chat.completions (Gemini မှာ Responses API မရှိ)
+        model = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash")
+        chat_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ],
+            # max_tokens is supported by Groq's OpenAI-compatible endpoint.
+            "max_tokens": bounded_output,
+        }
+        if response_schema:
+            chat_kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "schema": response_schema,
+                    "strict": True,
+                },
+            }
+        try:
+            completion = client.chat.completions.create(**chat_kwargs)
+            text = "".join(
+                (choice.message.content or "")
+                for choice in (completion.choices or [])
+            ).strip()
+        except OpenAIError as exc:
+            msg = getattr(exc, "message", None) or str(exc)
+            raise AIServiceError(f"Gemini request failed: {msg}") from exc
+
     if not text:
-        raise AIServiceError("OpenAI returned an empty response.")
+        raise AIServiceError("AI returned an empty response.")
     return text
 
 

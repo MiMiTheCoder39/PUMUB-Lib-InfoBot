@@ -19,20 +19,31 @@ class Config:
     # Flask Secret Key (session, CSRF စသည်တို့အတွက်)
     SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_secret_key")
 
-    # ---------------- OpenAI AI Integration ----------------
+    # ---------------- Multi-provider AI Integration ----------------
     # Secrets are read only from the environment/.env and never sent to templates.
-    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE")
-    OPENAI_MODEL = os.environ.get("OPENAI_MODEL") or os.environ.get(
-        "GROQ_MODEL", "openai/gpt-oss-120b"
+    # Providers are attempted in this order; an unavailable or failed provider
+    # is skipped automatically by services/ai_service.py.
+    AI_PROVIDER_ORDER = os.environ.get(
+        "AI_PROVIDER_ORDER", "openrouter,openai,groq,gemini,cerebras"
     )
-    # Convenience aliases: if a .env uses GROQ_API_KEY / GROQ_MODEL instead of
-    # the OPENAI_* names, fall back to them automatically. This keeps the
-    # chatbot working even when the example template names are used.
-    if not OPENAI_API_KEY:
-        OPENAI_API_KEY = os.environ.get("GROQ_API_KEY")
-    if not OPENAI_API_BASE:
-        OPENAI_API_BASE = os.environ.get("GROQ_API_BASE", "https://api.groq.com/openai/v1")
+    OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+    OPENROUTER_API_BASE = os.environ.get(
+        "OPENROUTER_API_BASE", "https://openrouter.ai/api/v1"
+    )
+    OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-120b")
+    OPENROUTER_SITE_URL = os.environ.get(
+        "OPENROUTER_SITE_URL", "https://pumublibinfobot.up.railway.app"
+    )
+    OPENROUTER_SITE_NAME = os.environ.get("OPENROUTER_SITE_NAME", "PUMUB LibInfoBot")
+
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
+    OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+    # Provider credentials remain separate so fallback attempts are real
+    # provider changes rather than repeated calls to the same endpoint.
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+    GROQ_API_BASE = os.environ.get("GROQ_API_BASE", "https://api.groq.com/openai/v1")
+    GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
     # ---------------- Gemini Secondary Provider (key2) ----------------
     # ဒီ project က primary key (Groq) + secondary key (Gemini) နှစ်ကြိမ် setup ကို
@@ -41,12 +52,21 @@ class Config:
     # style ကိုသုံးရာမှာ structured JSON extraction နဲ့ general chat နှစ်မျိုးလုံး
     # ထောက်ပံ့ပါတယ်။
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    GEMINI_API_BASE = os.environ.get(
+        "GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
     GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     # Primary provider ရွေးချယ်ရန်: "primary" (default, Groq) သို့မဟုတ် "gemini"
     AI_PROVIDER = os.environ.get("AI_PROVIDER", "primary").lower()
     OPENAI_TIMEOUT_SECONDS = float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "20"))
     OPENAI_MAX_INPUT_CHARS = int(os.environ.get("OPENAI_MAX_INPUT_CHARS", "12000"))
     OPENAI_MAX_OUTPUT_TOKENS = int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "1600"))
+    # Optional native OpenAI Responses API switch. Keep false for compatible
+    # OpenAI-style providers such as OpenRouter/Groq/Gemini/Cerebras.
+    AI_USE_RESPONSES_API = os.environ.get("AI_USE_RESPONSES_API", "false").lower() == "true"
+    CEREBRAS_API_KEY = os.environ.get("CEREBRAS_API_KEY")
+    CEREBRAS_API_BASE = os.environ.get("CEREBRAS_API_BASE", "https://api.cerebras.ai/v1")
+    CEREBRAS_MODEL = os.environ.get("CEREBRAS_MODEL", "gpt-oss-120b")
     AI_MAX_QUESTION_CHARS = int(os.environ.get("AI_MAX_QUESTION_CHARS", "2000"))
     AI_RATE_LIMIT_REQUESTS = int(os.environ.get("AI_RATE_LIMIT_REQUESTS", "20"))
     AI_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("AI_RATE_LIMIT_WINDOW_SECONDS", "60"))

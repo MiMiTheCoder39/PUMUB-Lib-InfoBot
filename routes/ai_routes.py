@@ -69,6 +69,7 @@ def ai_chat():
             book_id=book_id,
             action=payload.get("action"),
             mode=payload.get("mode", "medium"),
+            language=session.get("language", "my"),
         ))
     except LookupError as exc:
         return jsonify({"error": str(exc)}), 404
@@ -129,6 +130,7 @@ def ai_book_information():
             question,
             book_id=book_id,
             role=session.get("role"),
+            language=session.get("language", "my"),
         ))
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -210,7 +212,7 @@ def ai_book_search():
     if limited:
         return limited
     try:
-        return jsonify(search_from_question(question))
+        return jsonify(search_from_question(question, language=session.get("language", "my")))
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:

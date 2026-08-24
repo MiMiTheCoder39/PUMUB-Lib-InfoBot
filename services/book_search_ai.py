@@ -158,7 +158,7 @@ def _resolve_params(intent: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def search_from_question(question: str) -> dict[str, Any]:
+def search_from_question(question: str, *, language: str = "my") -> dict[str, Any]:
     """Understand a question, call existing search_books(), and format DB rows."""
     intent = extract_book_search_intent(question)
     params = _resolve_params(intent)
@@ -184,11 +184,18 @@ def search_from_question(question: str) -> dict[str, Any]:
         for book in books
     ]
     count = len(result_books)
-    answer = (
-        f"Found {count} matching book(s) from the library database."
-        if count
-        else "No matching books were found in the library database."
-    )
+    if str(language).lower().startswith("my"):
+        answer = (
+            f"Library database ထဲမှာ ကိုက်ညီတဲ့စာအုပ် {count} အုပ်တွေ့ပါတယ်။"
+            if count else
+            "Library database ထဲမှာ ကိုက်ညီတဲ့စာအုပ် မတွေ့ပါဘူး။"
+        )
+    else:
+        answer = (
+            f"Found {count} matching book(s) from the library database."
+            if count else
+            "No matching books were found in the library database."
+        )
     return {
         "intent": intent["intent"],
         "search_params": params,

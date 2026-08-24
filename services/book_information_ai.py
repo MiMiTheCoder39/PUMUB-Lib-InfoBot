@@ -95,6 +95,7 @@ def answer_book_information(
     *,
     book_id: int | None = None,
     role: str | None = None,
+    language: str = "my",
 ) -> dict[str, Any]:
     """Return an OpenAI-grounded answer using one actual database book."""
     if not isinstance(question, str) or not question.strip():
@@ -109,14 +110,22 @@ def answer_book_information(
         return {
             "intent": "BOOK_INFORMATION",
             "status": "ambiguous",
-            "answer": "More than one library book matched. Please provide a book_id or a more specific title/ISBN.",
+            "answer": (
+                "စာကြည့်တိုက်စာအုပ်တစ်အုပ်ထက်ပိုပြီး ကိုက်ညီနေပါတယ်။ ပိုတိကျတဲ့အမည်/ISBN သို့မဟုတ် စာအုပ်ကိုရွေးပေးပါ။"
+                if str(language).lower().startswith("my") else
+                "More than one library book matched. Please provide a more specific title/ISBN or select a book."
+            ),
             "books": candidates,
         }
     if book is None:
         return {
             "intent": "BOOK_INFORMATION",
             "status": "not_found",
-            "answer": "The requested book was not found in the library database.",
+            "answer": (
+                "တောင်းထားတဲ့စာအုပ်ကို Library database ထဲမှာ မတွေ့ပါဘူး။"
+                if str(language).lower().startswith("my") else
+                "The requested book was not found in the library database."
+            ),
             "book": None,
         }
 
@@ -124,7 +133,11 @@ def answer_book_information(
         return {
             "intent": "BOOK_INFORMATION",
             "status": "forbidden",
-            "answer": "This resource's information is restricted to teacher accounts.",
+            "answer": (
+                "ဒီ resource ရဲ့အချက်အလက်ကို Teacher account များအတွက်သာ ခွင့်ပြုထားပါတယ်။"
+                if str(language).lower().startswith("my") else
+                "This resource's information is restricted to teacher accounts."
+            ),
             "book": {"book_id": book.get("book_id"), "title": book.get("title")},
         }
 
@@ -140,7 +153,15 @@ def answer_book_information(
         "Derived availability from the record:",
         json.dumps(availability, ensure_ascii=False),
     ]
-    answer = answer_from_context(question, context, max_output_tokens=1000)
+    answer = answer_from_context(
+        question,
+        context,
+        max_output_tokens=1000,
+        system_prompt=(
+            "Use only the supplied authoritative library record. Do not add facts. "
+            + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
+        ),
+    )
     return {
         "intent": "BOOK_INFORMATION",
         "status": "ok",

@@ -10,7 +10,7 @@ from services.book_search_ai import search_from_question
 from services.book_information_ai import answer_book_information
 from services.pdf_ai import answer_pdf_question, summarize_pdf
 from services.pdf_text import PDFExtractionError
-from services.chat_orchestrator import handle_chat
+from services.chat_orchestrator import detect_message_language, handle_chat
 from utils.decorators import library_user_required, login_required
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
@@ -69,7 +69,7 @@ def ai_chat():
             book_id=book_id,
             action=payload.get("action"),
             mode=payload.get("mode", "medium"),
-            language=session.get("language", "my"),
+            language=detect_message_language(question),
         ))
     except LookupError as exc:
         return jsonify({"error": str(exc)}), 404
@@ -130,7 +130,7 @@ def ai_book_information():
             question,
             book_id=book_id,
             role=session.get("role"),
-            language=session.get("language", "my"),
+            language=detect_message_language(question),
         ))
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -212,7 +212,7 @@ def ai_book_search():
     if limited:
         return limited
     try:
-        return jsonify(search_from_question(question, language=session.get("language", "my")))
+        return jsonify(search_from_question(question, language=detect_message_language(question)))
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:

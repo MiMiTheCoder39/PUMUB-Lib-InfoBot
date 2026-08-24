@@ -24,6 +24,20 @@ def _is_myanmar(text: str) -> bool:
     return any("\u1000" <= char <= "\u109f" for char in text)
 
 
+def detect_message_language(text: str) -> str:
+    """Choose response language from the user's message, not UI settings.
+
+    Any Myanmar Unicode text selects Myanmar. A message containing Latin
+    letters but no Myanmar text selects English. Numbers/symbols alone default
+    to Myanmar as requested by the library's UX rule.
+    """
+    if _is_myanmar(text):
+        return "my"
+    if any(("A" <= char <= "Z") or ("a" <= char <= "z") for char in text):
+        return "en"
+    return "my"
+
+
 def _text(language: str, myanmar: str, english: str) -> str:
     return myanmar if _language(language) == "my" else english
 
@@ -140,7 +154,7 @@ def handle_chat(
     mode: str = "medium",
     language: str = "my",
 ) -> dict[str, Any]:
-    language = _language(language)
+    language = detect_message_language(question)
     if action == "pdf_summary":
         if book_id is None:
             raise ValueError("Select a book before requesting a PDF summary.")

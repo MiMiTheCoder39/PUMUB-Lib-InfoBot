@@ -25,6 +25,7 @@ from werkzeug.security import generate_password_hash
 from utils.decorators import login_required, admin_required
 from utils.i18n import SUPPORTED_LANGUAGES, translate
 from utils.file_utils import save_uploaded_file
+from utils.password_policy import check_password_policy
 from utils.r2_storage import R2StorageError, delete_object, is_enabled as r2_is_enabled
 
 from models.book_model import get_all_books, get_book_by_id, get_all_categories, get_all_authors
@@ -43,6 +44,7 @@ from models.admin_user_model import (
     delete_user_admin, toggle_user_status,
     get_inactive_users, bulk_delete_users,
     get_admin_users, get_admin_user_summary, get_user_dependency_counts,
+    reset_user_password_admin,
 )
 from models.admin_book_model import (
     BookStateError,
@@ -174,6 +176,37 @@ def users():
         role_filter=role, status_filter=status, faculty_id=faculty_id, search=search,
         pagination_prev_url=pagination_prev_url, pagination_next_url=pagination_next_url,
     )
+
+
+@admin_bp.route("/users/reset-password/<int:user_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def user_reset_password(user_id):
+    """Set a temporary password for a non-admin library user."""
+    user = get_user_by_id_admin(user_id)
+    if not user or user.get("role") == "admin":
+        flash(translate("admin_reset_user_invalid"), "danger")
+        return redirect(url_for("admin.users"))
+
+    if request.method == "POST":
+        temporary_password = request.form.get("temporary_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        if not temporary_password:
+            flash(translate("admin_reset_password_required"), "danger")
+            return redirect(url_for("admin.users"))
+        if temporary_password != confirm_password:
+            flash(translate("admin_reset_password_mismatch"), "danger")
+            return redirect(url_for("admin.users"))
+        if not check_password_policy(temporary_password)["all_ok"]:
+            flash(translate("admin_reset_password_weak"), "danger")
+            return redirect(url_for("admin.users"))
+        if not reset_user_password_admin(user_id, generate_password_hash(temporary_password)):
+            flash(translate("admin_reset_user_invalid"), "danger")
+            return redirect(url_for("admin.users"))
+        flash(translate("admin_reset_success"), "success")
+        return redirect(url_for("admin.users"))
+
+    return render_template("admin/reset_password.html", user=user)
 
 
 @admin_bp.route("/users/bulk-delete", methods=["POST"])

@@ -14,6 +14,7 @@ Features:
 """
 
 import os
+import re
 from io import BytesIO
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
@@ -37,7 +38,10 @@ from models.bookmark_model import add_bookmark, remove_bookmark, is_bookmarked, 
 from models.history_model import (
     log_read_history, get_read_history,
 )
-from models.user_model import get_user_by_id, update_password, update_profile, get_all_faculties
+from models.user_model import (
+    get_user_by_id, update_password, update_profile, update_username,
+    update_profile_image, get_all_faculties,
+)
 from models.report_model import (
     get_all_announcements,
     get_announcement_by_id,
@@ -351,39 +355,59 @@ def history():
 # ============================================================
 # PROFILE MANAGEMENT
 # ============================================================
-@student_bp.route("/profile", methods=["GET", "POST"])
+@student_bp.route("/profile", methods=["GET"])
 @login_required
 @library_user_required
 def profile():
     user = get_user_by_id(session["user_id"])
     faculties = get_all_faculties()
+    return render_template("user/profile.html", user=user, faculties=faculties)
 
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        faculty_id = request.form.get("faculty_id") or None
 
-        if not name or not email:
-            flash("Name နှင့် Email ကို ဖြည့်ပါ။", "danger")
+@student_bp.route("/profile/update", methods=["POST"])
+@login_required
+@library_user_required
+def profile_update():
+    """Update only the editable username and/or profile picture.
+
+    Name, email, faculty, role, and university identity are deliberately
+    not accepted from this form and remain sourced from the official record.
+    """
+    user_id = session["user_id"]
+    username = request.form.get("username", "").strip()
+    profile_file = request.files.get("profile_image")
+    changed = False
+
+    if username:
+        if len(username) < 3 or len(username) > 50 or not re.fullmatch(r"[A-Za-z0-9_]+", username):
+            flash(translate("profile_username_invalid"), "danger")
             return redirect(url_for("student.profile"))
+        if username != (session.get("username") or ""):
+            if not update_username(user_id, username):
+                flash(translate("profile_username_taken"), "danger")
+                return redirect(url_for("student.profile"))
+            session["username"] = username
+            changed = True
 
-        profile_image_filename = None
-        if "profile_image" in request.files:
-            saved = save_uploaded_file(
-                request.files["profile_image"],
-                current_app.config["LIBRARY_STORAGE_PROFILES"],
-                current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
-            )
-            if saved:
-                profile_image_filename = saved
+    if profile_file and profile_file.filename:
+        saved = save_uploaded_file(
+            profile_file,
+            current_app.config["LIBRARY_STORAGE_PROFILES"],
+            current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
+        )
+        if not saved:
+            flash(translate("profile_image_invalid"), "danger")
+            return redirect(url_for("student.profile"))
+        update_profile_image(user_id, saved)
+        session["profile_image"] = saved
+        changed = True
 
-        update_profile(session["user_id"], name, email, faculty_id, profile_image_filename)
-        session["name"] = name  # navbar ထဲက name ကို update လုပ်ပါ
-
-        flash("Profile ကို အောင်မြင်စွာ Update လုပ်ပြီးပါပြီ။", "success")
+    if not changed:
+        flash(translate("profile_required_fields"), "warning")
         return redirect(url_for("student.profile"))
 
-    return render_template("user/profile.html", user=user, faculties=faculties)
+    flash(translate("profile_update_success"), "success")
+    return redirect(url_for("student.profile"))
 
 
 @student_bp.route("/profile/change-password", methods=["POST"])

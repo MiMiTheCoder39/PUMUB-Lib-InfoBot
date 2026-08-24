@@ -22,7 +22,28 @@ class Config:
     # ---------------- OpenAI AI Integration ----------------
     # Secrets are read only from the environment/.env and never sent to templates.
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE")
     OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+    # Convenience aliases: if a .env uses GROQ_API_KEY / GROQ_MODEL instead of
+    # the OPENAI_* names, fall back to them automatically. This keeps the
+    # chatbot working even when the example template names are used.
+    if not OPENAI_API_KEY:
+        OPENAI_API_KEY = os.environ.get("GROQ_API_KEY")
+    if OPENAI_MODEL in (None, "gpt-5-mini"):
+        OPENAI_MODEL = os.environ.get("GROQ_MODEL", OPENAI_MODEL)
+    if not OPENAI_API_BASE:
+        OPENAI_API_BASE = os.environ.get("GROQ_API_BASE", "https://api.groq.com/openai/v1")
+
+    # ---------------- Gemini Secondary Provider (key2) ----------------
+    # ဒီ project က primary key (Groq) + secondary key (Gemini) နှစ်ကြိမ် setup ကို
+    # ထောက်ပံ့ပါတယ်။ AI_PROVIDER ပြောင်းလိုက်ရင် ချက်ချင်း provider ရွေ့သွားမယ်။
+    # Gemini ကို OpenAI-compatible endpoint ဖြင့် ချိတ်သုံးပြီး chat.completions
+    # style ကိုသုံးရာမှာ structured JSON extraction နဲ့ general chat နှစ်မျိုးလုံး
+    # ထောက်ပံ့ပါတယ်။
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    # Primary provider ရွေးချယ်ရန်: "primary" (default, Groq) သို့မဟုတ် "gemini"
+    AI_PROVIDER = os.environ.get("AI_PROVIDER", "primary").lower()
     OPENAI_TIMEOUT_SECONDS = float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "20"))
     OPENAI_MAX_INPUT_CHARS = int(os.environ.get("OPENAI_MAX_INPUT_CHARS", "12000"))
     OPENAI_MAX_OUTPUT_TOKENS = int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "1600"))
@@ -50,10 +71,27 @@ class Config:
     MYSQL_PORT = int(os.environ.get("MYSQLPORT") or os.environ.get("MYSQL_PORT", 3306))
     MYSQL_CURSORCLASS = "DictCursor"  # query results ကို dict အနေနဲ့ ပြန်ရအောင်
 
-    # ---------------- File Upload Configuration ----------------
-    UPLOAD_FOLDER_BOOKS = os.path.join(BASE_DIR, "static/uploads/books")
-    UPLOAD_FOLDER_COVERS = os.path.join(BASE_DIR, "static/uploads/covers")
-    UPLOAD_FOLDER_QRCODES = os.path.join(BASE_DIR, "static/uploads/qrcodes")
+    # Connection charset — utf8mb4 (4-byte) ဖြစ်ရန်။ utf8 (utf8mb3) သည် 4-byte
+    # characters (emoji စသည်) ကို INSERT လုပ်လျှင် MySQL error 1366 ဖြင့်
+    # crash ဖြစ်စေသည်။ Railway တွင် MYSQL_CHARSET=utf8mb4 env var ထည့်ပေးပါ။
+    MYSQL_CHARSET = os.environ.get("MYSQL_CHARSET", "utf8mb4")
+
+    # ---------------- File Upload Configuration (External Library Storage) ----------------
+    # LIBRARY_STORAGE_ROOT ကို environment variable ဖြင့် configure လုပ်ပါ။
+    # App source tree အပြင် ဖြစ်ရန် — static/uploads/ အတွင်း ထည့်လျှင် source
+    # ZIP size ကြီးလာမည် (Option A — External Library Storage migration).
+    # Default သည် app root ၏ parent directory အောက်တွင် library_storage/ ဖြစ်ပြီး
+    # local dev အတွက်သာ။ Railway တွင် LIBRARY_STORAGE_ROOT env var မဖြစ်မနေ set ပါ။
+    _LSR_DEFAULT = os.path.join(os.path.dirname(BASE_DIR), "library_storage")
+    LIBRARY_STORAGE_ROOT = os.environ.get("LIBRARY_STORAGE_ROOT") or _LSR_DEFAULT
+    LIBRARY_STORAGE_BOOKS = os.path.join(LIBRARY_STORAGE_ROOT, "books")
+    LIBRARY_STORAGE_COVERS = os.path.join(LIBRARY_STORAGE_ROOT, "covers")
+    LIBRARY_STORAGE_QRCODES = os.path.join(LIBRARY_STORAGE_ROOT, "qrcodes")
+    LIBRARY_STORAGE_PROFILES = os.path.join(LIBRARY_STORAGE_ROOT, "profiles")
+    # Legacy names — အရင် code ကို မထိအောင် alias ထားခြင်း (တန်ဖိုးများ external storage ဖြစ်သွားပြီ)
+    UPLOAD_FOLDER_BOOKS = LIBRARY_STORAGE_BOOKS
+    UPLOAD_FOLDER_COVERS = LIBRARY_STORAGE_COVERS
+    UPLOAD_FOLDER_QRCODES = LIBRARY_STORAGE_QRCODES
 
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 50 * 1024 * 1024))  # 50MB
 

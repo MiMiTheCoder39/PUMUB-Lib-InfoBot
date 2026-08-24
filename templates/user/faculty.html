@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "user/book_card.html" import book_card with context %}
+{% block title %}{{ faculty.faculty_name }}{% endblock %}
+{% block content %}
+<div class="user-page">
+  <nav class="user-breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('student.dashboard') }}">{{ t('home') }}</a><i class="bi bi-chevron-right"></i><a href="{{ url_for('student.search') }}">{{ t('browse') }}</a><i class="bi bi-chevron-right"></i><span>{{ faculty.faculty_name }}</span></nav>
+
+  <div class="user-library-hero">
+    <span class="user-eyebrow" style="color: rgba(255,255,255,.75)"><i class="bi bi-building"></i>{{ t('faculties') }}</span>
+    <h1>{{ faculty.faculty_name }}</h1>
+    <p>{{ faculty.department }} · <strong>{{ total }}</strong> {{ t('books_in_faculty') }}</p>
+    <div class="mt-3">
+      <a class="user-btn user-btn-soft" href="{{ url_for('student.search', faculty=faculty.faculty_id) }}"><i class="bi bi-search"></i>{{ t('search') }}</a>
+      <a class="user-btn user-btn-outline" href="{{ url_for('student.library') }}" style="background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.35); color:#fff"><i class="bi bi-journal"></i>{{ t('my_library') }}</a>
+    </div>
+  </div>
+
+  {% if shelves %}
+    {% for shelf in shelves %}
+    <section class="fac-shelf">
+      <h2 class="fac-shelf-title">{{ shelf.category.category_name or t('other') }}<small>{{ shelf.books|length }} {{ t('books_in_faculty') }}</small></h2>
+      <div class="user-book-grid">{% for book in shelf.books %}{{ book_card(book) }}{% endfor %}</div>
+    </section>
+    {% endfor %}
+  {% else %}
+    <div class="user-empty mt-4"><i class="bi bi-journal-x"></i><strong>{{ t('no_books_in_faculty') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>
+  {% endif %}
+</div>
+{% endblock %}

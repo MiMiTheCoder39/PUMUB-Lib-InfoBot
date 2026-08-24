@@ -1,151 +1,204 @@
 {% extends "base.html" %}
-{% block title %}My Profile{% endblock %}
-
+{% block title %}{{ t('my_profile') }}{% endblock %}
 {% block content %}
-<div class="container py-4">
-
-  <!-- Profile Header -->
-  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px; overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#095456,#0d7377); padding:2rem;">
-      <div class="d-flex align-items-center gap-3">
-        {% if user.profile_image %}
-          <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}"
-               style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);">
-        {% else %}
-          <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);
-                      display:flex;align-items:center;justify-content:center;font-size:2rem;
-                      border:3px solid rgba(255,255,255,.3); color:#fff;">
-            {{ user.name[0].upper() }}
-          </div>
-        {% endif %}
-        <div class="text-white">
-          <h4 class="mb-1 fw-bold">{{ user.name }}</h4>
-          <p class="mb-1 opacity-75" style="font-size:.88rem;">
-            <i class="bi bi-envelope me-1"></i>{{ user.email }}
-          </p>
-          <p class="mb-0 opacity-75" style="font-size:.85rem;">
-            <i class="bi bi-person-badge me-1"></i>{{ user.student_id or '—' }}
-            &nbsp;|&nbsp;
-            <span class="badge" style="background:rgba(13,115,119,.12);color:#0d7377;">Student</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<div class="user-page">
+  <div class="user-page-heading"><div><span class="user-eyebrow"><i class="bi bi-person-circle"></i>{{ t('profile') }}</span><h1>{{ t('my_profile') }}</h1><p>{{ t('account_information') }}</p></div></div>
+  <section class="user-profile-hero mb-4"><div class="user-profile-avatar">{% if user.profile_image %}<img src="{{ url_for('library_file.file_profile', filename=user.profile_image) }}" alt="{{ user.name }}">{% else %}{{ (user.name or 'U')[0]|upper }}{% endif %}</div><div><h1>{{ user.name }}</h1><p><i class="bi bi-envelope me-1"></i>{{ user.email }} · <i class="bi bi-person-badge me-1"></i>{% if user.role == 'student' %}{{ t('role_student') }}{% elif user.role == 'teacher' %}{{ t('role_teacher') }}{% else %}{{ t('admin') }}{% endif %}</p></div></section>
   <div class="row g-4">
-
-    <!-- Update Profile -->
-    <div class="col-md-7">
-      <div class="card border-0 shadow-sm h-100" style="border-radius:14px;">
-        <div class="card-header border-0 fw-bold py-3 px-4"
-             style="background:#095456;color:#fff;border-radius:14px 14px 0 0;font-size:.95rem;">
-          <i class="bi bi-person-gear me-2"></i>Update Profile
+    {# ---------- v20: University Record (read-only) + Profile Picture ---------- #}
+    <div class="col-lg-7">
+      <section class="user-form-card mb-4">
+        <h2><i class="bi bi-mortarboard me-2"></i>{{ t('university_record') }}</h2>
+        <p class="text-muted smaller mb-3">{{ t('university_record_note') }}</p>
+        <div class="user-record-grid">
+          <div class="user-record-item"><span class="user-record-label"><i class="bi bi-person-badge me-1"></i>{{ t('student_id') }}</span><span class="user-record-value">{{ user.student_id or user.teacher_id or '—' }}</span></div>
+          <div class="user-record-item"><span class="user-record-label"><i class="bi bi-person me-1"></i>{{ t('full_name') }}</span><span class="user-record-value">{{ user.name }}</span></div>
+          <div class="user-record-item"><span class="user-record-label"><i class="bi bi-envelope me-1"></i>{{ t('email') }}</span><span class="user-record-value">{{ user.email }}</span></div>
+          <div class="user-record-item"><span class="user-record-label"><i class="bi bi-building me-1"></i>{{ t('faculty') }}</span><span class="user-record-value">{% if user.faculty_name %}{{ user.faculty_name }}{% if user.department %} — {{ user.department }}{% endif %}{% else %}—{% endif %}</span></div>
+          <div class="user-record-item"><span class="user-record-label"><i class="bi bi-diagram-3 me-1"></i>{{ t('role') }}</span><span class="user-record-value">{% if user.role == 'student' %}{{ t('role_student') }}{% elif user.role == 'teacher' %}{{ t('role_teacher') }}{% else %}{{ t('admin') }}{% endif %}</span></div>
         </div>
-        <div class="card-body p-4">
-          <form method="POST" action="{{ url_for('student.profile') }}" enctype="multipart/form-data">
-
-            <div class="mb-3">
-              <label class="form-label fw-600">Student ID</label>
-              <input type="text" class="form-control" value="{{ user.student_id or '—' }}"
-                     disabled style="background:#f8fafc;">
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-600">Full Name <span class="text-danger">*</span></label>
-              <input type="text" name="name" class="form-control"
-                     value="{{ user.name }}" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-600">Email <span class="text-danger">*</span></label>
-              <input type="email" name="email" class="form-control"
-                     value="{{ user.email }}" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-600">Faculty</label>
-              <select name="faculty_id" class="form-select">
-                <option value="">— Select Faculty —</option>
-                {% for f in faculties %}
-                  <option value="{{ f.faculty_id }}"
-                    {% if user.faculty_id == f.faculty_id %}selected{% endif %}>
-                    {{ f.faculty_name }} ({{ f.department }})
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label class="form-label fw-600">Profile Picture</label>
-              {% if user.profile_image %}
-                <div class="mb-2">
-                  <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}"
-                       style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
-                </div>
-              {% endif %}
-              <input type="file" name="profile_image" class="form-control" accept="image/*">
-              <small class="text-muted">PNG, JPG, JPEG (Max 5MB)</small>
-            </div>
-
-            <button type="submit" class="btn btn-library px-4">
-              <i class="bi bi-save me-2"></i>Save Changes
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Change Password -->
-    <div class="col-md-5">
-      <div class="card border-0 shadow-sm" style="border-radius:14px;">
-        <div class="card-header border-0 fw-bold py-3 px-4"
-             style="background:#095456;color:#fff;border-radius:14px 14px 0 0;font-size:.95rem;">
-          <i class="bi bi-lock me-2"></i>Change Password
-        </div>
-        <div class="card-body p-4">
-          <form method="POST" action="{{ url_for('student.change_password') }}">
-            <div class="mb-3">
-              <label class="form-label fw-600">Current Password</label>
-              <input type="password" name="current_password" class="form-control"
-                     placeholder="Current password" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-600">New Password</label>
-              <input type="password" name="new_password" class="form-control"
-                     placeholder="Min 6 characters" required minlength="6">
-            </div>
-            <div class="mb-4">
-              <label class="form-label fw-600">Confirm New Password</label>
-              <input type="password" name="confirm_password" class="form-control"
-                     placeholder="Repeat new password" required>
-            </div>
-            <button type="submit" class="btn btn-warning px-4 fw-bold w-100">
-              <i class="bi bi-key me-2"></i>Change Password
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Quick Links -->
-      <div class="card border-0 shadow-sm mt-3" style="border-radius:14px;">
-        <div class="card-body p-3">
-          <p class="fw-bold mb-2" style="font-size:.9rem; color:#095456;">Quick Links</p>
-          <div class="d-flex flex-column gap-2">
-            <a href="{{ url_for('student.bookmarks') }}" class="btn btn-outline-warning btn-sm text-start">
-              <i class="bi bi-bookmark-star me-2"></i>My Bookmarks
-            </a>
-            <a href="{{ url_for('student.history') }}" class="btn btn-outline-secondary btn-sm text-start">
-              <i class="bi bi-clock-history me-2"></i>View History
-            </a>
-            <a href="{{ url_for('student.recommendations') }}" class="btn btn-outline-primary btn-sm text-start">
-              <i class="bi bi-stars me-2"></i>Recommendations
-            </a>
+      </section>
+      <section class="user-form-card">
+        <h2><i class="bi bi-camera me-2"></i>{{ t('profile_picture') }}</h2>
+        <form method="POST" action="{{ url_for('student.profile') }}" enctype="multipart/form-data" id="profilePicForm">
+          <div class="mb-3">
+            <label class="user-form-label" for="profile-username">{{ t('profile_username_label') }}</label>
+            <input id="profile-username" class="user-form-control" type="text" name="username" value="{{ user.username }}" minlength="3" maxlength="50" pattern="[A-Za-z0-9_]+" autocomplete="username" required>
+            <small class="text-muted">{{ t('profile_username_hint') }}</small>
           </div>
-        </div>
-      </div>
+          <div class="mb-3 d-flex align-items-center gap-3">
+            <label for="profile-image" class="user-btn user-btn-soft" style="cursor:pointer"><i class="bi bi-image me-1"></i>{{ t('choose_file') }}</label>
+            <small class="text-muted" id="picFileName">{{ t('file_types') }}</small>
+          </div>
+          <input id="profile-image" type="file" name="profile_image" accept="image/*" class="d-none">
+          <div class="mb-3">
+            <div class="user-pic-preview">{% if user.profile_image %}<img id="picPreview" src="{{ url_for('library_file.file_profile', filename=user.profile_image) }}" alt="{{ user.name }}">{% else %}<span id="picPreview" class="user-pic-placeholder">{{ (user.name or 'U')[0]|upper }}</span>{% endif %}</div>
+          </div>
+          <button class="user-btn user-btn-primary" type="submit" id="picSaveBtn"><i class="bi bi-save"></i>{{ t('save_changes') }}</button>
+        </form>
+      </section>
     </div>
 
+    {# ---------- Change Password (Phase 3: live checklist + toggles) ---------- #}
+    <div class="col-lg-5">
+      <section class="user-form-card mb-4">
+        <h2><i class="bi bi-lock me-2"></i>{{ t('change_password') }}</h2>
+        <form method="POST" action="{{ url_for('student.change_password') }}" id="changePwdForm" novalidate>
+          <div class="mb-3">
+            <label class="user-form-label" for="current-password">{{ t('current_password') }}</label>
+            <div class="input-group">
+              <input id="current-password" class="user-form-control" type="password" name="current_password" required autocomplete="current-password">
+              <button type="button" class="btn btn-outline-secondary pwd-visibility" data-target="current-password" aria-label="{{ t('pwd_toggle') }}"><i class="bi bi-eye"></i></button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="user-form-label" for="new-password">{{ t('new_password') }} <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input id="new-password" class="user-form-control" type="password" name="new_password" required autocomplete="new-password" maxlength="128">
+              <button type="button" class="btn btn-outline-secondary pwd-visibility" data-target="new-password" aria-label="{{ t('pwd_toggle') }}"><i class="bi bi-eye"></i></button>
+            </div>
+            <ul class="pwd-checklist mt-2" id="cpChecklist" aria-live="polite">
+              {% for key, label in [
+                ("cp_rule_length", t("pwd_rule_length")),
+                ("cp_rule_upper", t("pwd_rule_upper")),
+                ("cp_rule_lower", t("pwd_rule_lower")),
+                ("cp_rule_digit", t("pwd_rule_digit")),
+                ("cp_rule_special", t("pwd_rule_special")),
+              ] %}
+              <li data-rule="{{ key }}"><i class="bi bi-circle"></i> {{ label }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="mb-4">
+            <label class="user-form-label" for="confirm-password">{{ t('confirm_password') }}</label>
+            <div class="input-group">
+              <input id="confirm-password" class="user-form-control" type="password" name="confirm_password" required autocomplete="new-password" maxlength="128">
+              <button type="button" class="btn btn-outline-secondary pwd-visibility" data-target="confirm-password" aria-label="{{ t('pwd_toggle') }}"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="field-hint mt-2" id="cpConfirmHint">
+              <i class="bi bi-info-circle me-1"></i><span>{{ t('register_confirm_hint') }}</span>
+            </div>
+          </div>
+          <button class="user-btn user-btn-gold w-100" type="submit" id="cpSubmit" disabled>
+            <i class="bi bi-key"></i>{{ t('change_password') }}
+          </button>
+        </form>
+      </section>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pwd-checklist { list-style: none; margin: 0; padding: 0; }
+  .pwd-checklist li { display: flex; align-items: center; gap: .45rem; color: #7a8a8d; font-size: .82rem; font-weight: 500; margin-bottom: .2rem; }
+  .pwd-checklist li i { font-size: .7rem; }
+  .pwd-checklist li.is-ok { color: #198754; font-weight: 600; }
+  .pwd-checklist li.is-ok i::before { content: "\f26a"; font-size: .8rem; }
+  .pwd-checklist li.is-fail { color: #c0392b; }
+  .pwd-checklist li.is-fail i::before { content: "\f623"; font-size: .8rem; }
+  .field-hint.is-ok { color: #198754; }
+  .field-hint.is-ok i::before { content: "\f26a"; font-size: .8rem; }
+  .field-hint.is-fail { color: #c0392b; }
+  .field-hint.is-fail i::before { content: "\f623"; font-size: .8rem; }
+  /* v20 — University Record card */
+  .user-record-grid { display: grid; gap: 10px; }
+  .user-record-item { display: flex; align-items: baseline; gap: 12px; padding: 10px 12px; background: #f4fafa; border-radius: 10px; }
+  .user-record-label { flex: 0 0 140px; color: #526568; font-size: .8rem; font-weight: 700; }
+  .user-record-value { color: #10373a; font-size: .86rem; font-weight: 700; }
+  /* v20 — picture preview */
+  .user-pic-preview { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: #d9eeee; color: var(--user-teal-dark, #123c3f); font-weight: 800; font-size: 2.2rem; overflow: hidden; }
+  .user-pic-preview img { width: 100%; height: 100%; object-fit: cover; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  // ---------- Change password checklist + toggles ----------
+  var newPw = document.getElementById('new-password');
+  var confirmPw = document.getElementById('confirm-password');
+  var submitBtn = document.getElementById('cpSubmit');
+  var confirmHint = document.getElementById('cpConfirmHint');
+  var checklist = document.getElementById('cpChecklist');
+  if (newPw && confirmPw && submitBtn) {
+    document.querySelectorAll('.pwd-visibility').forEach(function (btn) {
+      var target = document.getElementById(btn.getAttribute('data-target'));
+      if (!target) return;
+      btn.addEventListener('click', function () {
+        var hidden = target.type === 'password';
+        target.type = hidden ? 'text' : 'password';
+        btn.querySelector('i').className = hidden ? 'bi bi-eye-slash' : 'bi bi-eye';
+        btn.setAttribute('aria-label', hidden ? '{{ t("pwd_hide") }}' : '{{ t("pwd_show") }}');
+      });
+    });
+    var rules = {
+      cp_rule_length:  function (pw) { return pw.length >= 8; },
+      cp_rule_upper:   function (pw) { return /[A-Z]/.test(pw); },
+      cp_rule_lower:   function (pw) { return /[a-z]/.test(pw); },
+      cp_rule_digit:   function (pw) { return /\d/.test(pw); },
+      cp_rule_special: function (pw) { return /[^A-Za-z0-9]/.test(pw) }
+    };
+    function check() {
+      var pw = newPw.value || '';
+      var allOk = true;
+      checklist.querySelectorAll('li').forEach(function (li) {
+        var rule = li.getAttribute('data-rule');
+        var ok = rules[rule] && rules[rule](pw);
+        li.classList.toggle('is-ok', ok);
+        li.classList.toggle('is-fail', pw.length > 0 && !ok);
+        li.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+        if (!ok) allOk = false;
+      });
+      var match = pw.length > 0 && confirmPw.value === pw;
+      confirmHint.querySelector('span').textContent = match
+        ? '{{ t("pwd_confirm_ok") }}'
+        : (confirmPw.value.length > 0 ? '{{ t("pwd_confirm_mismatch") }}' : '{{ t("register_confirm_hint") }}');
+      confirmHint.className = 'field-hint mt-2' + (confirmPw.value.length > 0 ? (match ? ' is-ok' : ' is-fail') : '');
+      submitBtn.disabled = !(allOk && match);
+    }
+    newPw.addEventListener('input', check);
+    confirmPw.addEventListener('input', check);
+    check();
+  }
+
+  // ---------- Profile picture: show file name + live preview + enable save ----------
+  var fileInput = document.getElementById('profile-image');
+  var fileName = document.getElementById('picFileName');
+  var saveBtn = document.getElementById('picSaveBtn');
+  var preview = document.getElementById('picPreview');
+  var usernameInput = document.getElementById('profile-username');
+  var initialUsername = usernameInput ? usernameInput.value : '';
+  function syncProfileSaveState() {
+    if (!saveBtn) return;
+    var usernameChanged = usernameInput && usernameInput.value.trim() !== initialUsername;
+    var fileSelected = fileInput && fileInput.files && fileInput.files.length > 0;
+    saveBtn.disabled = !(usernameChanged || fileSelected);
+  }
+  if (usernameInput) usernameInput.addEventListener('input', syncProfileSaveState);
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (f) {
+        if (fileName) fileName.textContent = f.name;
+        if (preview) {
+          var url = URL.createObjectURL(f);
+          if (preview.tagName === 'IMG') preview.src = url;
+          else {
+            var img = document.createElement('img');
+            img.id = 'picPreview'; img.src = url; img.alt = '';
+            preview.replaceWith(img);
+            preview = img;
+          }
+        }
+      } else {
+        if (fileName) fileName.textContent = 'PNG, JPG, JPEG';
+      }
+      syncProfileSaveState();
+    });
+  }
+  syncProfileSaveState();
+})();
+</script>
 {% endblock %}

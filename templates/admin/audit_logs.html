@@ -1,0 +1,42 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin Audit Logs{% endblock %}
+{% block admin_content %}
+<div class="admin-page-heading">
+    <div>
+        <span class="admin-eyebrow">Administration</span>
+        <h1>Audit Logs</h1>
+        <p>Monitor administrative actions across the system</p>
+    </div>
+</div>
+
+<section class="admin-panel">
+    <div class="table-responsive admin-table-wrap">
+        <table class="table align-middle mb-0 admin-compact-table">
+            <thead>
+                <tr>
+                    <th>Admin</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Details</th>
+                    <th class="text-end">Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td><strong>{{ log.admin_name }}</strong></td>
+                    <td><span class="badge bg-info text-dark">{{ log.action }}</span></td>
+                    <td><small class="text-muted">{{ log.target_type }} #{{ log.target_id or 'N/A' }}</small></td>
+                    <td><small>{{ log.details or '—' }}</small></td>
+                    <td class="text-end text-muted small">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No audit logs found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,60 +1,6 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}{{ 'Edit' if user else 'Add' }} User{% endblock %}
-
+{% block title %}{{ t('edit') }} {{ t('users') }}{% endblock %}
 {% block admin_content %}
-<h4><i class="bi bi-person-gear"></i> {{ 'Edit' if user else 'Add New' }} User</h4>
-<div class="card shadow-sm mt-3" style="max-width:600px;">
-    <div class="card-body p-4">
-        <form method="POST" action="{{ url_for('admin.user_edit', user_id=user.user_id) if user else url_for('admin.user_add') }}">
-            <div class="mb-3">
-                <label class="form-label">Student ID / Staff ID</label>
-                <input type="text" name="student_id" class="form-control" value="{{ user.student_id if user else '' }}" placeholder="e.g. CS-2024-003 or T-001">
-                <small class="text-muted">Student ဆိုလျှင် Student ID, Teacher ဆိုလျှင် Staff ID ထည့်ပါ။</small>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                <input type="text" name="name" class="form-control" value="{{ user.name if user else '' }}" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Email <span class="text-danger">*</span></label>
-                <input type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required>
-            </div>
-            {% if not user %}
-            <div class="mb-3">
-                <label class="form-label">Username <span class="text-danger">*</span></label>
-                <input type="text" name="username" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Password <span class="text-danger">*</span></label>
-                <input type="password" name="password" class="form-control" required minlength="6">
-            </div>
-            {% endif %}
-            <div class="mb-3">
-                <label class="form-label">Role</label>
-                <select name="role" class="form-select">
-                    <option value="student" {% if not user or user.role=='student' %}selected{% endif %}>Student</option>
-                    <option value="teacher" {% if user and user.role=='teacher' %}selected{% endif %}>Teacher</option>
-                    <option value="admin" {% if user and user.role=='admin' %}selected{% endif %}>Admin</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Faculty</label>
-                <select name="faculty_id" class="form-select">
-                    <option value="">— None —</option>
-                    {% for f in faculties %}
-                        <option value="{{ f.faculty_id }}" {% if user and user.faculty_id == f.faculty_id %}selected{% endif %}>
-                            {{ f.faculty_name }} ({{ f.department }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-library">
-                    <i class="bi bi-save"></i> {{ 'Update' if user else 'Add User' }}
-                </button>
-                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
+<div class="admin-page-heading"><div><span class="admin-eyebrow">{{ t('users') }}</span><h1>{{ t('edit') }} {{ t('users') }}</h1><p>{{ t('manage_members') }}</p></div><a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>{{ t('users') }}</a></div>
+<form method="POST" action="{{ url_for('admin.user_edit', user_id=user.user_id) }}"><div class="row g-4"><div class="col-lg-8"><section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>{{ t('basic_information') }}</h2><p>{{ t('basic_info_sub') }}</p></div></div><div class="admin-form-grid"><div class="admin-form-field"><label for="userId">Student/Staff ID</label><input id="userId" type="text" name="student_id" class="form-control" value="{{ user.student_id if user else '' }}"><small>{{ t('teacher_policy_source') }}</small></div><div class="admin-form-field"><label for="userName">{{ t('name') }} <span class="text-danger">*</span></label><input id="userName" type="text" name="name" class="form-control" value="{{ user.name if user else '' }}" required></div><div class="admin-form-field"><label for="userEmail">{{ t('email') }} <span class="text-danger">*</span></label><input id="userEmail" type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required></div></div></section><section class="admin-panel"><div class="admin-panel-head"><div><h2>{{ t('role') }} &amp; {{ t('faculty') }}</h2><p>{{ t('teacher_policy_source') }}</p></div></div><div class="admin-form-grid"><div class="admin-form-field"><label>{{ t('role') }}</label><input class="form-control" disabled value="{{ t('students') if user.role == 'student' else (t('teachers') if user.role == 'teacher' else t('admins')) }}"><small>{{ t('ur_role_record_locked') }}</small></div><div class="admin-form-field"><label for="userFaculty">{{ t('faculty') }}</label><select id="userFaculty" name="faculty_id" class="form-select"><option value="">{{ t('all') }}</option>{% for f in faculties %}<option value="{{ f.faculty_id }}" {% if user and user.faculty_id == f.faculty_id %}selected{% endif %}>{{ f.faculty_name }}{% if f.department %} · {{ f.department }}{% endif %}</option>{% endfor %}</select></div></div></section></div><div class="col-lg-4"><section class="admin-panel"><div class="admin-panel-head"><div><h2>{{ t('status') }}</h2><p>{{ t('teacher_policy_source') }}</p></div></div><div class="admin-info-callout"><i class="bi bi-shield-check"></i><span>{{ t('admin_security_note') }}</span></div></section></div></div><div class="admin-form-actions"><button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>{{ t('save') }}</button><a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">{{ t('cancel') }}</a></div></form>
 {% endblock %}

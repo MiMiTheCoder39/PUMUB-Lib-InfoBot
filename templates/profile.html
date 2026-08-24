@@ -41,7 +41,7 @@
                             <label class="form-label">Profile Picture</label>
                             {% if user.profile_image %}
                                 <div class="mb-2">
-                                    <img src="{{ url_for('static', filename='uploads/covers/' + user.profile_image) }}" style="height:70px; width:70px; object-fit:cover;" class="rounded-circle border">
+                                    <img src="{{ url_for('library_file.file_profile', filename=user.profile_image) }}" style="height:70px; width:70px; object-fit:cover;" class="rounded-circle border">
                                 </div>
                             {% endif %}
                             <input type="file" name="profile_image" class="form-control" accept="image/*">

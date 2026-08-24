@@ -7,11 +7,13 @@ app.py  -  Digital Library Management System
 from flask import Flask, render_template, redirect, url_for, session, current_app
 from config import Config
 from models.db import mysql
+from utils.i18n import current_language, translate, localize_notification_title, localize_notification_message
 
 from routes.auth_routes import auth_bp
 from routes.student_routes import student_bp
 from routes.admin_routes import admin_bp
 from routes.ai_routes import ai_bp
+from routes.file_routes import file_bp
 
 
 def create_app():
@@ -24,17 +26,66 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(file_bp)
 
     @app.context_processor
     def inject_globals():
         unread_notif_count = 0
+        profile_image = session.get("profile_image")
         if "user_id" in session and session.get("role") in ("student", "teacher"):
             try:
                 from models.notification_model import get_unread_count
                 unread_notif_count = get_unread_count(session["user_id"])
             except Exception:
                 unread_notif_count = 0
-        return {"unread_notif_count": unread_notif_count}
+            # Refresh the avatar from the database so an existing session also
+            # sees a profile picture uploaded before the current login.
+            try:
+                from models.user_model import get_user_by_id
+                current_user = get_user_by_id(session["user_id"])
+                if current_user is not None:
+                    profile_image = current_user.get("profile_image")
+                    session["profile_image"] = profile_image
+            except Exception:
+                pass
+        all_faculties = []
+        try:
+            from models.user_model import get_all_faculties
+            all_faculties = get_all_faculties()
+        except Exception:
+            all_faculties = []
+        def _status_label(status):
+            """Localized label for the four-state record status."""
+            try:
+                return translate(
+                    {"active": "ur_active", "inactive": "ur_inactive",
+                     "graduated": "ur_graduated",
+                     "suspended": "ur_suspended"}.get(status, "ur_active"))
+            except Exception:
+                return status or ""
+
+        def _status_badge_class(status):
+            """Soft pill class for the four-state record status (V2)."""
+            cls = {
+                "active": "admin-status admin-status-active",
+                "inactive": "admin-status admin-status-inactive",
+                "graduated": "admin-status admin-status-graduated",
+                "suspended": "admin-status admin-status-suspended",
+            }
+            return cls.get(status, "admin-status admin-status-inactive")
+
+        return {
+            "unread_notif_count": unread_notif_count,
+            "profile_image": profile_image,
+            "current_language": current_language(),
+            "supported_languages": (("my", "မြန်မာ"), ("en", "English")),
+            "all_faculties": all_faculties,
+            "t": translate,
+            "status_label": _status_label,
+            "status_badge_class": _status_badge_class,
+            "notification_title": localize_notification_title,
+            "notification_message": localize_notification_message,
+        }
 
     @app.route("/")
     def home():
@@ -48,17 +99,22 @@ def create_app():
 
         # Guest -> show public home.html with books data
         popular_books = []
+        recent_books = []
         faculties = []
         categories = []
         try:
-            from models.book_model import get_popular_books, get_all_categories, search_books
+            from models.book_model import get_popular_books, get_all_categories, get_all_books, search_books
             from models.user_model import get_all_faculties
             popular_books = get_popular_books(limit=10)
+            recent_books = get_all_books(limit=10)
             faculties = get_all_faculties()
             categories = get_all_categories()
-            # Enrich faculties with books (4 per faculty)
+            # Enrich faculties with books (full count + shelf preview)
             for faculty in faculties:
-                faculty['books'] = search_books(faculty_id=faculty.get('faculty_id'), limit=4)
+                fid = faculty.get('faculty_id')
+                all_books_for_faculty = search_books(faculty_id=fid, primary_only=True)
+                faculty['book_count'] = len(all_books_for_faculty)
+                faculty['books'] = all_books_for_faculty[:6]
             # Announcements + categories with covers
             from models.report_model import (
                 get_all_announcements, get_books_by_category_for_shelf,
@@ -85,11 +141,19 @@ def create_app():
 
         return render_template("home.html",
                                popular_books=popular_books,
+                               recent_books=recent_books,
                                faculties=faculties,
                                categories=categories,
                                announcements=announcements,
                                top_score_users=top_score_users,
-                               most_borrowed_books=most_borrowed_books)
+                               most_borrowed_books=most_borrowed_books,
+                               supported_languages=(("my", "မြန်မာ"), ("en", "English")),
+                               current_language=current_language())
+
+    @app.route("/library-rules")
+    def library_rules_public():
+        """Public Library Rules page (no login required)."""
+        return render_template("user/rules.html")
 
     @app.route("/test-db")
     def test_db():

@@ -1,89 +1,9 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}Announcements{% endblock %}
-
+{% block title %}{{ t('announcements') }}{% endblock %}
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4><i class="bi bi-megaphone"></i> Announcements</h4>
-    <button class="btn btn-library" data-bs-toggle="modal" data-bs-target="#addAnnModal">
-        <i class="bi bi-plus-circle"></i> Add Announcement
-    </button>
-</div>
-
-{% for ann in announcements %}
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-            <div>
-                <h5 class="mb-1">{{ ann.title }}</h5>
-                <small class="text-muted"><i class="bi bi-clock"></i> {{ ann.date.strftime('%Y-%m-%d %H:%M') if ann.date else '' }} | By {{ ann.created_by_name or 'Admin' }}</small>
-                <p class="mt-2 mb-0">{{ ann.content }}</p>
-            </div>
-            <div class="d-flex gap-1 ms-3">
-                <button class="btn btn-sm btn-outline-primary"
-                        data-bs-toggle="modal" data-bs-target="#editAnn{{ ann.announcement_id }}">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <form method="POST" action="{{ url_for('admin.announcement_delete', ann_id=ann.announcement_id) }}"
-                      onsubmit="return confirm('Announcement ဖျက်မည်?')">
-                    <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Modal -->
-<div class="modal fade" id="editAnn{{ ann.announcement_id }}" tabindex="-1">
-    <div class="modal-dialog modal-lg"><div class="modal-content">
-        <div class="modal-header" style="background:#095456;color:white;">
-            <h5 class="modal-title">Edit Announcement</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <form method="POST" action="{{ url_for('admin.announcement_edit', ann_id=ann.announcement_id) }}">
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Title</label>
-                    <input type="text" name="title" class="form-control" value="{{ ann.title }}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Content</label>
-                    <textarea name="content" class="form-control" rows="4" required>{{ ann.content }}</textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-library">Update</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-        </form>
-    </div></div>
-</div>
-{% else %}
-<div class="alert alert-info">Announcement မရှိသေးပါ။</div>
-{% endfor %}
-
-<!-- Add Announcement Modal -->
-<div class="modal fade" id="addAnnModal" tabindex="-1">
-    <div class="modal-dialog modal-lg"><div class="modal-content">
-        <div class="modal-header" style="background:#095456;color:white;">
-            <h5 class="modal-title"><i class="bi bi-megaphone"></i> Add Announcement</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <form method="POST" action="{{ url_for('admin.announcement_add') }}">
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Title</label>
-                    <input type="text" name="title" class="form-control" placeholder="Announcement Title" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Content</label>
-                    <textarea name="content" class="form-control" rows="5" placeholder="Announcement content..." required></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-library">Post</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-        </form>
-    </div></div>
-</div>
+<div class="admin-page-heading"><div><span class="admin-eyebrow">{{ t('communication') }}</span><h1>{{ t('announcement_management') }}</h1><p>{{ t('manage_communications') }}</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAnnModal"><i class="bi bi-plus-lg me-2"></i>{{ t('add') }} {{ t('announcements') }}</button></div>
+<section class="admin-kpi-grid admin-kpi-grid-2 mb-4"><div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-blue"><i class="bi bi-megaphone"></i></div><div><span>{{ t('total') }}</span><strong>{{ announcements|length }}</strong></div></div><div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-broadcast"></i></div><div><span>{{ t('audience') }}</span><strong>{{ audience or 0 }}</strong></div></div></section>
+<section class="admin-panel mb-4"><div class="admin-alert admin-alert-info m-3"><i class="bi bi-info-circle"></i><span>{{ t('announcement_data_limit') }}</span></div><form method="GET" class="admin-report-filters"><div class="admin-filter-field admin-filter-search"><label for="announcementSearch">{{ t('search_announcements') }}</label><input id="announcementSearch" name="search" value="{{ search }}" class="form-control" placeholder="{{ t('search_announcements') }}"></div><div class="admin-report-filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>{{ t('search') }}</button><a class="btn btn-outline-secondary" href="{{ url_for('admin.announcements') }}">{{ t('clear_filters') }}</a></div></form></section>
+<section class="admin-panel"><div class="admin-panel-head"><div><h2>{{ t('announcements') }}</h2><p>{{ announcements|length }} {{ t('records') }} · {{ t('active_students_broadcast') }}</p></div></div><div class="table-responsive admin-table-wrap"><table class="table align-middle mb-0 admin-compact-table"><thead><tr><th>{{ t('title') }}</th><th>{{ t('audience') }}</th><th>{{ t('created_date') }}</th><th>{{ t('created_by') }}</th><th class="text-end">{{ t('actions') }}</th></tr></thead><tbody>{% for ann in announcements %}<tr><td><strong>{{ ann.title }}</strong><small class="d-block text-muted admin-cell-truncate" title="{{ ann.content }}">{{ ann.content }}</small></td><td><span class="admin-status admin-status-approved">{{ t('active_students') }}</span></td><td class="text-muted small">{{ ann.date.strftime('%d %b %Y, %H:%M') if ann.date else '—' }}</td><td>{{ ann.created_by_name or t('admin') }}</td><td class="text-end"><div class="admin-table-actions"><button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewAnn{{ ann.announcement_id }}" aria-label="{{ t('view') }}"><i class="bi bi-eye"></i></button><button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editAnn{{ ann.announcement_id }}" aria-label="{{ t('edit') }}"><i class="bi bi-pencil"></i></button><form method="POST" action="{{ url_for('admin.announcement_delete', ann_id=ann.announcement_id) }}" class="d-inline" onsubmit="return confirm({{ (t('confirm_delete') ~ ' ' ~ ann.title)|tojson }})"><button class="btn btn-sm btn-outline-danger" aria-label="{{ t('delete') }}"><i class="bi bi-trash"></i></button></form></div></td></tr><div class="modal fade" id="viewAnn{{ ann.announcement_id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content admin-detail-modal"><div class="modal-header"><h2 class="modal-title">{{ ann.title }}</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><div class="modal-body"><p class="text-muted small">{{ ann.date.strftime('%d %b %Y, %H:%M') if ann.date else '—' }} · {{ ann.created_by_name or t('admin') }}</p><div class="admin-announcement-content">{{ ann.content }}</div></div></div></div></div><div class="modal fade" id="editAnn{{ ann.announcement_id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content admin-detail-modal"><div class="modal-header"><h2 class="modal-title">{{ t('edit') }} {{ t('announcements') }}</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><form method="POST" action="{{ url_for('admin.announcement_edit', ann_id=ann.announcement_id) }}"><div class="modal-body"><label class="form-label" for="editAnnTitle{{ ann.announcement_id }}">{{ t('title') }}</label><input id="editAnnTitle{{ ann.announcement_id }}" type="text" name="title" class="form-control mb-3" value="{{ ann.title }}" required><label class="form-label" for="editAnnContent{{ ann.announcement_id }}">{{ t('content') }}</label><textarea id="editAnnContent{{ ann.announcement_id }}" name="content" class="form-control" rows="7" required>{{ ann.content }}</textarea></div><div class="modal-footer"><button type="submit" class="btn btn-primary">{{ t('update') }}</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('cancel') }}</button></div></form></div></div></div>{% else %}<tr><td colspan="5"><div class="admin-empty-state admin-empty-inline"><i class="bi bi-megaphone"></i><span>{{ t('no_announcements') }}</span><small>{{ t('create_first_announcement') }}</small></div></td></tr>{% endfor %}</tbody></table></div></section>
+<div class="modal fade" id="addAnnModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content admin-detail-modal"><div class="modal-header"><h2 class="modal-title">{{ t('add') }} {{ t('announcements') }}</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><form method="POST" action="{{ url_for('admin.announcement_add') }}"><div class="modal-body"><label class="form-label" for="newAnnTitle">{{ t('title') }}</label><input id="newAnnTitle" type="text" name="title" class="form-control mb-3" required><label class="form-label" for="newAnnContent">{{ t('content') }}</label><textarea id="newAnnContent" name="content" class="form-control" rows="8" required></textarea><small class="form-text text-muted d-block mt-2">{{ t('active_students_broadcast') }}</small></div><div class="modal-footer"><button type="submit" class="btn btn-primary">{{ t('save') }}</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('cancel') }}</button></div></form></div></div></div>
 {% endblock %}

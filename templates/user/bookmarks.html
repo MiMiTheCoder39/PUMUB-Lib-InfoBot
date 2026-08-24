@@ -1,23 +1,10 @@
 {% extends "base.html" %}
-{% from "user/book_card.html" import book_card %}
-{% block title %}My Bookmarks{% endblock %}
-
+{% from "user/book_card.html" import book_card with context %}
+{% block title %}{{ t('bookmarks') }}{% endblock %}
 {% block content %}
-<div class="py-4">
-    <h3><i class="bi bi-bookmark-star"></i> My Bookmarks</h3>
-    <p class="text-muted">သိမ်းထားတဲ့ စာအုပ်များ</p>
-
-    {% if books %}
-        <div class="row">
-            {% for book in books %}
-                {{ book_card(book) }}
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> Bookmark ထားတဲ့ စာအုပ် မရှိသေးပါ။
-            <a href="{{ url_for('student.search') }}">Book ရှာဖွေပါ</a>
-        </div>
-    {% endif %}
+<div class="user-page">
+  <div class="user-page-heading"><div><span class="user-eyebrow"><i class="bi bi-bookmark-heart"></i>{{ t('my_library') }}</span><h1>{{ t('my_bookmarks') }}</h1><p>{{ books|length }} {{ t('books_found') }}</p></div><a class="user-btn user-btn-soft" href="{{ url_for('student.search') }}"><i class="bi bi-search"></i>{{ t('browse_books') }}</a></div>
+  <nav class="user-library-tabs" aria-label="My Library"><a class="user-library-tab is-active" href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark me-1"></i>{{ t('bookmarks') }}</a><a class="user-library-tab" href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history me-1"></i>{{ t('history') }}</a><a class="user-library-tab" href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark me-1"></i>{{ t('borrow_history') }}</a></nav>
+  {% if books %}<div class="user-book-grid">{% for book in books %}{{ book_card(book) }}{% endfor %}</div>{% else %}<div class="user-empty"><i class="bi bi-bookmark"></i><strong>{{ t('no_bookmarks') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>{% endif %}
 </div>
 {% endblock %}

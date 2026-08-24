@@ -8,9 +8,8 @@ Features:
 - Search Books (Title / Author / Category / Faculty)
 - View Book Details (+ view_count increment)
 - Read Online (PDF inline viewer) (+ read_history log)
-- Download Book (PDF download) (+ download_count increment + download_history log)
 - Bookmark / Favorite (add, remove, list)
-- View History (Read History + Download History)
+- View History (Read History)
 - Profile Management (Update Profile, Change Password)
 """
 
@@ -24,19 +23,26 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils.decorators import login_required, student_required, library_user_required
 from utils.file_utils import save_uploaded_file
 from utils.recommender import get_recommendations
+from utils.password_policy import check_password_policy
+from utils.i18n import SUPPORTED_LANGUAGES, translate
+from models.db import mysql
 
 from models.book_model import (
     search_books, get_all_books, get_book_by_id, get_popular_books,
-    increment_view_count, increment_download_count,
+    increment_view_count, 
     get_all_categories, get_all_authors,
 )
 from models.bookmark_model import add_bookmark, remove_bookmark, is_bookmarked, get_user_bookmarks
 from models.history_model import (
-    log_read_history, get_read_history, log_download, get_download_history,
+    log_read_history, get_read_history,
 )
-from models.user_model import get_user_by_id, update_password, update_profile, get_all_faculties
+from models.user_model import (
+    get_user_by_id, get_user_by_username, update_password,
+    update_profile, get_all_faculties,
+)
 from models.report_model import (
     get_all_announcements,
+    get_announcement_by_id,
     get_books_by_category_for_shelf,
     get_active_users,
     get_most_borrowed_books,
@@ -45,9 +51,12 @@ from models.borrow_model import (
     create_borrow_request,
     get_student_borrow_history,
     get_student_borrow_stats,
+    get_student_fines,
+    mark_overdue_records,
 )
 from models.notification_model import (
     get_user_notifications, get_unread_count, mark_all_read, mark_one_read,
+    notify_borrow_request_submitted,
 )
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
@@ -60,6 +69,12 @@ student_bp = Blueprint("student", __name__, url_prefix="/student")
 @login_required
 @library_user_required
 def dashboard():
+    from flask import request as _req
+    faculty_scroll = _req.args.get("faculty") or ""
+    try:
+        faculty_scroll = str(int(faculty_scroll))
+    except (ValueError, TypeError):
+        faculty_scroll = ""
     user_id = session["user_id"]
     recent_books    = get_all_books(limit=8)
     popular_books   = get_popular_books(limit=10)
@@ -85,9 +100,12 @@ def dashboard():
     except Exception:
         pass
 
-    # Enrich faculties with books
+    # Enrich faculties with books (full collection count + shelf preview)
     for faculty in faculties:
-        faculty['books'] = search_books(faculty_id=faculty.get('faculty_id'), limit=4)
+        fid = faculty.get('faculty_id')
+        all_books_for_faculty = search_books(faculty_id=fid, primary_only=True)
+        faculty['book_count'] = len(all_books_for_faculty)
+        faculty['books'] = all_books_for_faculty[:6]
 
     # Enrich categories with book covers (photo5-style shelves)
     for cat in categories:
@@ -113,7 +131,8 @@ def dashboard():
         unread_count=unread_count,
         active_borrows_count=stats.get("borrowed", 0) + stats.get("overdue", 0),
         pending_requests_count=stats.get("pending", 0) + stats.get("approved", 0),
-        overdue_count=stats.get("overdue", 0)
+        overdue_count=stats.get("overdue", 0),
+        faculty_scroll=faculty_scroll
     )
 
 
@@ -127,40 +146,73 @@ def search():
     keyword = (request.args.get("q") or request.args.get("keyword", "")).strip()
     category_id = request.args.get("category") or request.args.get("category_id") or None
     faculty_id = request.args.get("faculty") or request.args.get("faculty_id") or None
-    author_id = request.args.get("author_id") or None
+    author_id = request.args.get("author") or request.args.get("author_id") or None
     resource_type = request.args.get("resource_type") or None
-    sort_by = request.args.get("sort") or None
+    availability = request.args.get("availability") or None
+    sort_by = request.args.get("sort") or "newest"
 
-    # Filter တစ်ခုမှ မပါရင် Book အားလုံးကို ပြသည်
-    if not any([keyword, category_id, faculty_id, author_id, resource_type]):
-        if sort_by == 'borrowed':
-            books = get_popular_books(limit=50)
-        else:
-            books = get_all_books()
-    else:
+    has_filters = any((keyword, category_id, faculty_id, author_id, resource_type, availability))
+    if sort_by == "borrowed" and not has_filters:
+        books = get_most_borrowed_books(limit=100)
+    elif has_filters:
         books = search_books(
             keyword=keyword or None,
             category_id=category_id,
             faculty_id=faculty_id,
             author_id=author_id,
             resource_type=resource_type,
+            primary_only=False,
         )
+    else:
+        books = get_all_books()
 
-    categories = get_all_categories()
-    faculties = get_all_faculties()
-    authors = get_all_authors()
+    if availability == "available":
+        books = [book for book in books if int(book.get("available_copies") or 0) > 0]
+    elif availability == "digital":
+        books = [book for book in books if book.get("pdf_file")]
+
+    if sort_by == "title":
+        books = sorted(books, key=lambda row: (row.get("title") or "").lower())
 
     return render_template(
         "user/search.html",
         books=books,
-        categories=categories,
-        faculties=faculties,
-        authors=authors,
         keyword=keyword,
         selected_category=category_id,
         selected_faculty=faculty_id,
         selected_author=author_id,
-        selected_type=resource_type,
+        selected_resource_type=resource_type,
+        selected_availability=availability,
+        selected_sort=sort_by,
+        categories=get_all_categories(),
+        authors=get_all_authors(),
+        faculties=get_all_faculties(),
+    )
+
+
+@student_bp.route("/collection/<kind>/<int:collection_id>")
+@login_required
+@library_user_required
+def collection(kind, collection_id):
+    if kind == "category":
+        books = search_books(category_id=collection_id, primary_only=True)
+        title = next((row.get("category_name") for row in get_all_categories() if str(row.get("category_id")) == str(collection_id)), "Category Collection")
+    elif kind == "faculty":
+        books = search_books(faculty_id=collection_id, primary_only=True)
+        title = next((row.get("faculty_name") for row in get_all_faculties() if str(row.get("faculty_id")) == str(collection_id)), "Faculty Collection")
+    else:
+        abort(404)
+    return render_template("user/collection.html", books=books, collection_title=title)
+
+
+@student_bp.route("/most-borrowed")
+@login_required
+@library_user_required
+def most_borrowed():
+    return render_template(
+        "user/collection.html",
+        books=get_most_borrowed_books(limit=100),
+        collection_title="Most Borrowed Books",
     )
 
 
@@ -205,7 +257,12 @@ def read_book(book_id):
     # Access Control
     restricted_types = ['thesis', 'research_paper', 'reference_book', 'teachers_guide']
     if book['resource_type'] in restricted_types and session.get("role") != "teacher":
-        flash("ဤစာအုပ်ကို ဖတ်ရှုခွင့်မရှိပါ။ (Teachers Only)", "danger")
+        flash("ဤစာအုပ်ကို ဖတ့်ရှုခွင့်မရှိပါ။ (Teachers Only)", "danger")
+        return redirect(url_for("student.book_details", book_id=book_id))
+
+    # Read Online ဂိတ်: PDF ဖိုင်မရှိသောစာအုပ်ကို viewer မဖွင့်ဘဲ details သို့ ပြန်ပို့မည်
+    if not book.get("pdf_file"):
+        flash("ဤစာအုပ်တွင် PDF ဖိုင် မရှိသည့်အတွက် Online ဖတ့်ရှုမှု မရနိုင်ပါ။", "warning")
         return redirect(url_for("student.book_details", book_id=book_id))
 
     log_read_history(session["user_id"], book_id)
@@ -227,37 +284,15 @@ def serve_book_file(book_id):
     if book['resource_type'] in restricted_types and session.get("role") != "teacher":
         abort(403)
 
-    return send_from_directory(
+    resp = send_from_directory(
         current_app.config["UPLOAD_FOLDER_BOOKS"], book["pdf_file"], as_attachment=False
     )
-
-
-# ============================================================
-# DOWNLOAD BOOK
-# ============================================================
-@student_bp.route("/book/<int:book_id>/download")
-@login_required
-@library_user_required
-def download_book(book_id):
-    book = get_book_by_id(book_id)
-    if not book:
-        abort(404)
-
-    # Access Control
-    restricted_types = ['thesis', 'research_paper', 'reference_book', 'teachers_guide']
-    if book['resource_type'] in restricted_types and session.get("role") != "teacher":
-        flash("ဤစာအုပ်ကို Download ပြုလုပ်ခွင့်မရှိပါ။ (Teachers Only)", "danger")
-        return redirect(url_for("student.book_details", book_id=book_id))
-
-    increment_download_count(book_id)
-    log_download(session["user_id"], book_id)
-
-    return send_from_directory(
-        current_app.config["UPLOAD_FOLDER_BOOKS"],
-        book["pdf_file"],
-        as_attachment=True,
-        download_name=f"{book['title']}.pdf",
-    )
+    # Defense-in-depth: never offer the PDF as a saved attachment (already
+    # guaranteed by as_attachment=False), block proxy/content-sniffing
+    # reuse, and keep it out of shared caches.
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
 
 
 # ============================================================
@@ -290,16 +325,15 @@ def bookmarks():
 
 
 # ============================================================
-# VIEW HISTORY (Read History + Download History)
+# VIEW HISTORY (Read History only — Download feature removed)
 # ============================================================
 @student_bp.route("/history")
 @login_required
 @library_user_required
 def history():
     read_history = get_read_history(session["user_id"])
-    download_history = get_download_history(session["user_id"])
     return render_template(
-        "user/history.html", read_history=read_history, download_history=download_history
+        "user/history.html", read_history=read_history
     )
 
 
@@ -314,28 +348,63 @@ def profile():
     faculties = get_all_faculties()
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        faculty_id = request.form.get("faculty_id") or None
+        # Name/email/faculty are official-record fields in this UI and are
+        # therefore read-only; retain the stored values when the form omits them.
+        name = request.form.get("name", user.get("name", "")).strip()
+        email = request.form.get("email", user.get("email", "")).strip().lower()
+        faculty_id = request.form.get("faculty_id") if "faculty_id" in request.form else user.get("faculty_id")
+        username = request.form.get("username", "").strip()
 
-        if not name or not email:
-            flash("Name နှင့် Email ကို ဖြည့်ပါ။", "danger")
+        if not name or not email or not username:
+            flash(translate("profile_required_fields"), "danger")
+            return redirect(url_for("student.profile"))
+
+        if not (3 <= len(username) <= 50) or not all(
+            ch.isalnum() or ch == "_" for ch in username
+        ):
+            flash(translate("profile_username_invalid"), "danger")
+            return redirect(url_for("student.profile"))
+
+        existing_username = get_user_by_username(username)
+        if existing_username and int(existing_username["user_id"]) != int(session["user_id"]):
+            flash(translate("profile_username_taken"), "danger")
             return redirect(url_for("student.profile"))
 
         profile_image_filename = None
         if "profile_image" in request.files:
-            saved = save_uploaded_file(
-                request.files["profile_image"],
-                current_app.config["UPLOAD_FOLDER_COVERS"],  # reuse covers folder for simplicity
-                current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
+            uploaded = request.files["profile_image"]
+            if uploaded and uploaded.filename:
+                profile_image_filename = save_uploaded_file(
+                    uploaded,
+                    current_app.config["LIBRARY_STORAGE_PROFILES"],
+                    current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
+                )
+                if not profile_image_filename:
+                    flash(translate("profile_image_invalid"), "danger")
+                    return redirect(url_for("student.profile"))
+
+        try:
+            update_profile(
+                session["user_id"], name, email, faculty_id,
+                profile_image=profile_image_filename,
+                username=username,
             )
-            if saved:
-                profile_image_filename = saved
+        except Exception as exc:
+            # MySQL duplicate-key protection remains the final guard in case
+            # another account claims the username between the pre-check and update.
+            if getattr(exc, "args", [None])[0] == 1062:
+                flash(translate("profile_username_taken"), "danger")
+                return redirect(url_for("student.profile"))
+            raise
 
-        update_profile(session["user_id"], name, email, faculty_id, profile_image_filename)
-        session["name"] = name  # navbar ထဲက name ကို update လုပ်ပါ
+        session["name"] = name
+        session["username"] = username
+        if profile_image_filename:
+            session["profile_image"] = profile_image_filename
+        else:
+            session.setdefault("profile_image", user.get("profile_image"))
 
-        flash("Profile ကို အောင်မြင်စွာ Update လုပ်ပြီးပါပြီ။", "success")
+        flash(translate("profile_update_success"), "success")
         return redirect(url_for("student.profile"))
 
     return render_template("user/profile.html", user=user, faculties=faculties)
@@ -352,20 +421,42 @@ def change_password():
     confirm_password = request.form.get("confirm_password", "")
 
     if not check_password_hash(user["password"], current_password):
-        flash("လက်ရှိ Password မှားယွင်းနေပါသည်။", "danger")
+        flash(translate("cp_wrong_current"), "danger")
         return redirect(url_for("student.profile"))
 
-    if len(new_password) < 6:
-        flash("Password အသစ်သည် အနည်းဆုံး အက္ခရာ ၆ လုံး ရှိရပါမည်။", "danger")
+    policy = check_password_policy(new_password)
+    if not policy["all_ok"]:
+        flash(translate("cp_policy_failed"), "danger")
         return redirect(url_for("student.profile"))
 
     if new_password != confirm_password:
-        flash("Password အသစ်နှင့် Confirm Password မတူညီပါ။", "danger")
+        flash(translate("cp_mismatch"), "danger")
         return redirect(url_for("student.profile"))
 
     update_password(session["user_id"], generate_password_hash(new_password))
-    flash("Password ကို အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ။", "success")
+    flash(translate("cp_success"), "success")
     return redirect(url_for("student.profile"))
+
+# ============================================================
+# LANGUAGE AND LIBRARY RULES
+# ============================================================
+@student_bp.route("/language/<language>")
+@login_required
+@library_user_required
+def set_language(language):
+    if language not in SUPPORTED_LANGUAGES:
+        flash("Unsupported language.", "warning")
+        return redirect(request.referrer or url_for("student.dashboard"))
+    session["language"] = language
+    return redirect(request.referrer or url_for("student.dashboard"))
+
+
+@student_bp.route("/rules")
+@login_required
+@library_user_required
+def library_rules():
+    return render_template("user/rules.html")
+
 
 # ============================================================
 # NOTIFICATIONS
@@ -394,8 +485,94 @@ def notification_read(notif_id):
 @login_required
 @library_user_required
 def recommendations():
-    recommended = get_recommendations(session["user_id"], top_n=12)
-    return render_template("user/recommendations.html", books=recommended)
+    user_id = session["user_id"]
+    # The existing TF-IDF + cosine similarity engine is used as-is.
+    recommended = get_recommendations(user_id, top_n=8)
+
+    # Honest cold-start detection: the engine already falls back to popular
+    # books when the user has no read/download/bookmark activity. We label it
+    # so the UI never presents generic books as "Recommended for You".
+    cold_start = bool(not _user_has_activity(user_id) or not recommended)
+
+    # "Because You Read..." — only shown when real read_history data exists.
+    because_you_read = _books_because_you_read(user_id, limit=8)
+
+    # Recently Added — real books ordered by upload date.
+    recently_added = _recently_added_books(limit=8)
+
+    # Popular / Most Borrowed — real borrow activity from the library.
+    most_borrowed = get_most_borrowed_books(limit=8)
+    return render_template(
+        "user/recommendations.html",
+        books=recommended,
+        cold_start=cold_start,
+        because_you_read=because_you_read,
+        recently_added=recently_added,
+        most_borrowed=most_borrowed,
+    )
+
+
+def _user_has_activity(user_id):
+    """Real reading / bookmark activity exists for this user."""
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT user_id FROM ("
+        " SELECT user_id FROM read_history WHERE user_id = %s"
+        " UNION ALL"
+        " SELECT user_id FROM bookmarks WHERE user_id = %s"
+        ") t LIMIT 1",
+        (user_id, user_id),
+    )
+    has = bool(cur.fetchone())
+    cur.close()
+    return has
+
+
+def _books_because_you_read(user_id, limit=8):
+    """Book records for the user's real read_history entries (freshest first)."""
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT rh.book_id FROM read_history rh "
+        "WHERE rh.user_id = %s "
+        "GROUP BY rh.book_id ORDER BY MAX(rh.read_date) DESC LIMIT %s",
+        (user_id, limit),
+    )
+    ids = [row["book_id"] for row in cur.fetchall()]
+    if not ids:
+        cur.close()
+        return []
+    placeholders = ",".join("%s" for _ in ids)
+    cur.execute(
+        f"SELECT b.book_id, b.title, b.cover_image, b.author_name, "
+        f"COALESCE(c.category_name,'') AS category_name, b.resource_type "
+        f"FROM books b "
+        f"LEFT JOIN categories c ON b.category_id = c.category_id "
+        f"WHERE b.book_id IN ({placeholders}) AND COALESCE(b.is_archived, 0) = 0",
+        ids,
+    )
+    rows = cur.fetchall()
+    cur.close()
+    return rows
+
+
+def _recently_added_books(limit=8):
+    """Most recently uploaded books (real data)."""
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT b.book_id, b.title, b.cover_image, "
+        "COALESCE(a.author_name,'') AS author_name, "
+        "COALESCE(c.category_name,'') AS category_name, "
+        "b.resource_type "
+        "FROM books b "
+        "LEFT JOIN authors a ON b.author_id = a.author_id "
+        "LEFT JOIN categories c ON b.category_id = c.category_id "
+        "WHERE COALESCE(b.is_archived, 0) = 0 "
+        "ORDER BY b.upload_date DESC LIMIT %s",
+        (limit,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    return rows
 
 
 # ============================================================
@@ -416,6 +593,12 @@ def borrow_request(book_id):
     elif result == "duplicate":
         flash("ဤစာအုပ်ကို ငှားယူရန် တောင်းဆိုထားပြီး (သို့မဟုတ်) လက်ဝယ်ရှိနေပြီး ဖြစ်ပါသည်။", "warning")
     else:
+        book = get_book_by_id(book_id)
+        notify_borrow_request_submitted(
+            session["user_id"],
+            book["title"] if book else str(book_id),
+            result,
+        )
         flash("Borrow Request ပေးပို့ပြီးပါပြီ။ Admin Approve ပြုလုပ်ရန် စောင့်ပါ။", "success")
     return redirect(url_for("student.book_details", book_id=book_id))
 
@@ -428,8 +611,32 @@ def borrow_request(book_id):
 @library_user_required
 def borrow_history():
     from datetime import datetime
+    mark_overdue_records()
     history = get_student_borrow_history(session["user_id"])
     return render_template("user/borrow_history.html", history=history, now=datetime.now())
+
+
+@student_bp.route("/fines")
+@login_required
+@library_user_required
+def fines():
+    status_filter = request.args.get("status")
+    mark_overdue_records()
+    user_id = session["user_id"]
+    all_fine_rows = get_student_fines(user_id)
+    fine_rows = get_student_fines(user_id, status_filter)
+    history = get_student_borrow_history(user_id)
+    summary = {
+        "finalized_total": sum(float(row.get("amount") or 0) for row in all_fine_rows),
+        "finalized_unpaid": sum(float(row.get("amount") or 0) for row in all_fine_rows if not row.get("is_paid")),
+        "finalized_paid": sum(float(row.get("amount") or 0) for row in all_fine_rows if row.get("is_paid")),
+        "estimated_overdue": sum(
+            float(row.get("estimated_fine") or 0)
+            for row in history
+            if row.get("status") in ("borrowed", "overdue")
+        ),
+    }
+    return render_template("user/fines.html", fines=fine_rows, summary=summary, status_filter=status_filter)
 
 # ============================================================
 # CLEARANCE / NO-DUES
@@ -451,18 +658,74 @@ def clearance():
 @library_user_required
 def reading_history():
     read_hist = get_read_history(session["user_id"])
-    download_hist = get_download_history(session["user_id"])
     return render_template(
-        "user/history.html", read_history=read_hist, download_history=download_hist
+        "user/history.html", read_history=read_hist
     )
 
 
 # ============================================================
-# DOWNLOADS (Download History)
+# ANNOUNCEMENTS — list page + detail view
+# Reuses the real announcements table via report_model (no mock data).
 # ============================================================
-@student_bp.route("/downloads")
+@student_bp.route("/announcements")
 @login_required
 @library_user_required
-def downloads():
-    download_hist = get_download_history(session["user_id"])
-    return render_template("user/downloads.html", download_history=download_hist)
+def announcements():
+    search = request.args.get("search", "").strip() or None
+    all_ann = get_all_announcements(search=search)
+    return render_template(
+        "user/announcements.html", announcements=all_ann, search=search
+    )
+
+
+@student_bp.route("/announcements/<int:ann_id>")
+@login_required
+@library_user_required
+def announcement_detail(ann_id):
+    # Reuse the same model helper the admin panel uses for the detail lookup.
+    ann = get_announcement_by_id(ann_id)
+    if not ann:
+        abort(404)
+    return render_template("user/announcement_detail.html", ann=ann)
+
+
+# ============================================================
+# MY LIBRARY — user-centric hub (Bookmarks / Continue Reading /
+# Borrowed / History). Pure read-only aggregation of real data;
+# every row comes from the existing bookmarks, read_history
+# and borrow_requests tables (no mock data).
+# ============================================================
+@student_bp.route("/my-library")
+@login_required
+@library_user_required
+def my_library():
+    user_id = session["user_id"]
+    tab = (request.args.get("tab") or "").strip().lower() or "bookmarks"
+    if tab not in ("bookmarks", "continue", "borrowed", "history"):
+        tab = "bookmarks"
+
+    # Bookmarks — real user bookmarks with full book details
+    bookmarks = get_user_bookmarks(user_id)
+
+    # Continue Reading — real recent reads only.
+    # NOTE: read_history has no page/percentage progress columns,
+    # so we show only the last-read timestamp (no invented progress).
+    recently_read = get_read_history(user_id, limit=12)
+
+    # Borrowed — real borrow records with real statuses and due dates
+    mark_overdue_records()  # refresh statuses against real due dates
+    borrows = get_student_borrow_history(user_id)
+    active_borrows = [b for b in borrows if b.get("status") in ("pending", "approved", "borrowed", "overdue")]
+
+    # History — real read activity rows
+    read_hist = get_read_history(user_id, limit=30)
+
+    return render_template(
+        "user/my_library.html",
+        tab=tab,
+        bookmarks=bookmarks,
+        recently_read=recently_read,
+        borrows=borrows,
+        active_borrows=active_borrows,
+        read_history=read_hist,
+    )

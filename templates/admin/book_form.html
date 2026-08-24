@@ -1,109 +1,172 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}{{ 'Edit' if book else 'Add' }} Book{% endblock %}
-
+{% block title %}{{ t('edit_book') if book else t('add_book') }}{% endblock %}
 {% block admin_content %}
-<h4><i class="bi bi-book"></i> {{ 'Edit' if book else 'Add New' }} Book</h4>
-<div class="card shadow-sm mt-3">
-    <div class="card-body p-4">
-        <form method="POST"
-              action="{{ url_for('admin.book_edit', book_id=book.book_id) if book else url_for('admin.book_add') }}"
-              enctype="multipart/form-data">
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control" value="{{ book.title if book else '' }}" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">ISBN</label>
-                            <input type="text" name="isbn" class="form-control" value="{{ book.isbn if book else '' }}" placeholder="e.g. 978-3-16-148410-0">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Author Name</label>
-                            <input type="text" name="author_name" class="form-control" value="{{ book.author_name if book else '' }}" placeholder="e.g. Dr. Aung Kyaw">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category_id" class="form-select">
-                                <option value="">— None —</option>
-                                {% for c in categories %}
-                                    <option value="{{ c.category_id }}" {% if book and book.category_id==c.category_id %}selected{% endif %}>{{ c.category_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Faculty</label>
-                            <select name="faculty_id" class="form-select">
-                                <option value="">— None —</option>
-                                {% for f in faculties %}
-                                    <option value="{{ f.faculty_id }}" {% if book and book.faculty_id==f.faculty_id %}selected{% endif %}>{{ f.faculty_name }} ({{ f.department }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Resource Type</label>
-                            <select name="resource_type" class="form-select">
-                                {% for t in ['book','ebook','thesis','journal','research_paper','reference_book','teachers_guide'] %}
-                                    <option value="{{ t }}" {% if book and book.resource_type==t %}selected{% endif %}>{{ t|replace('_',' ')|title }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Publish Date</label>
-                            <input type="date" name="publish_date" class="form-control" value="{{ book.publish_date if book else '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Total Copies (Physical)</label>
-                            <input type="number" name="total_copies" class="form-control" value="{{ book.total_copies if book else 0 }}" min="0">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="4">{{ book.description if book else '' }}</textarea>
-                    </div>
-                </div>
+<div class="admin-page-heading"><div><span class="admin-eyebrow">{{ t('library') }}</span><h1>{{ t('edit_book') if book else t('add_book') }}</h1><p>{{ t('manage_inventory') }}</p></div><a href="{{ url_for('admin.books') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>{{ t('books') }}</a></div>
 
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label class="form-label">PDF File {% if not book %}<span class="text-danger">*</span>{% endif %}</label>
-                        {% if book and book.pdf_file %}
-                            <p class="small text-success"><i class="bi bi-file-pdf"></i> {{ book.pdf_file }}</p>
-                        {% endif %}
-                        <input type="file" name="pdf_file" class="form-control" accept=".pdf" {% if not book %}required{% endif %}>
-                        {% if book %}<small class="text-muted">File အသစ်ရွေးမှသာ Replace ဖြစ်မည်</small>{% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Cover Image</label>
-                        {% if book and book.cover_image %}
-                            <div class="mb-2">
-                                <img src="{{ url_for('static', filename='uploads/covers/'+book.cover_image) }}" style="height:100px;" class="rounded border">
-                            </div>
-                        {% endif %}
-                        <input type="file" name="cover_image" class="form-control" accept="image/*">
-                    </div>
-                    {% if book and book.qr_code %}
-                    <div class="mb-3">
-                        <label class="form-label">QR Code (Auto-generated)</label>
-                        <img src="{{ url_for('static', filename='uploads/qrcodes/'+book.qr_code) }}" style="width:120px;" class="d-block border rounded p-1">
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+<form method="POST" action="{{ url_for('admin.book_edit', book_id=book.book_id) if book else url_for('admin.book_add') }}" enctype="multipart/form-data" novalidate>
+<div class="row g-4">
+  <div class="col-lg-8">
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-library">
-                    <i class="bi bi-save"></i> {{ 'Update Book' if book else 'Add Book (QR auto-generate)' }}
-                </button>
-                <a href="{{ url_for('admin.books') }}" class="btn btn-outline-secondary">Cancel</a>
+    {# ---------- Section 1 — Book Information ---------- #}
+    <section class="admin-panel mb-4">
+      <div class="admin-panel-head"><div><h2><i class="bi bi-info-circle me-2 text-primary"></i>{{ t('book_information') }}</h2><p>{{ t('book_information_hint') }}</p></div></div>
+      <div class="admin-form-grid">
+        <div class="admin-form-field admin-form-field-wide"><label for="bookTitle">{{ t('title') }} <span class="text-danger">*</span></label><input id="bookTitle" type="text" name="title" class="form-control" value="{{ book.title if book else '' }}" required></div>
+        <div class="admin-form-field"><label for="bookIsbn">ISBN</label><input id="bookIsbn" type="text" name="isbn" class="form-control" value="{{ book.isbn if book else '' }}" placeholder="978-..."></div>
+        <div class="admin-form-field"><label for="bookAuthor">{{ t('author') }}</label><input id="bookAuthor" type="text" name="author_name" class="form-control" value="{{ book.author_name if book else '' }}"></div>
+        <div class="admin-form-field"><label for="bookFaculty">{{ t('department') }}</label>
+          <select id="bookFaculty" name="faculty_id" class="form-select" data-categories='{{ categories|tojson }}'>
+            <option value="">{{ t('all') }}</option>
+            {% for f in faculties %}
+            <option value="{{ f.faculty_id }}" data-dept="{{ f.department or '' }}" {% if book and book.faculty_id == f.faculty_id %}selected{% endif %}>{{ f.faculty_name }}{% if f.department %} · {{ f.department }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted" id="facultyDeptHint">{% if book and book.department %}{{ book.department }}{% else %}{{ t('faculty_department_hint') }}{% endif %}</small>
+        </div>
+        <div class="admin-form-field"><label for="bookCategory">{{ t('category') }}</label>
+          <select id="bookCategory" name="category_id" class="form-select" data-faculty="{{ book.faculty_id if book else '' }}">
+            <option value="">{{ t('all') }}</option>
+            {% for c in categories %}
+            <option value="{{ c.category_id }}" data-cat-faculty="{{ c.faculty_id or '' }}" {% if book and book.category_id == c.category_id %}selected{% endif %}>{{ c.category_name }}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted">{{ t('category_faculty_hint') }}</small>
+        </div>
+        <div class="admin-form-field"><label for="bookType">{{ t('resource_type') }}</label>
+          <select id="bookType" name="resource_type" class="form-select">
+            {% for value in ['book','ebook','thesis','journal','research_paper','reference_book','teachers_guide'] %}
+            <option value="{{ value }}" {% if book and book.resource_type == value %}selected{% endif %}>{{ value|replace('_',' ')|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    {# ---------- Section 2 — Media & Digital Content ---------- #}
+    <section class="admin-panel mb-4">
+      <div class="admin-panel-head"><div><h2><i class="bi bi-file-earmark-media me-2 text-primary"></i>{{ t('media_and_digital') }}</h2><p>{{ t('media_and_digital_hint') }}</p></div></div>
+      <div class="admin-form-grid">
+        <div class="admin-form-field admin-form-field-wide"><label for="coverFile">{{ t('cover_image') }}</label>
+          {% if book and book.cover_image %}<img src="{{ url_for('library_file.file_cover', filename=book.cover_image) }}" class="admin-form-cover mb-2" alt="{{ book.title }}">{% endif %}
+          <input id="coverFile" type="file" name="cover_image" class="form-control" accept="image/*">
+        </div>
+        <div class="admin-form-field admin-form-field-wide">
+          <label for="pdfFile">{{ t('pdf_file') }}</label>
+          {% if book and book.pdf_file %}
+          <div class="admin-file-preview" id="currentPdfPreview"><i class="bi bi-file-earmark-pdf"></i><span>{{ book.pdf_file }}</span></div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="remove_pdf" id="removePdf" value="1">
+            <label class="form-check-label" for="removePdf">{{ t('remove_pdf') }}</label>
+          </div>
+          {% endif %}
+          <input id="pdfFile" type="file" name="pdf_file" class="form-control" accept=".pdf">
+          <small class="text-muted">{{ t('pdf_optional_hint') }}</small>
+        </div>
+      </div>
+    </section>
+
+    {# ---------- Section 3 — Availability & Book State ---------- #}
+    <section class="admin-panel">
+      <div class="admin-panel-head"><div><h2><i class="bi bi-book me-2 text-primary"></i>{{ t('availability_and_state') }}</h2><p>{{ t('availability_and_state_hint') }}</p></div></div>
+      <div class="admin-info-callout mb-3"><i class="bi bi-lightbulb"></i><div id="stateHint">{{ t('state_hint_hybrid') }}</div></div>
+      <div class="admin-form-grid">
+        <div class="admin-form-field admin-form-field-wide">
+          <label class="form-label">{{ t('book_state') }}</label>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check">
+              <input class="form-check-input state-radio" type="radio" name="is_physical" id="stateHybrid" value="1" data-pdf="on" checked {% if book and book.is_physical == 1 and book.pdf_file %}checked{% endif %}>
+              <label class="form-check-label" for="stateHybrid"><span class="badge bg-success me-1"><i class="bi bi-book"></i><i class="bi bi-file-earmark-pdf ms-1"></i></span>{{ t('state_hybrid') }}</label>
             </div>
-        </form>
+            <div class="form-check">
+              <input class="form-check-input state-radio" type="radio" name="is_physical" id="statePhysical" value="1" data-pdf="off" {% if book and book.is_physical == 1 and not book.pdf_file %}checked{% endif %}>
+              <label class="form-check-label" for="statePhysical"><span class="badge bg-primary me-1"><i class="bi bi-book"></i></span>{{ t('state_physical') }}</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input state-radio" type="radio" name="is_physical" id="stateDigital" value="0" {% if book and book.is_physical == 0 %}checked{% endif %}>
+              <label class="form-check-label" for="stateDigital"><span class="badge bg-info text-dark me-1"><i class="bi bi-file-earmark-pdf"></i></span>{{ t('state_digital') }}</label>
+            </div>
+          </div>
+        </div>
+        <div class="admin-form-field"><label for="totalCopies">{{ t('total_copies') }}</label><input id="totalCopies" type="number" name="total_copies" class="form-control" value="{{ book.total_copies if book else 0 }}" min="0"></div>
+        <div class="admin-form-field"><label for="publishDate">{{ t('published_date') }}</label><input id="publishDate" type="date" name="publish_date" class="form-control" value="{{ book.publish_date if book else '' }}"></div>
+        <div class="admin-form-field"><label for="publisher">{{ t('publisher') }}</label><input id="publisher" type="text" name="publisher" class="form-control" value="{{ book.publisher if book else '' }}"></div>
+        <div class="admin-form-field"><label for="edition">{{ t('edition') }}</label><input id="edition" type="text" name="edition" class="form-control" value="{{ book.edition if book else '' }}"></div>
+        <div class="admin-form-field"><label for="publicationYear">{{ t('publication_year') }}</label><input id="publicationYear" type="number" name="publication_year" class="form-control" min="1000" max="2100" value="{{ book.publication_year if book else '' }}"></div>
+        <div class="admin-form-field admin-form-field-wide"><label for="bookDescription">{{ t('description') }}</label><textarea id="bookDescription" name="description" class="form-control" rows="4">{{ book.description if book else '' }}</textarea></div>
+        <div class="admin-form-field admin-form-field-wide">
+          <details class="admin-advanced-details">
+            <summary class="admin-advanced-summary">{{ t('state_guide_help') }}</summary>
+            <div class="admin-advanced-body p-3">
+              <p class="mb-2" style="font-size:.8rem;color:var(--admin-muted)"><span class="badge bg-success me-1"><i class="bi bi-book"></i><i class="bi bi-file-earmark-pdf ms-1"></i></span> <strong>{{ t('state_hybrid') }}</strong> — {{ t('state_hybrid_desc') }}</p>
+              <p class="mb-2" style="font-size:.8rem;color:var(--admin-muted)"><span class="badge bg-primary me-1"><i class="bi bi-book"></i></span> <strong>{{ t('state_physical') }}</strong> — {{ t('state_physical_desc') }}</p>
+              <p class="mb-0" style="font-size:.8rem;color:var(--admin-muted)"><span class="badge bg-info text-dark me-1"><i class="bi bi-file-earmark-pdf"></i></span> <strong>{{ t('state_digital') }}</strong> — {{ t('state_digital_desc') }}</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <div class="admin-form-actions admin-form-actions-bottom">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>{{ t('save') }}</button>
+      <a href="{{ url_for('admin.books') }}" class="btn btn-outline-secondary">{{ t('cancel') }}</a>
     </div>
+  </div>
 </div>
+</form>
+
+<script>
+(function () {
+  'use strict';
+  var HINTS = {{ state_hints|tojson }};
+  var stateHint = document.getElementById('stateHint');
+  var pdfField = document.getElementById('pdfFile');
+  var radios = Array.prototype.slice.call(document.querySelectorAll('.state-radio'));
+
+  var selectedPdf = radios.some(function (r) { return r.checked && r.getAttribute('data-pdf') === 'on'; });
+  radios.forEach(function (r) { r.addEventListener('change', function () { selectedPdf = r.getAttribute('data-pdf') === 'on'; }); });
+  function updateStateHint() {
+    var physical = radios.some(function (r) { return r.checked && r.value === '1'; });
+    var hasPdf = selectedPdf || (pdfField.files && pdfField.files.length > 0) || {% if book and book.pdf_file %}true{% else %}false{% endif %};
+    if (physical && hasPdf) { stateHint.textContent = HINTS.hybrid; }
+    else if (physical) { stateHint.textContent = HINTS.physical; }
+    else if (hasPdf) { stateHint.textContent = HINTS.digital; }
+    else { stateHint.textContent = HINTS.invalid; }
+  }
+  radios.forEach(function (r) { r.addEventListener('change', updateStateHint); });
+  if (pdfField) { pdfField.addEventListener('change', updateStateHint); updateStateHint(); }
+
+  // Department → Category dependent dropdown: only categories linked to the
+  // selected department (or unlinked categories, valid for every department)
+  var facultySel = document.getElementById('bookFaculty');
+  var categorySel = document.getElementById('bookCategory');
+  var deptHint = document.getElementById('facultyDeptHint');
+  var currentFaculty = categorySel.getAttribute('data-faculty') || '';
+  if (currentFaculty) { facultySel.value = currentFaculty; }
+  if (currentFaculty && !facultySel.value) { facultySel.value = ''; }
+
+  function filterCategories() {
+    var fid = facultySel.value;
+    var options = Array.prototype.slice.call(categorySel.options);
+    var selectedCat = {% if book %}'{{ book.category_id }}'{% else %}''{% endif %};
+    var kept = 0;
+    options.forEach(function (opt) {
+      if (!opt.value) { opt.hidden = false; return; }
+      var catFaculty = opt.getAttribute('data-cat-faculty') || '';
+      var keep = (catFaculty === '' || catFaculty === fid);
+      opt.hidden = !keep;
+      if (keep) { kept += 1; if (catFaculty === fid) { opt.selected = (String(opt.value) === String(selectedCat)); } }
+    });
+    if (!optSelected(categorySel)) { categorySel.value = ''; }
+    var fac = facultySel.options[facultySel.selectedIndex];
+    if (fac && fac.value) {
+      var dept = fac.getAttribute('data-dept') || '';
+      deptHint.textContent = dept ? dept : {{ no_department|tojson }};
+    } else {
+      deptHint.textContent = {{ all_departments|tojson }};
+    }
+  }
+  function optSelected(sel) { return Array.prototype.some.call(sel.options, function (o) { return o.selected && !o.hidden; }); }
+  if (facultySel && categorySel) { facultySel.addEventListener('change', filterCategories); filterCategories(); }
+})();
+</script>
 {% endblock %}

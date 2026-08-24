@@ -1,186 +1,30 @@
 {% extends "base.html" %}
-{% from "user/book_card.html" import book_card %}
-{% block title %}Search Books{% endblock %}
-
+{% from "user/book_card.html" import book_card with context %}
+{% block title %}{{ t('search_books') }}{% endblock %}
 {% block content %}
-<div class="py-4">
-    <!-- Search Header Section -->
-    <div class="search-section mb-5">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h2 class="mb-3">
-                    <i class="bi bi-search me-2"></i>Search Library
-                </h2>
-                <p class="mb-0 opacity-85">
-                    Find books by title, author, ISBN, category, or keyword
-                </p>
-            </div>
-        </div>
-
-        <!-- Main Search Form -->
-        <form method="GET" action="{{ url_for('student.search') }}" class="mt-4">
-            <div class="search-box">
-                <input type="text" 
-                       name="keyword" 
-                       class="form-control form-control-lg" 
-                       placeholder="Search books by title, author, ISBN, or keyword..."
-                       value="{{ keyword or '' }}"
-                       autocomplete="off">
-                <button type="submit" class="btn btn-light btn-lg fw-600">
-                    <i class="bi bi-search me-2"></i>Search
-                </button>
-            </div>
-
-            <!-- Optional Filters (Collapsible) -->
-            <div class="mt-3">
-                <button type="button" class="btn btn-link text-white p-0" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false">
-                    <i class="bi bi-funnel me-2"></i>Advanced Filters
-                </button>
-            </div>
-
-            <div class="collapse mt-3" id="advancedFilters">
-                <div class="filter-row">
-                    <div>
-                        <label class="form-label text-white small fw-600 mb-2">Category</label>
-                        <select name="category_id" class="form-select form-select-sm">
-                            <option value="">All Categories</option>
-                            {% for c in categories %}
-                                <option value="{{ c.category_id }}"
-                                    {% if selected_category|string == c.category_id|string %}selected{% endif %}>
-                                    {{ c.category_name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label text-white small fw-600 mb-2">Faculty</label>
-                        <select name="faculty_id" class="form-select form-select-sm">
-                            <option value="">All Faculties</option>
-                            {% for f in faculties %}
-                                <option value="{{ f.faculty_id }}"
-                                    {% if selected_faculty|string == f.faculty_id|string %}selected{% endif %}>
-                                    {{ f.faculty_name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label text-white small fw-600 mb-2">Resource Type</label>
-                        <select name="resource_type" class="form-select form-select-sm">
-                            <option value="">All Types</option>
-                            {% for t in ['book','ebook','thesis','journal','research_paper','reference_book','teachers_guide'] %}
-                                <option value="{{ t }}" {% if selected_type == t %}selected{% endif %}>
-                                    {{ t | replace('_',' ') | title }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-light btn-sm fw-600">
-                        <i class="bi bi-search me-1"></i>Apply Filters
-                    </button>
-                    <a href="{{ url_for('student.search') }}" class="btn btn-outline-light btn-sm fw-600 ms-2">
-                        <i class="bi bi-x-circle me-1"></i>Clear All
-                    </a>
-                </div>
-            </div>
-        </form>
+<div class="ds-dashboard ds-listing">
+  {# ══════ HERO — original PUMUB LibInfoBot card (dashboard style) ══════ #}
+  <section class="ds-hero" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-stars"></i> {{ t('explore_library') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('hero_subtitle') }}</p>
+      <form class="ds-search-bar" action="{{ url_for('student.search') }}" method="GET">
+        <label class="visually-hidden" for="ds-search">{{ t('search_placeholder') }}</label>
+        <input id="ds-search" type="search" name="q" value="{{ keyword or '' }}" placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+        <button type="submit" class="ds-search-btn" aria-label="{{ t('search_button') }}"><i class="bi bi-search"></i></button>
+      </form>
     </div>
+  </section>
 
-    <!-- Results Section -->
-    <div class="mb-4">
-        {% if books %}
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h5 class="mb-1">
-                        <i class="bi bi-book me-2"></i>
-                        <span class="badge bg-primary">{{ books|length }}</span>
-                        Result{{ 's' if books|length != 1 else '' }} Found
-                    </h5>
-                    {% if keyword %}
-                        <p class="text-muted small mb-0">
-                            Searching for: <strong>"{{ keyword }}"</strong>
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
+  {# ══════ PANNSATTLANN-STYLE TITLE ROW ══════ #}
+  <section class="ds-list-title-row">
+    <h2 class="ds-list-title">{% if keyword %}“{{ keyword }}”{% else %}{{ t('search_books') }}{% endif %}</h2>
+    <p class="ds-list-title-sub">{{ books|length }} {{ t('books_found') }}</p>
+  </section>
 
-            <!-- Book Grid -->
-            <div class="row g-4">
-                {% for book in books %}
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-                        {{ book_card(book) }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <!-- No Results State -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="mb-3">
-                        <i class="bi bi-search text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
-                    </div>
-                    <h5 class="text-muted mb-2">No Books Found</h5>
-                    <p class="text-muted mb-4">
-                        {% if keyword %}
-                            We couldn't find any books matching "<strong>{{ keyword }}</strong>".
-                        {% else %}
-                            Try searching for a book title, author name, ISBN, or keyword.
-                        {% endif %}
-                    </p>
-                    <div>
-                        <a href="{{ url_for('student.search') }}" class="btn btn-primary">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Reset Search
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Search Tips -->
-    <div class="card border-0 bg-light mt-5">
-        <div class="card-body">
-            <h6 class="card-title mb-3">
-                <i class="bi bi-lightbulb me-2"></i>Search Tips
-            </h6>
-            <div class="row">
-                <div class="col-md-6">
-                    <ul class="list-unstyled small text-muted">
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            Search by book title: <code>database</code>
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            Search by author: <code>john smith</code>
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            Search by ISBN: <code>978-3-16-148410-0</code>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <ul class="list-unstyled small text-muted">
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            Partial matching supported
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            ISBN works with or without hyphens
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success me-2"></i>
-                            Use filters for advanced search
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
+  {# ══════ PANNSATTLANN-STYLE CLEAN GRID ══════ #}
+  {% if books %}<div class="psl-grid" aria-live="polite">{% for book in books %}{{ book_card(book) }}{% endfor %}</div>
+  {% else %}<div class="user-empty"><i class="bi bi-search"></i><strong>{{ t('no_search_results') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>{% endif %}
 </div>
 {% endblock %}

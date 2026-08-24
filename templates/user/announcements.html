@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ t('announcements_page_title') }} — PUMUB LibInfoBot{% endblock %}
+{% block content %}
+<div class="ds-dashboard">
+  {# ══════ HERO — PUMUB LibInfoBot title card (schoolbg.jpg, no search bar) ══════ #}
+  <section class="ds-hero" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-megaphone-fill"></i> {{ t('announcements') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('announcements_page_sub') }}</p>
+    </div>
+  </section>
+
+  {# ══════ ANNOUNCEMENTS — centered list (no search bar) ══════ #}
+  <section class="ds-section" aria-labelledby="ann-page-heading">
+    <div class="user-section-heading" style="text-align:center; justify-content:center;">
+      <div>
+        <h1 id="ann-page-heading" class="user-section-title" style="font-size:1.55rem;">{{ t('announcements_page_title') }}</h1>
+        <p class="user-eyebrow" style="margin-top:4px; color:var(--text-muted);">{{ t('announcements_page_sub') }}</p>
+      </div>
+    </div>
+    <div class="user-ann-list user-ann-list-centered">
+      {% for ann in announcements %}
+      <a class="user-ann-card" href="{{ url_for('student.announcement_detail', ann_id=ann.announcement_id) }}">
+        <span class="user-ann-icon"><i class="bi bi-megaphone-fill"></i></span>
+        <div class="user-ann-body">
+          <div class="user-ann-head-row">
+            <h3 class="user-ann-title">{{ ann.title }}</h3>
+            <span class="user-ann-date"><i class="bi bi-calendar3"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
+          </div>
+          <p class="user-ann-preview">{{ ann.content[:220] }}{% if ann.content|length > 220 %}…{% endif %}</p>
+          <span class="user-ann-more">{{ t('read_more') }} <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
+      {% else %}
+      <div class="user-data-card" style="text-align: center; color: var(--text-muted);">
+        <i class="bi bi-megaphone" style="font-size: 2.2rem; opacity: .5;"></i>
+        <p class="mt-3">{{ t('ann_none_yet') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

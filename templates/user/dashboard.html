@@ -1,294 +1,211 @@
+{# ═══════════════════════════════════════════════════════════
+   USER DASHBOARD — v8 pannsattlann-style layout (teal palette)
+   Style-only rewrite. Data contract identical to the original:
+   name, recent_books, popular_books, recommended, faculties,
+   categories, announcements, stats, unread_count, faculty_scroll.
+   Background image: /static/images/schoolbg.jpg
+════════════════════════════════════════════════════════════ #}
 {% extends "base.html" %}
-{% block title %}My Dashboard - PUMUB Digital Library{% endblock %}
+{% block title %}{{ t('home') }}{% endblock %}
 
-{% block navbar %}{% endblock %}
-{% block footer %}{% endblock %}
+{# ── reusable cover-only tile ─────────────────────────── #}
+{% macro ds_tile(book) %}
+<a class="ds-tile" href="{{ url_for('student.book_details', book_id=book.book_id) }}" title="{{ book.title }}">
+  <span class="ds-book">
+  {% if book.cover_image %}
+    <img src="{{ url_for('library_file.file_cover', filename=book.cover_image) }}" alt="{{ book.title }}" loading="lazy">
+  {% else %}
+    <span class="ds-tile-fallback"><i class="bi bi-book"></i></span>
+  {% endif %}
+  </span>
+</a>
+{% endmacro %}
 
 {% block content %}
-<!-- ═══════════════════════════════════════════════════════════
-     HERO HEADER — School Image Background + Teal Overlay
-═══════════════════════════════════════════════════════════ -->
-<header class="psl-hero">
-    <div class="psl-hero-inner">
-        <div class="brand-row">
-            <span class="brand-emoji">📚</span>
-            <h1 class="brand-title">Lib InfoBot</h1>
-        </div>
-        <p class="brand-subtitle">Access thousands of academic resources, research papers, and textbooks from your university's official digital repository.</p>
-        <form class="psl-search-bar" action="{{ url_for('auth.login') }}" method="GET">
-            <input type="text" name="q" placeholder="Search title, author, or ISBN..." disabled>
-            <button type="button" onclick="window.location.href='{{ url_for('auth.login') }}'" aria-label="Search">
-                <i class="bi bi-search"></i>
-            </button>
-        </form>
-    </div>
-</header>
-<!-- ═══════════════════════════════════════════════════════════
-     STICKY NAVIGATION BAR (White + Teal Border)
-     Items: Home | ရွေးချယ်ရန်ဌာနများ ▼ | Announcement | Top Score | Profile Dropdown
-═══════════════════════════════════════════════════════════ -->
-<nav class="psl-navbar">
-    <div class="nav-container">
-        <a href="{{ url_for('student.dashboard') }}" class="nav-brand-link">
-            <span class="brand-emoji" style="font-size: 1.3rem;">📚</span>
-            <span class="brand-mini">Lib InfoBot</span>
-        </a>
-        <ul class="nav-links">
-            <li><a href="{{ url_for('student.dashboard') }}" class="active">Home</a></li>
-            <li>
-                <span class="nav-link-btn">ရွေးချယ်ရန်ဌာနများ <i class="bi bi-chevron-down" style="font-size: 0.7rem;"></i></span>
-                <div class="nav-dropdown">
-                    {% for faculty in faculties %}
-                    <a href="#faculty-{{ faculty.faculty_id }}">{{ faculty.faculty_name }} ({{ faculty.department }})</a>
-                    {% endfor %}
-                </div>
-            </li>
-            <li><a href="#announcement-section">Announcement</a></li>
-            <li><a href="#top-score-section">Top Score</a></li>
-        </ul>
-        <div class="nav-right">
-            <div class="profile-dropdown">
-                <div class="profile-avatar">
-                    <i class="bi bi-person-fill"></i>
-                </div>
-                <div class="profile-dropdown-menu">
-                    <div class="dropdown-header">{{ session.get('name', 'User') }}</div>
-                    <a href="{{ url_for('student.profile') }}"><i class="bi bi-person"></i> Profile</a>
-                    <a href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark"></i> Borrow History</a>
-                    <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i> Clearance</a>
-                    <a href="{{ url_for('student.notifications') }}"><i class="bi bi-bell"></i> Notifications
-                        {% if unread_count %}<span class="notif-badge">{{ unread_count }}</span>{% endif %}
-                    </a>
-                    <a href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark"></i> My Bookmarks</a>
-                    <a href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history"></i> View History</a>
-                    <a href="{{ url_for('student.downloads') }}"><i class="bi bi-download"></i> Downloads</a>
-                    <div class="divider"></div>
-                    <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</nav>
+<div class="ds-dashboard">
 
-<!-- ═══════════════════════════════════════════════════════════
-     QUICK STATS (Role-Based)
-═══════════════════════════════════════════════════════════ -->
-<div class="stats-row">
-    <div class="stat-card border-teal">
-        <div>
-            <div class="stat-label">Borrowed Books</div>
-            <div class="stat-value">{{ active_borrows_count or 0 }}</div>
-            <div class="stat-hint">Limit: {{ 5 if session.get('role') == 'teacher' else 3 }} books</div>
-        </div>
-        <div class="stat-icon"><i class="bi bi-journal-bookmark"></i></div>
+  {# ══════ HERO — school photo background (photo2 style) ══════ #}
+  <section class="ds-hero" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-stars"></i> {{ t('explore_library') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('hero_subtitle') }}</p>
+      <form class="ds-search-bar" action="{{ url_for('student.search') }}" method="GET">
+        <label class="visually-hidden" for="ds-search">{{ t('search_placeholder') }}</label>
+        <input id="ds-search" type="search" name="q" placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+        <button type="submit" class="ds-search-btn" aria-label="{{ t('search_button') }}"><i class="bi bi-search"></i></button>
+      </form>
     </div>
-    <div class="stat-card border-blue">
-        <div>
-            <div class="stat-label">Pending Requests</div>
-            <div class="stat-value">{{ pending_requests_count or 0 }}</div>
-            <div class="stat-hint">Awaiting Admin approval</div>
-        </div>
-        <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-    </div>
-    <div class="stat-card border-red">
-        <div>
-            <div class="stat-label">Overdue Books</div>
-            <div class="stat-value">{{ overdue_count or 0 }}</div>
-            <div class="stat-hint">{% if session.get('role') == 'teacher' %}30-day borrow period{% else %}1,000 MMK/day fine{% endif %}</div>
-        </div>
-        <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
-    </div>
-    <div class="stat-card border-green">
-        <div>
-            <div class="stat-label">Unread Notifications</div>
-            <div class="stat-value">{{ unread_count or 0 }}</div>
-            <a href="{{ url_for('student.notifications') }}" class="stat-hint" style="color: var(--accent-blue);">View all notifications →</a>
-        </div>
-        <div class="stat-icon"><i class="bi bi-bell"></i></div>
-    </div>
-</div>
+  </section>
 
-<!-- Teacher Privileges Banner -->
-{% if session.get('role') == 'teacher' %}
-<div class="privilege-banner">
-    <div class="inner">
-        <i class="bi bi-shield-check"></i>
-        <div>
-            <h4>Teacher Privileges Active</h4>
-            <p>As a Teacher, you can borrow up to <strong>5 books</strong> for <strong>30 days</strong> each. You also have exclusive access to Teacher's Guides and Reference materials.</p>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- ═══════════════════════════════════════════════════════════
-     MOST BORROWED BOOKS — 3D Shelf Display (5 per row, 2 rows)
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title" id="top-score-section">အငှားအများဆုံးစာအုပ်များ</h2>
-<p class="section-subtitle">Most Borrowed Books — Top Score Selection</p>
-
-<div class="book-shelf-container">
-    <div class="book-shelf">
-        <!-- Row 1: First 5 books -->
-        <div class="book-shelf-row">
-            {% for book in most_borrowed_books[:5] %}
-            <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="shelf-book">
-                <div class="book-cover-wrapper">
-                    {% if book.cover_image %}
-                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
-                    {% else %}
-                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
-                    {% endif %}
-                </div>
-                <div class="book-title">{{ book.title }}</div>
-                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="book-shelf-plank"></div>
-
-        <!-- Row 2: Next 5 books -->
-        {% if most_borrowed_books|length > 5 %}
-        <div class="book-shelf-row" style="margin-top: 25px;">
-            {% for book in most_borrowed_books[5:10] %}
-            <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="shelf-book">
-                <div class="book-cover-wrapper">
-                    {% if book.cover_image %}
-                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
-                    {% else %}
-                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
-                    {% endif %}
-                </div>
-                <div class="book-title">{{ book.title }}</div>
-                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="book-shelf-plank"></div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="section-view-more">
-    <a href="{{ url_for('student.search', sort='borrowed') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     ANNOUNCEMENT SECTION (Admin announcements)
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title" id="announcement-section">ကြေညာချက်များ</h2>
-<p class="section-subtitle">Announcement</p>
-
-<div class="announcement-grid">
-    {% for ann in announcements %}
-    <div class="announcement-card">
-        <div class="ann-date-badge"><i class="bi bi-megaphone-fill"></i></div>
-        <h4 class="ann-title">{{ ann.title }}</h4>
-        <p class="ann-body">{{ ann.content[:150] }}{% if ann.content|length > 150 %}...{% endif %}</p>
-        <span class="ann-date"><i class="bi bi-calendar3 me-1"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
-    </div>
-    {% else %}
-    <div class="announcement-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
-        <i class="bi bi-megaphone" style="font-size: 2rem; opacity: .5;"></i>
-        <p class="mt-2">No announcements yet.</p>
-    </div>
-    {% endfor %}
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     BOOK CATEGORIES — Category Cards WITH book covers (photo5 style)
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title">စာအုပ်အမျိုးအစားများ</h2>
-<p class="section-subtitle">Book Categories</p>
-
-<div class="category-grid category-grid-shelves">
-    {% for category in categories %}
-    <a href="{{ url_for('student.search', category=category.category_id) }}" class="category-card category-card-shelf">
-        <div class="cat-shelf-books">
-            {% for book in (category.get('books', []) or [])[:3] %}
-                {% if book.cover_image %}
-                    <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" alt="{{ book.title }}" class="cat-shelf-img" style="background: none;">
-                {% endif %}
-            {% endfor %}
-            {% if not category.get('books', []) %}
-            <div class="cat-shelf-empty"><i class="bi bi-book"></i></div>
-            {% endif %}
-        </div>
-        <div class="cat-name">{{ category.category_name }}</div>
-        {% if category.book_count is defined %}
-        <div class="cat-count">{{ category.book_count }} စာအုပ်</div>
-        {% endif %}
+  {# ══════ STAT CARDS ══════ #}
+  <section class="ds-stats" aria-label="{{ t('library_activity') if t('library_activity') else 'Library activity' }}">
+    <a class="ds-stat-card" href="{{ url_for('student.borrow_history') }}">
+      <span class="ds-stat-icon"><i class="bi bi-journal-bookmark"></i></span>
+      <span><small class="ds-stat-label">{{ t('active_borrows') }}</small><strong class="ds-stat-value">{{ active_borrows_count or 0 }}</strong></span>
     </a>
+    <a class="ds-stat-card" href="{{ url_for('student.borrow_history') }}">
+      <span class="ds-stat-icon"><i class="bi bi-hourglass-split"></i></span>
+      <span><small class="ds-stat-label">{{ t('pending_requests') }}</small><strong class="ds-stat-value">{{ pending_requests_count or 0 }}</strong></span>
+    </a>
+    <a class="ds-stat-card" href="{{ url_for('student.borrow_history') }}">
+      <span class="ds-stat-icon"><i class="bi bi-exclamation-circle"></i></span>
+      <span><small class="ds-stat-label">{{ t('overdue_books') }}</small><strong class="ds-stat-value">{{ overdue_count or 0 }}</strong></span>
+    </a>
+    <a class="ds-stat-card" href="{{ url_for('student.notifications') }}">
+      <span class="ds-stat-icon"><i class="bi bi-bell"></i></span>
+      <span><small class="ds-stat-label">{{ t('unread_notifications') }}</small><strong class="ds-stat-value">{{ unread_count or 0 }}</strong></span>
+    </a>
+  </section>
+
+  {# ══════ RECOMMENDED ══════ #}
+  {% if recommended %}
+  <section class="ds-section" aria-labelledby="recommended-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="recommended-heading"><i class="bi bi-magic"></i> {{ t('recommended_for_you') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-recommended" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-recommended" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-recommended">{% for book in recommended[:5] %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+    <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('student.recommendations') }}">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a></div>
+  </section>
+  {% endif %}
+
+  {# ══════ MOST BORROWED ══════ #}
+  {% if most_borrowed_books %}
+  <section class="ds-section" aria-labelledby="popular-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="popular-heading"><i class="bi bi-fire"></i> {{ t('most_borrowed') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-popular" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-popular" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-popular">{% for book in most_borrowed_books[:5] %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+    <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('student.most_borrowed') }}">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a></div>
+  </section>
+  {% endif %}
+
+  {# ══════ RECENTLY ADDED ══════ #}
+  {% if recent_books %}
+  <section class="ds-section" aria-labelledby="recent-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="recent-heading"><i class="bi bi-clock-history"></i> {{ t('recently_added') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-recent" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-recent" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-recent">{% for book in recent_books[:5] %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+    <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('student.search') }}">{{ t('view_all_books') }} <i class="bi bi-arrow-right"></i></a></div>
+  </section>
+  {% endif %}
+
+  {# ══════ FACULTY SHELVES ══════ #}
+  {% set shelf_faculties = faculties|selectattr('book_count')|list %}
+  {% if shelf_faculties %}
+  <section class="ds-section" aria-labelledby="faculties-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="faculties-heading"><i class="bi bi-mortarboard-fill"></i> {{ t('faculties_heading') }}</h2>
+    </div>
+    {% for faculty in shelf_faculties %}
+    {% if faculty.books %}
+    <div class="ds-faculty-block" id="faculty-{{ faculty.faculty_id }}">
+      <div class="ds-faculty-head">
+        <h3 class="ds-faculty-name"><i class="bi bi-bookshelf"></i> {{ faculty.faculty_name }}{% if faculty.department %} <small>({{ faculty.department }})</small>{% endif %}</h3>
+        <span class="ds-count-badge">{{ faculty.book_count }} {{ t('books_found') }}</span>
+      </div>
+      <div class="ds-shelf-container">
+        <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-faculty-{{ faculty.faculty_id }}" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+        <span class="ds-nav-arrow ds-nav-next" data-target="shelf-faculty-{{ faculty.faculty_id }}" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+        <div class="ds-shelf-row ds-row-4 ds-shelf-scroll" id="shelf-faculty-{{ faculty.faculty_id }}">{% for book in faculty.books %}{{ ds_tile(book) }}{% endfor %}</div>
+        <div class="ds-shelf-plank"></div>
+      </div>
+      <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('student.collection', kind='faculty', collection_id=faculty.faculty_id) }}">{{ t('explore_more') }} <i class="bi bi-arrow-right"></i></a></div>
+    </div>
+    {% endif %}
     {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ══════ CATEGORIES — pastel cards with fanned covers ══════ #}
+  {% if categories %}
+  <section class="ds-section" aria-labelledby="categories-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="categories-heading"><i class="bi bi-grid-fill"></i> {{ t('browse_categories') }}</h2>
+    </div>
+    <div class="ds-cat-grid">
+      {% for category in categories %}
+      <a class="ds-cat-card" style="--cat-bg: var(--ds-cat-bg-{{ loop.index0 % 4 }})" href="{{ url_for('student.collection', kind='category', collection_id=category.category_id) }}">
+        <span class="ds-cat-covers">
+          {% set catbooks = category.books or [] %}
+          {% if catbooks|length >= 2 %}<span class="ds-cat-side ds-cat-left"><img src="{{ url_for('library_file.file_cover', filename=catbooks[0].cover_image) }}" alt="" loading="lazy"></span>{% endif %}
+          {% if catbooks|length >= 1 %}<span class="ds-cat-center"><img src="{{ url_for('library_file.file_cover', filename=catbooks[0 if catbooks|length == 1 else 1].cover_image) }}" alt="{{ category.category_name }}" loading="lazy"></span>{% else %}<span class="ds-cat-center ds-cat-fallback"><i class="bi bi-journal"></i></span>{% endif %}
+          {% if catbooks|length >= 3 %}<span class="ds-cat-side ds-cat-right"><img src="{{ url_for('library_file.file_cover', filename=catbooks[2].cover_image) }}" alt="" loading="lazy"></span>{% endif %}
+        </span>
+        <span class="ds-cat-name">{{ category.category_name }}{% if category.book_count is defined %}<small>{{ category.book_count }} {{ t('books_found') }}</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══════ ANNOUNCEMENTS ══════ #}
+  {% if announcements %}
+  <section class="ds-section" aria-labelledby="announcements-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="announcements-heading"><i class="bi bi-megaphone-fill"></i> {{ t('announcements') }}</h2>
+    </div>
+    <div class="ds-ann-list">
+      {% for ann in announcements %}
+      <a class="ds-ann-card" href="{{ url_for('student.announcement_detail', ann_id=ann.announcement_id) if ann.announcement_id is defined else url_for('student.announcements') }}">
+        <span class="ds-ann-icon"><i class="bi bi-megaphone"></i></span>
+        <span class="ds-ann-body">
+          <span class="ds-ann-title">{{ ann.title }}</span>
+          <span class="ds-ann-snippet">{{ ann.content[:180] }}{% if ann.content|length > 180 %}…{% endif %}</span>
+          <span class="ds-ann-date"><i class="bi bi-calendar-event me-1"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
+        </span>
+        <span class="ds-ann-more"><i class="bi bi-chevron-right"></i></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
 </div>
+{% endblock %}
 
-<!-- ═══════════════════════════════════════════════════════════
-     FACULTY BOOK SHELVES — 4 books per row per faculty
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title">ဌာနအလိုက် စာအုပ်စဉ်များ</h2>
-<p class="section-subtitle">Faculty Book Shelves</p>
-
-{% for faculty in faculties %}
-<div class="book-shelf-container" id="faculty-{{ faculty.faculty_id }}">
-    <h3 class="faculty-shelf-title">{{ faculty.faculty_name }} ({{ faculty.department }})</h3>
-    <p style="font-size: 0.8rem; color: var(--text-muted); padding: 0 20px; margin-bottom: 15px;">{{ faculty.department or '' }} Books - Selection</p>
-    
-    <div class="book-grid">
-        {% for book in faculty.books[:4] %}
-        <a href="{{ url_for('student.book_details', book_id=book.book_id) }}" class="book-grid-item">
-            {% if book.cover_image %}
-                <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="cover-img" alt="{{ book.title }}">
-            {% else %}
-                <div class="cover-img" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%); display: flex; align-items: center; justify-content: center; height: 250px;">
-                    <i class="bi bi-journal" style="font-size: 2rem; color: #fff;"></i>
-                </div>
-            {% endif %}
-            <div class="book-info">
-                <div class="title">{{ book.title }}</div>
-                <div class="author">{{ book.author_name or '—' }}</div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    
-    <div class="section-view-more">
-        <a href="{{ url_for('student.search', faculty=faculty.faculty_id) }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-    </div>
-</div>
-{% endfor %}
-
-<div class="section-view-more">
-    <a href="{{ url_for('student.search') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     FOOTER (TEAL)
-═══════════════════════════════════════════════════════════ -->
-<footer class="psl-footer">
-    <div class="footer-grid">
-        <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="{{ url_for('student.search') }}">Browse All Books</a>
-            <a href="{{ url_for('student.borrow_history') }}">My Borrowings</a>
-            <a href="{{ url_for('student.bookmarks') }}">My Bookmarks</a>
-            <a href="{{ url_for('student.clearance') }}">Library Clearance</a>
-        </div>
-        <div class="footer-col">
-            <h4>Resources</h4>
-            <a href="{{ url_for('student.search', resource_type='textbook') }}">Textbooks</a>
-            <a href="{{ url_for('student.search', resource_type='reference_book') }}">Reference Books</a>
-            <a href="{{ url_for('student.search', resource_type='journal') }}">Journals</a>
-            <a href="{{ url_for('student.search', resource_type='thesis') }}">Thesis Papers</a>
-        </div>
-        <div class="footer-col">
-            <h4>Contact Us</h4>
-            <p><i class="bi bi-geo-alt me-2"></i>Polytechnic University (Maubin)<br>Maubin, Ayeyarwady Region, Myanmar</p>
-            <p><i class="bi bi-telephone me-2"></i>+95 45 30123</p>
-            <p><i class="bi bi-envelope me-2"></i>library@pumub.edu.mm</p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        &copy; 2026 PUMUB Digital Library. All rights reserved.
-    </div>
-</footer>
+{% block extra_scripts %}
+<script>
+(function(){
+  function scrollRow(el, dir){
+    if(!el) return;
+    var tile = el.querySelector('.ds-tile');
+    if(!tile) return;
+    var step = tile.offsetWidth + 20;
+    el.scrollBy({left: dir * step, behavior:'smooth'});
+  }
+  document.querySelectorAll('.ds-nav-arrow').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      scrollRow(el, btn.classList.contains('ds-nav-prev') ? -1 : 1);
+    });
+  });
+})();
+</script>
+{% if faculty_scroll %}<script>
+(function(){
+  var id='faculty-{{ faculty_scroll }}';
+  window.addEventListener('load',function(){
+    var el=document.getElementById(id);
+    if(el){window.setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},250);}
+  });
+})();
+</script>{% endif %}
 {% endblock %}

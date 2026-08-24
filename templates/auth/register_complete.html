@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="{{ 'my' if (lang or 'my') == 'my' else 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ t('complete_title') }} — PUMUB LibInfoBot</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Step 4 completion — uses the shared .auth-* visual system in
+       style.css (Phase 4). Presentation only. */
+    .complete-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, #10B981, #059669);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.1rem;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
+      animation: auth-pop .5s ease-out both;
+    }
+    .complete-icon i { font-size: 2.1rem; color: #fff; }
+    @keyframes auth-pop {
+      from { transform: scale(.4); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .auth-head-complete {
+      text-align: center;
+      background: transparent;
+      border: none;
+      padding: 1.6rem 1.4rem .8rem;
+    }
+    .auth-head-complete h3 { color: #0F172A; font-size: 1.45rem; font-weight: 800; }
+    .auth-head-complete p { color: #64748B; font-size: .92rem; }
+  </style>
+</head>
+<body class="auth-page">
+
+  <!-- Top row: brand + language -->
+  <div class="auth-navrow">
+    <a href="{{ url_for('home') }}" class="auth-brand">
+      <span class="auth-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span>
+        <span class="auth-brand-name">{{ t('auth_brand_name') }}</span>
+        <span class="auth-brand-sub">{{ t('auth_brand_sub') }}</span>
+      </span>
+    </a>
+    <div class="auth-lang" role="group" aria-label="{{ t('lang_title') }}">
+      <a href="{{ url_for('auth.set_language', language='my', redirect='/auth/register/complete') }}" {% if lang == 'my' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_my') }}</a>
+      <span class="auth-lang-sep" aria-hidden="true">|</span>
+      <a href="{{ url_for('auth.set_language', language='en', redirect='/auth/register/complete') }}" {% if lang == 'en' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_en') }}</a>
+    </div>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="auth-alert auth-alert-{{ cat }} alert-dismissible" role="alert">
+            <i class="bi {{ 'bi-check-circle' if cat == 'success' else ('bi-info-circle' if cat == 'info' else 'bi-exclamation-circle') }}"></i>
+            <span>{{ msg }}</span>
+            <button type="button" class="auth-alert-close" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Header (4-step stepper: all done, step 4 complete) -->
+      <div class="auth-head-complete">
+        <div class="complete-icon" aria-hidden="true"><i class="bi bi-check-lg"></i></div>
+        <span class="auth-head-step" style="color:#64748B;"><i class="bi bi-flag-checkered"></i> {{ t('register_step_badge') }} 04 / 04</span>
+        <div class="auth-progress mt-3" style="justify-content:center;">
+          <span class="auth-dot is-done" aria-label="{{ t('register_step1_progress') }}"></span>
+          <span class="auth-dotline is-done"></span>
+          <span class="auth-dot is-done" aria-label="{{ t('register_step2_progress') }}"></span>
+          <span class="auth-dotline is-done"></span>
+          <span class="auth-dot is-done" aria-label="{{ t('register_step3_progress') }}"></span>
+          <span class="auth-dotline is-done"></span>
+          <span class="auth-dot is-current" aria-label="{{ t('register_step4_progress') }}"></span>
+        </div>
+        <h3 style="margin-top:.9rem;">{{ t('complete_title') }}</h3>
+        <p>{{ t('complete_desc') }}</p>
+      </div>
+
+      <!-- Body -->
+      <div class="auth-body" style="padding-top:0;">
+        <div class="auth-verified" style="margin-bottom:1.2rem;">
+          <div class="auth-verified-band" style="color:#059669; border-color:#BBF7D0; background:#F0FDF4;">
+            <i class="bi bi-shield-check"></i> {{ t('register_verified_band') }}
+          </div>
+          <div class="auth-verified-note" style="border:none; padding:.6rem 0 0;">
+            <i class="bi bi-lock me-1"></i> {{ t('register_verified_note') }}
+          </div>
+        </div>
+
+        <a href="{{ url_for('auth.login') }}" class="btn auth-btn w-100 mb-3">
+          <i class="bi bi-box-arrow-in-right"></i> {{ t('complete_go_signin') }}
+        </a>
+
+        <div class="text-center mb-2">
+          <a href="{{ url_for('auth.register') }}" class="auth-backstep">
+            <i class="bi bi-arrow-left"></i> {{ t('complete_back_register') }}
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="auth-foot">
+        <span class="text-muted">{{ t('auth_have_account') }} </span>
+        <a href="{{ url_for('auth.login') }}">{{ t('auth_login_here') }}</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

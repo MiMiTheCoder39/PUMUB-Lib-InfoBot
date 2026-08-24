@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page_not_found') }}{% endblock %}
+{% block content %}
+<div class="user-page">
+  <div class="user-empty" style="padding:60px 24px">
+    <i class="bi bi-exclamation-octagon"></i>
+    <strong>{{ t('page_not_found') }}</strong>
+    <p>{{ t('page_not_found_help') }}</p>
+    <a class="user-btn user-btn-primary" href="{{ url_for('student.dashboard') if session.get('user_id') and session.get('role') != 'admin' else url_for('home') }}"><i class="bi bi-house"></i>{{ t('home') }}</a>
+    <a class="user-btn user-btn-soft" href="{{ url_for('student.search') }}"><i class="bi bi-search"></i>{{ t('search_books') }}</a>
+  </div>
+</div>
+{% endblock %}

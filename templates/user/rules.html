@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ t('rules') }}{% endblock %}
+{% block content %}
+<div class="container py-5 rules-page">
+  <div class="rules-hero mb-4">
+    <span class="eyebrow"><i class="bi bi-shield-check me-1"></i>{{ t('rules') }}</span>
+    <h1 class="mt-2">{{ t('rules') }}</h1>
+    <p class="lead mb-0">{{ t('rules_intro') }}</p>
+  </div>
+
+  <div class="rules-official-note mb-4">
+    <i class="bi bi-building-check"></i>
+    <div><strong>{{ t('rules_official_source_title') }}</strong><span>{{ t('rules_official_source_body') }}</span></div>
+  </div>
+
+  {% set rule_sections = [
+    ('rules_hours_title', ['rules_hours_weekdays', 'rules_hours_closed'], 'bi-clock'),
+    ('rules_access_title', ['rules_access_university', 'rules_access_external'], 'bi-people'),
+    ('rules_membership_title', ['rules_membership_teacher', 'rules_membership_staff', 'rules_membership_student'], 'bi-person-vcard'),
+    ('rules_reading_room_title', ['rules_reading_room_silence', 'rules_reading_room_phone', 'rules_reading_room_food', 'rules_reading_room_seating', 'rules_reading_room_materials'], 'bi-person-workspace'),
+    ('rules_borrowing_rights_title', ['rules_borrowing_student', 'rules_borrowing_teacher', 'rules_borrowing_duration', 'rules_return_self', 'rules_return_display'], 'bi-journal-bookmark'),
+    ('rules_restricted_title', ['rules_restricted_materials'], 'bi-book-lock'),
+    ('rules_conduct_title', ['rules_conduct_damage', 'rules_conduct_copy', 'rules_conduct_reshelve'], 'bi-shield-exclamation'),
+    ('rules_fine_title', ['rules_fine_amount', 'rules_fine_teacher'], 'bi-cash-coin')
+  ] %}
+
+  <div class="row g-4">
+    {% for title_key, item_keys, icon in rule_sections %}
+    <div class="col-12 col-md-6">
+      <article class="card h-100 border-0 shadow-sm rules-card">
+        <div class="card-body p-4">
+          <div class="rules-icon"><i class="bi {{ icon }}"></i></div>
+          <h2 class="h5 mt-3">{{ t(title_key) }}</h2>
+          <ul class="rules-list text-muted mb-0">
+            {% for item_key in item_keys %}<li>{{ t(item_key) }}</li>{% endfor %}
+          </ul>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .rules-official-note{display:flex;align-items:flex-start;gap:12px;padding:14px 17px;border:1px solid #cbe4e4;border-radius:14px;background:#eef9f9;color:#075457}
+  .rules-official-note>i{font-size:1.25rem;margin-top:2px}.rules-official-note strong,.rules-official-note span{display:block}.rules-official-note strong{font-size:.86rem}.rules-official-note span{margin-top:3px;color:#526568;font-size:.78rem;line-height:1.6}
+  .rules-list{padding-left:1.15rem;font-size:.83rem;line-height:1.75}.rules-list li{margin-bottom:.45rem}.rules-list li:last-child{margin-bottom:0}
+</style>
+{% endblock %}

@@ -1,30 +1,130 @@
+{# ═══════════════════════════════════════════════════════════
+   RECOMMENDATIONS PAGE — v18
+   Hero: PUMUB LibInfoBot title card (librarybg.jpg background)
+   Sections below: pannsattlann-style 3D shelves with title rows
+═══════════════════════════════════════════════════════════ #}
 {% extends "base.html" %}
-{% from "user/book_card.html" import book_card %}
-{% block title %}Recommended Books{% endblock %}
+{% block title %}{{ t('recommended_for_you') }}{% endblock %}
+
+{# ── Reusable cover-only tile (same as dashboard v10) ── #}
+{% macro ds_tile(book) %}
+<a class="ds-tile" href="{{ url_for('student.book_details', book_id=book.book_id) }}" title="{{ book.title }}">
+  <span class="ds-book">
+  {% if book.cover_image %}
+    <img src="{{ url_for('library_file.file_cover', filename=book.cover_image) }}" alt="{{ book.title }}" loading="lazy">
+  {% else %}
+    <span class="ds-tile-fallback"><i class="bi bi-book"></i></span>
+  {% endif %}
+  </span>
+</a>
+{% endmacro %}
 
 {% block content %}
-<div class="py-4">
-    <h3><i class="bi bi-stars text-warning"></i> Recommended For You</h3>
-    <p class="text-muted">
-        သင်ဖတ်ဖူးသော၊ Download လုပ်ဖူးသော၊ Bookmark လုပ်ထားသော Books များကို
-        အခြေခံ၍ AI Recommendation System မှ တင်ဆက်ပေးသည်။
-    </p>
+<div class="ds-dashboard">
+  {# ══════ HERO — library photo background (PUMUB LibInfoBot card) ══════ #}
+  <section class="ds-hero ds-hero-library" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-stars"></i> {{ t('explore_library') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('recommendation_intro') }}</p>
+      <form class="ds-search-bar" action="{{ url_for('student.search') }}" method="GET">
+        <label class="visually-hidden" for="ds-search">{{ t('search_placeholder') }}</label>
+        <input id="ds-search" type="search" name="q" placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+        <button type="submit" class="ds-search-btn" aria-label="{{ t('search_button') }}"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+  </section>
 
-    {% if books %}
-        <div class="row">
-            {% for book in books %}
-                {{ book_card(book) }}
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info text-center py-5">
-            <i class="bi bi-robot" style="font-size:3rem; opacity:0.4;"></i>
-            <p class="mt-3">Recommendation ပြရန် Book တချို့ ဖတ်ကြည့်ပါ သို့မဟုတ် Download လုပ်ကြည့်ပါ။<br>
-            Recommendation System သည် သင့် Reading History ကို အခြေခံပါသည်။</p>
-            <a href="{{ url_for('student.search') }}" class="btn btn-library">
-                <i class="bi bi-search"></i> Browse Books
-            </a>
-        </div>
-    {% endif %}
+  {# ── Recommended for You (engine) or honest cold-start discovery ───────── #}
+  {% if cold_start %}
+  <section class="ds-section">
+    <div class="user-faculty-shelf user-cold-start">
+      <i class="bi bi-compass-fill user-cold-start-icon"></i>
+      <h2 class="h4 mt-3 mb-2">{{ t('rec_cold_start_title') }}</h2>
+      <p class="text-muted mb-3">{{ t('rec_cold_start_body') }}</p>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.dashboard') }}">{{ t('rec_cold_start_explore') }}</a>
+    </div>
+  </section>
+  {% else %}
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title"><i class="bi bi-heart-fill"></i> {{ t('recommended_for_you') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-recommended" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-recommended" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-recommended">{% for book in books %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Because You Read... (only when real reading history exists) ───────── #}
+  {% if because_you_read %}
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title"><i class="bi bi-bookmark-star-fill"></i> {{ t('rec_because_you_read') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-because" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-because" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-because">{% for book in because_you_read %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Trending in the Library ───────────────────────── #}
+  {% if most_borrowed %}
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title"><i class="bi bi-fire"></i> {{ t('rec_trending') }}</h2>
+      <a class="ds-pill" href="{{ url_for('student.most_borrowed') }}">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-trending" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-trending" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-trending">{% for book in most_borrowed %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── New Arrivals ──────────────────────────────────── #}
+  {% if recently_added %}
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title"><i class="bi bi-stars"></i> {{ t('recently_added') }}</h2>
+      <a class="ds-pill" href="{{ url_for('student.search', sort='newest') }}">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-new" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-new" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-new">{% for book in recently_added %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+  </section>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){
+  function scrollRow(el, dir){
+    if(!el) return;
+    var tile = el.querySelector('.ds-tile');
+    if(!tile) return;
+    var step = tile.offsetWidth + 20;
+    el.scrollBy({left: dir * step, behavior:'smooth'});
+  }
+  document.querySelectorAll('.ds-nav-arrow').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      scrollRow(el, btn.classList.contains('ds-nav-prev') ? -1 : 1);
+    });
+  });
+})();
+</script>
 {% endblock %}

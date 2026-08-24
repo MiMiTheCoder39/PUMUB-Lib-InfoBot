@@ -1,111 +1,11 @@
 {% extends "base.html" %}
-{% block title %}My History{% endblock %}
-
+{% block title %}{{ t('history') }}{% endblock %}
 {% block content %}
-<div class="py-4">
-    <h3><i class="bi bi-clock-history"></i> View History</h3>
-
-    <ul class="nav nav-tabs mb-4" id="historyTab">
-        <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#readTab">
-                <i class="bi bi-book"></i> Read History ({{ read_history|length }})
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#downloadTab">
-                <i class="bi bi-download"></i> Download History ({{ download_history|length }})
-            </a>
-        </li>
-    </ul>
-
-    <div class="tab-content">
-        <!-- Read History Tab -->
-        <div class="tab-pane fade show active" id="readTab">
-            {% if read_history %}
-                <div class="table-responsive">
-                    <table class="table table-hover bg-white rounded shadow-sm">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Cover</th>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>Read Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in read_history %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>
-                                    {% if item.cover_image %}
-                                        <img src="{{ url_for('static', filename='uploads/covers/' + item.cover_image) }}" style="height:40px; width:30px; object-fit:cover;" class="rounded">
-                                    {% else %}
-                                        <i class="bi bi-journal" style="font-size:1.5rem;"></i>
-                                    {% endif %}
-                                </td>
-                                <td>{{ item.title }}</td>
-                                <td>{{ item.author_name or "—" }}</td>
-                                <td><small class="text-muted">{{ item.read_date.strftime('%Y-%m-%d %H:%M') if item.read_date else '—' }}</small></td>
-                                <td>
-                                    <a href="{{ url_for('student.read_book', book_id=item.book_id) }}" class="btn btn-sm btn-library">
-                                        <i class="bi bi-book"></i> Read Again
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info"><i class="bi bi-info-circle"></i> Read history မရှိသေးပါ။</div>
-            {% endif %}
-        </div>
-
-        <!-- Download History Tab -->
-        <div class="tab-pane fade" id="downloadTab">
-            {% if download_history %}
-                <div class="table-responsive">
-                    <table class="table table-hover bg-white rounded shadow-sm">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Cover</th>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>Download Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in download_history %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>
-                                    {% if item.cover_image %}
-                                        <img src="{{ url_for('static', filename='uploads/covers/' + item.cover_image) }}" style="height:40px; width:30px; object-fit:cover;" class="rounded">
-                                    {% else %}
-                                        <i class="bi bi-journal" style="font-size:1.5rem;"></i>
-                                    {% endif %}
-                                </td>
-                                <td>{{ item.title }}</td>
-                                <td>{{ item.author_name or "—" }}</td>
-                                <td><small class="text-muted">{{ item.download_date.strftime('%Y-%m-%d %H:%M') if item.download_date else '—' }}</small></td>
-                                <td>
-                                    <a href="{{ url_for('student.download_book', book_id=item.book_id) }}" class="btn btn-sm btn-success">
-                                        <i class="bi bi-download"></i> Download Again
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info"><i class="bi bi-info-circle"></i> Download history မရှိသေးပါ။</div>
-            {% endif %}
-        </div>
-    </div>
+<div class="user-page">
+  <div class="user-page-heading"><div><span class="user-eyebrow"><i class="bi bi-clock-history"></i>{{ t('my_library') }}</span><h1>{{ t('reading_history') }}</h1><p>{{ t('reading_history_intro') }}</p></div><a class="user-btn user-btn-soft" href="{{ url_for('student.search') }}"><i class="bi bi-search"></i>{{ t('browse_books') }}</a></div>
+  <nav class="user-library-tabs" aria-label="My Library"><a class="user-library-tab" href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark me-1"></i>{{ t('bookmarks') }}</a><a class="user-library-tab is-active" href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history me-1"></i>{{ t('history') }}</a><a class="user-library-tab" href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark me-1"></i>{{ t('borrow_history') }}</a></nav>
+  <div class="user-data-card">
+    {% if read_history %}<div class="user-table-wrap"><table class="user-data-table"><thead><tr><th>{{ t('book') }}</th><th>{{ t('author_label') }}</th><th>{{ t('date') }}</th><th></th></tr></thead><tbody>{% for item in read_history %}<tr><td><strong><a href="{{ url_for('student.book_details', book_id=item.book_id) }}" style="color:var(--user-ink);text-decoration:none">{{ item.title }}</a></strong></td><td>{{ item.author_name or t('unknown_author') }}</td><td>{{ item.read_date.strftime('%Y-%m-%d %H:%M') if item.read_date else '—' }}</td><td class="text-end"><a class="user-btn user-btn-soft" href="{{ url_for('student.read_book', book_id=item.book_id) }}"><i class="bi bi-book"></i>{{ t('read_online') }}</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="user-empty m-4"><i class="bi bi-clock-history"></i><strong>{{ t('no_history') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>{% endif %}
+  </div>
 </div>
 {% endblock %}

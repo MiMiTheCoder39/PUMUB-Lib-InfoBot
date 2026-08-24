@@ -75,20 +75,24 @@ def update_password(user_id, hashed_password):
     cur.close()
 
 
-def update_profile(user_id, name, email, faculty_id, profile_image=None):
-    """Update Profile (Name, Email, Faculty, Profile Picture)."""
-    cur = mysql.connection.cursor()
+def update_profile(user_id, name, email, faculty_id, profile_image=None, username=None):
+    """Update editable profile fields and optionally a new profile picture."""
+    fields = ["name = %s", "email = %s", "faculty_id = %s"]
+    values = [name, email, faculty_id]
+
+    if username is not None:
+        fields.append("username = %s")
+        values.append(username)
     if profile_image:
-        cur.execute(
-            """UPDATE users SET name = %s, email = %s, faculty_id = %s, profile_image = %s
-               WHERE user_id = %s""",
-            (name, email, faculty_id, profile_image, user_id),
-        )
-    else:
-        cur.execute(
-            "UPDATE users SET name = %s, email = %s, faculty_id = %s WHERE user_id = %s",
-            (name, email, faculty_id, user_id),
-        )
+        fields.append("profile_image = %s")
+        values.append(profile_image)
+
+    values.append(user_id)
+    cur = mysql.connection.cursor()
+    cur.execute(
+        f"UPDATE users SET {', '.join(fields)} WHERE user_id = %s",
+        tuple(values),
+    )
     mysql.connection.commit()
     cur.close()
 

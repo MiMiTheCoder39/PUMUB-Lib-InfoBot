@@ -1,41 +1,59 @@
 {% extends 'admin/base_admin.html' %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}{{ t('admin_dashboard') }}{% endblock %}
 {% block admin_content %}
-<div class="dashboard-header d-flex flex-wrap justify-content-between align-items-center mb-4">
-  <div><h2 class="mb-1">Library Insights</h2><p class="text-muted small mb-0">Overview of collection, members, and circulation status</p></div>
-  <div class="mt-3 mt-md-0 d-flex gap-2"><a href="{{ url_for('admin.book_add') }}" class="btn btn-outline-primary"><i class="bi bi-plus-lg me-2"></i>Add Book</a><a href="{{ url_for('admin.borrows') }}" class="btn btn-primary"><i class="bi bi-qr-code-scan me-2"></i>Counter Workflow</a></div>
-</div>
-<div class="row g-3 mb-4">
-  {% for label, value, icon, color in [('Total Books', stats.total_books, 'bi-book', 'primary'), ('Total Users', stats.total_users, 'bi-people', 'info'), ('Active Borrows', stats.active_borrows, 'bi-arrow-left-right', 'success'), ('Pending Requests', stats.pending_requests, 'bi-hourglass-split', 'warning')] %}
-  <div class="col-12 col-sm-6 col-xl-3"><div class="card border-0 shadow-sm h-100 border-bottom border-{{ color }} border-4"><div class="card-body"><div class="d-flex justify-content-between mb-2"><span class="text-muted small text-uppercase fw-bold">{{ label }}</span><i class="bi {{ icon }} text-{{ color }} fs-4"></i></div><h2 class="mb-0 fw-bold">{{ value }}</h2></div></div></div>
-  {% endfor %}
-</div>
-<div class="row g-4">
-  {% set chart_specs = [
-    ('Most Borrowed Books', 'mostBorrowedChart', most_borrowed, 'bar', 'borrow_count', 'No borrowing data available yet.'),
-    ('Books per Category', 'categoryChart', category_counts, 'doughnut', 'book_count', 'No category data available yet.'),
-    ('Users by Role', 'roleChart', role_stats, 'doughnut', 'cnt', 'No user-role data available yet.'),
-    ('Borrow Status', 'statusChart', status_stats, 'doughnut', 'cnt', 'No borrowing status data available yet.'),
-    ('Monthly Downloads', 'downloadChart', months, 'line', 'monthly', 'No download data available yet.')
-  ] %}
-  <div class="col-12 col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Most Borrowed Books</h5></div><div class="card-body"><div class="chart-box" data-empty="{{ 'true' if not most_borrowed else 'false' }}"><canvas id="mostBorrowedChart"></canvas><div class="chart-empty">No borrowing data available yet.</div></div></div></div></div>
-  <div class="col-12 col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Books per Category</h5></div><div class="card-body"><div class="chart-box" data-empty="{{ 'true' if not category_counts else 'false' }}"><canvas id="categoryChart"></canvas><div class="chart-empty">No category data available yet.</div></div></div></div></div>
-  <div class="col-12 col-md-6 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Users by Role</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not role_stats else 'false' }}"><canvas id="roleChart"></canvas><div class="chart-empty">No user-role data available yet.</div></div></div></div></div>
-  <div class="col-12 col-md-6 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Borrow Status</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not status_stats else 'false' }}"><canvas id="statusChart"></canvas><div class="chart-empty">No borrowing status data available yet.</div></div></div></div></div>
-  <div class="col-12 col-xl-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 py-3"><h5 class="mb-0 fw-bold">Monthly Downloads</h5></div><div class="card-body"><div class="chart-box chart-box-sm" data-empty="{{ 'true' if not months else 'false' }}"><canvas id="downloadChart"></canvas><div class="chart-empty">No download data available yet.</div></div></div></div></div>
-</div>
-<style>.chart-box{position:relative;height:300px}.chart-box-sm{height:260px}.chart-empty{display:none;height:100%;align-items:center;justify-content:center;color:#64748b;font-size:.9rem;text-align:center}.chart-box[data-empty="true"] canvas{display:none}.chart-box[data-empty="true"] .chart-empty{display:flex}</style>
+<div class="admin-page-heading"><div><span class="admin-eyebrow">{{ t('administration') }}</span><h1>{{ t('admin_dashboard') }}</h1><p>{{ t('monitor_collection') }}</p></div><div class="admin-page-actions"><a href="{{ url_for('admin.book_add') }}" class="btn btn-outline-secondary"><i class="bi bi-plus-lg me-2"></i>{{ t('add_book') }}</a><a href="{{ url_for('admin.borrows') }}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-2"></i>{{ t('open_borrowing') }}</a></div></div>
+
+{# ── Library Overview · KPI cards ── #}
+<section class="admin-kpi-grid mb-4" aria-label="{{ t('library') }}">
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-book"></i></div><div><span>{{ t('total_books') }}</span><strong>{{ stats.total_books or 0 }}</strong><small class="admin-kpi-sub text-muted">{{ t('books_active_label').format(n=stats.books_active or 0) }}{% if stats.books_archived %} <span aria-hidden="true">&middot;</span> {{ t('books_archived_label').format(n=stats.books_archived) }}{% endif %}</small></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-indigo"><i class="bi bi-people"></i></div><div><span>{{ t('total_users') }}</span><strong>{{ stats.total_users or 0 }}</strong><small class="admin-kpi-sub text-muted">{{ t('total_students') }} {{ stats.total_students or 0 }}{% if stats.total_teachers %} <span aria-hidden="true">&middot;</span> {{ t('total_teachers') }} {{ stats.total_teachers }}{% endif %}</small></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-blue"><i class="bi bi-mortarboard"></i></div><div><span>{{ t('total_students') }}</span><strong>{{ stats.total_students or 0 }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-purple"><i class="bi bi-person-workspace"></i></div><div><span>{{ t('total_teachers') }}</span><strong>{{ stats.total_teachers or 0 }}</strong></div></div>
+  <div class="admin-kpi-card admin-kpi-context"><div class="admin-kpi-icon admin-kpi-green"><i class="bi bi-arrow-left-right"></i></div><div><span>{{ t('active_borrows') }}</span><strong>{{ stats.active_borrows or 0 }}</strong><small class="admin-kpi-sub {{ 'admin-kpi-sub-warn' if (stats.overdue or 0) > 0 else '' }}">{{ t('unreturned_issues').format(n=(stats.overdue or 0)) }} <i class="bi bi-exclamation-circle"></i></small></div></div>
+</section>
+
+{# ── Priority / Attention ── #}
+<section class="admin-panel mb-4">
+  <div class="admin-panel-head"><div><h2>{{ t('priority_attention') }}</h2><p>{{ t('priority_attention_sub') }}</p></div></div>
+  <div class="admin-priority-grid">
+    {% set pending_count = stats.pending_requests or 0 %}
+    {% set overdue_fines = stats.overdue_fine_count or 0 %}
+    {% set unreturned = stats.active_borrows or 0 %}
+    {% set all_caught = pending_count == 0 and overdue_fines == 0 and unreturned == 0 %}
+    <div class="admin-priority-card {{ 'admin-priority-healthy' if all_caught else 'admin-priority-warning' }}">
+      <span class="admin-priority-icon"><i class="bi bi-inbox"></i></span>
+      <span>
+        <small>{{ t('pending_requests_label') }}</small>
+        <strong>{{ pending_count if not all_caught else t('all_caught_up') }}</strong>
+        {% if pending_count %}<em class="mt-1 d-block"><a class="admin-priority-link" href="{{ url_for('admin.borrows', status='pending') }}">{{ t('view_requests') }} <i class="bi bi-arrow-right"></i></a></em>{% endif %}
+      </span>
+    </div>
+    <div class="admin-priority-card {{ 'admin-priority-healthy' if all_caught else 'admin-priority-money' }}">
+      <span class="admin-priority-icon"><i class="bi bi-cash-stack"></i></span>
+      <span>
+        <small>{{ t('overdue_fines_label') }}</small>
+        <strong>{{ overdue_fines if not all_caught else t('all_caught_up') }}</strong>
+        {% if overdue_fines %}<em class="mt-1 d-block"><a class="admin-priority-link" href="{{ url_for('admin.fines', status='overdue') }}">{{ t('view_fines') }} <i class="bi bi-arrow-right"></i></a></em>{% endif %}
+      </span>
+    </div>
+    <div class="admin-priority-card {{ 'admin-priority-healthy' if all_caught else 'admin-priority-danger' }}">
+      <span class="admin-priority-icon"><i class="bi bi-book-half"></i></span>
+      <span>
+        <small>{{ t('unreturned_books_label') }}</small>
+        <strong>{{ unreturned if not all_caught else t('all_caught_up') }}</strong>
+        {% if unreturned %}<em class="mt-1 d-block"><a class="admin-priority-link" href="{{ url_for('admin.borrows', status='borrowed') }}">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a></em>{% endif %}
+      </span>
+    </div>
+  </div>
+</section>
+
+{# ── Borrowing Trend · Last 7 days ── #}
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>{{ t('borrowing_trend') }}</h2><p>{{ t('trend_7days_label') }}</p></div><a href="{{ url_for('admin.charts', period='7d') }}" class="admin-text-link">{{ t('view_analytics') }} <i class="bi bi-arrow-right"></i></a></div><div class="admin-chart-area admin-chart-tall" data-empty="{{ 'true' if not trend_data else 'false' }}"><canvas id="borrowTrendChart" aria-label="{{ t('borrowing_trend') }}"></canvas><div class="admin-empty-state"><i class="bi bi-bar-chart"></i><span>{{ t('no_borrowing_activity') }}</span></div></div></section>
+
+{# ── Borrow Status (presentation mapping: borrowed → Issued) ── #}
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>{{ t('borrow_status_title') }}</h2><p>{{ t('borrow_status_sub') }}</p></div><a href="{{ url_for('admin.borrows') }}" class="admin-text-link">{{ t('view_requests') }} <i class="bi bi-arrow-right"></i></a></div><div class="admin-chart-area admin-chart-mid" data-empty="{{ 'true' if not status_stats else 'false' }}"><canvas id="borrowStatusChart" aria-label="{{ t('borrow_status_title') }}"></canvas><div class="admin-empty-state"><i class="bi bi-pie-chart"></i><span>{{ t('no_borrow_records') }}</span></div></div></section>
+
+{# ── Recent Circulation Activity ── #}
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>{{ t('recent_borrow_requests') }}</h2><p>{{ t('latest_circulation') }}</p></div><a href="{{ url_for('admin.borrows') }}" class="admin-text-link">{{ t('view_all') }} <i class="bi bi-arrow-right"></i></a></div><div class="table-responsive admin-table-wrap"><table class="table align-middle mb-0 admin-compact-table"><thead><tr><th>{{ t('student') }}</th><th>{{ t('book') }}</th><th>{{ t('status') }}</th><th class="text-end">{{ t('created_date') }}</th></tr></thead><tbody>{% for row in recent_requests %}<tr><td><strong>{{ row.student_name }}</strong><small class="d-block text-muted">{{ row.borrow_id_code or '—' }}</small></td><td class="admin-cell-truncate" title="{{ row.book_title }}">{{ row.book_title }}</td><td><span class="admin-status admin-status-{{ 'issued' if row.status == 'borrowed' else row.status }}">{{ status_labels.get(row.status, row.status) }}</span></td><td class="text-end text-muted small">{{ row.request_date.strftime('%d %b %Y') if row.request_date else '—' }}</td></tr>{% else %}<tr><td colspan="4"><div class="admin-empty-state admin-empty-inline"><i class="bi bi-inbox"></i><span>{{ t('no_borrow_records') }}</span></div></td></tr>{% endfor %}</tbody></table></div></section>
 {% endblock %}
-{% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script>
-const teal='#0b7375', navy='#16324f', palette=['#0b7375','#e8a838','#2563eb','#dc3545','#6f42c1','#198754','#fd7e14'];
-const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}};
-function draw(id,type,labels,data,label,extra={}){const el=document.getElementById(id); if(!el || !data.length)return; new Chart(el,{type,data:{labels,datasets:[{label,data,backgroundColor:type==='line'?'rgba(11,115,117,.16)':palette,borderColor:type==='line'?teal:palette,borderWidth:2,fill:type==='line',tension:.35}]},options:{...common,...extra}})}
-draw('mostBorrowedChart','bar',{{ most_borrowed|map(attribute='title')|list|tojson }},{{ most_borrowed|map(attribute='borrow_count')|list|tojson }},'Borrow records',{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}}});
-draw('categoryChart','doughnut',{{ category_counts|map(attribute='category_name')|list|tojson }},{{ category_counts|map(attribute='book_count')|list|tojson }},'Books');
-draw('roleChart','doughnut',{{ role_stats|map(attribute='role')|list|tojson }},{{ role_stats|map(attribute='cnt')|list|tojson }},'Users');
-draw('statusChart','doughnut',{{ status_stats|map(attribute='status')|list|tojson }},{{ status_stats|map(attribute='cnt')|list|tojson }},'Borrow requests');
-draw('downloadChart','line',{{ months|tojson }},{{ dl_data|tojson }},'Downloads',{scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
-</script>
-{% endblock %}
+{% block extra_scripts %}<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>(()=>{const teal='#0b7375',palette=['#0b7375','#2f80ed','#27ae60','#e9a23b','#d64545','#8067b7','#7c8b9a'];const b=document.getElementById('borrowTrendChart'),bd={{ trend_data|tojson }},bl={{ trend_labels|tojson }};if(b&&bd.length)new Chart(b,{type:'line',data:{labels:bl,datasets:[{label:{{ t('issued_borrows')|tojson }},data:bd,borderColor:teal,backgroundColor:'rgba(11,115,117,.12)',fill:true,tension:.35,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});const s=document.getElementById('borrowStatusChart'),sr={{ status_stats|tojson }};if(s&&sr.length)new Chart(s,{type:'doughnut',data:{labels:sr.map(r=>({{ status_labels|tojson }}[r.status]||r.status)),datasets:[{data:sr.map(r=>Number(r.cnt||0)),backgroundColor:palette,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{position:'bottom'}}}});})();</script>{% endblock %}

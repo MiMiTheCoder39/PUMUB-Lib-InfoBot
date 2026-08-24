@@ -1,193 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ 'my' if (lang or 'my') == 'my' else 'en' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — PUMUB Digital Library</title>
+  <title>{{ t('page_login') }} — PUMUB LibInfoBot</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #095456 0%, #0d7377 50%, #14919b 100%);
-      display: flex; flex-direction: column;
+    /* Login page — Phase 4 centered one-column design,
+       teal-gradient welcome header (user-approved reference).
+       Reuses the shared .auth-* visual system from style.css
+       (soft off-white bg, white auth card, deep teal accent,
+       dark navy text, subtle border, light shadow). */
+
+    /* Back-to-home link above the card */
+    .lg-back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      color: #0E6C66;
+      font-size: .92rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color .18s ease, gap .18s ease;
     }
-    .login-wrapper {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center;
-      padding: 2rem 1rem;
+    .lg-back-home:hover { color: #0B5A56; gap: .6rem; }
+    .lg-back-home i { font-size: .95rem; }
+
+    /* Teal welcome header on the card */
+    .lg-head {
+      background: linear-gradient(150deg, #0E6C66 0%, #0F766E 45%, #128583 100%);
+      border-radius: 20px 20px 0 0;
+      padding: 2.4rem 1.5rem 2.2rem;
+      text-align: center;
     }
-    .login-box {
-      width: 100%; max-width: 420px;
-      background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0,0,0,.3);
-    }
-    .login-header {
-      background: linear-gradient(135deg, #095456, #0d7377);
-      padding: 2.2rem 2rem;
-      text-align: center; color: #fff;
-    }
-    .login-logo {
-      width: 72px; height: 72px;
-      background: rgba(23,184,190,.2);
+    .lg-head-icon {
+      width: 84px; height: 84px;
+      margin: 0 auto 1.1rem;
+      border: 3px solid rgba(255,255,255,.45);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 1rem;
-      font-size: 2rem;
-      border: 2px solid rgba(23,184,190,.4);
+      font-size: 2.2rem;
+      color: rgba(255,255,255,.9);
     }
-    .login-header h4 { font-weight: 800; margin: 0 0 .3rem; font-size: 1.3rem; }
-    .login-header p  { opacity: .75; font-size: .85rem; margin: 0; }
-    .login-body { padding: 2rem; }
-    .form-label { font-weight: 600; font-size: .85rem; color: #2d3748; margin-bottom: .35rem; }
-    .input-group-text {
-      background: #f8fafc; border: 1.5px solid #e2e8f0;
-      border-right: none; color: #0d7377;
-    }
-    .form-control {
-      border: 1.5px solid #e2e8f0;
-      border-left: none;
-      border-radius: 0 8px 8px 0 !important;
-      padding: .65rem 1rem;
-      font-size: .9rem;
-      transition: all .2s;
-    }
-    .form-control:focus {
-      border-color: #0d7377;
-      box-shadow: 0 0 0 3px rgba(13,115,119,.1);
-    }
-    .input-group:focus-within .input-group-text {
-      border-color: #0d7377;
-    }
-    .btn-login-submit {
-      background: linear-gradient(135deg, #0d7377, #14919b);
-      border: none; color: #fff;
-      font-weight: 700; font-size: .95rem;
-      border-radius: 10px; padding: .75rem;
-      letter-spacing: .3px;
-      transition: all .2s;
-      width: 100%;
-    }
-    .btn-login-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(13,115,119,.4);
+    .lg-head h1 {
+      margin: 0 0 .45rem;
       color: #fff;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: .01em;
     }
-    .divider { text-align: center; margin: 1.2rem 0; color: #a0aec0; font-size: .82rem; position: relative; }
-    .divider::before, .divider::after {
-      content: ''; position: absolute; top: 50%;
-      width: 42%; height: 1px; background: #e2e8f0;
+    .lg-head p {
+      margin: 0;
+      color: rgba(255,255,255,.88);
+      font-size: .95rem;
+      line-height: 1.55;
     }
-    .divider::before { left: 0; }
-    .divider::after  { right: 0; }
-    .demo-box {
-      background: #f0fdfa; border-radius: 10px;
-      padding: .9rem 1rem; border: 1px solid #ccfbf1;
+
+    /* OR divider */
+    .lg-or {
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      margin: 1.15rem 0 1rem;
+      color: #94A3B8;
       font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .08em;
     }
-    .demo-box strong { color: #0d7377; }
-    .demo-credential {
-      display: flex; justify-content: space-between;
-      align-items: center; padding: .3rem 0;
-      border-bottom: 1px dashed #e2e8f0;
+    .lg-or::before,
+    .lg-or::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #E2E8F0;
     }
-    .demo-credential:last-child { border-bottom: none; padding-bottom: 0; }
-    .demo-credential code {
-      background: #e0f7f8; color: #095456;
-      padding: .15rem .5rem; border-radius: 5px; font-size: .8rem;
+
+    /* Register link row */
+    .lg-footer {
+      padding: .3rem 0 .3rem;
+      text-align: center;
     }
-    .login-footer { text-align: center; padding: 0 2rem 1.8rem; }
-    .login-footer a { color: #0d7377; font-weight: 600; }
-    .login-footer a:hover { color: #14919b; }
-    /* Back link */
-    .back-link { color: rgba(255,255,255,.7); font-size:.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:.35rem; margin-bottom:1rem; }
-    .back-link:hover { color:#fff; }
   </style>
 </head>
-<body>
-<div class="login-wrapper">
-  <div>
-    <div class="text-center mb-3">
-      <a href="{{ url_for('home') }}" class="back-link">
-        <i class="bi bi-arrow-left"></i> Back to Home
-      </a>
+<body class="auth-page">
+
+  <!-- Top row: brand + language switch -->
+  <div class="auth-navrow">
+    <a href="{{ url_for('home') }}" class="auth-brand">
+      <span class="auth-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span>
+        <span class="auth-brand-name">{{ t('auth_brand_name') }}</span>
+        <span class="auth-brand-sub">{{ t('auth_brand_sub') }}</span>
+      </span>
+    </a>
+    <div class="auth-lang" role="group" aria-label="{{ t('lang_title') }}">
+      <a href="{{ url_for('auth.set_language', language='my', redirect='/auth/login') }}" {% if lang == 'my' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_my') }}</a>
+      <span class="auth-lang-sep" aria-hidden="true">|</span>
+      <a href="{{ url_for('auth.set_language', language='en', redirect='/auth/login') }}" {% if lang == 'en' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_en') }}</a>
     </div>
+  </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" style="border-radius:10px;">
-          <i class="bi bi-exclamation-circle me-2"></i>{{ msg }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}{% endif %}
-    {% endwith %}
+  <!-- Back to Home (centered above the card) -->
+  <div class="text-center mt-2 mb-3">
+    <a href="{{ url_for('home') }}" class="lg-back-home">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ t('back_to_home') }}
+    </a>
+  </div>
 
-    <div class="login-box">
-      <!-- Header -->
-      <div class="login-header">
-        <div class="login-logo"><i class="bi bi-book" style="color: #17b8be;"></i></div>
-        <h4>Welcome Back!</h4>
-        <p>Digital Library Management System<br>Polytechnic University (Maubin)</p>
+  <div class="auth-wrapper">
+    <div class="auth-card" style="max-width:480px; overflow:hidden;">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="auth-alert auth-alert-{{ cat }} alert-dismissible" role="alert">
+            <i class="bi {{ 'bi-check-circle' if cat == 'success' else ('bi-info-circle' if cat == 'info' else 'bi-exclamation-circle') }}"></i>
+            <span>{{ msg }}</span>
+            <button type="button" class="auth-alert-close" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Compact login header: title only -->
+      <div class="lg-head lg-head-compact">
+        <div class="lg-head-icon" aria-hidden="true"><i class="bi bi-book"></i></div>
+        <h1 id="lg-hero-title">{{ t('member_login') }}</h1>
       </div>
 
-      <!-- Body -->
-      <div class="login-body">
-        <form method="POST" action="{{ url_for('auth.login') }}">
+      <!-- Essential login form only -->
+      <div class="auth-body">
+
+        <form method="POST" action="{{ url_for('auth.login') }}" id="lgForm" novalidate>
           <div class="mb-3">
-            <label class="form-label">Username</label>
+            <label class="auth-label" for="username">{{ t('login_username_label') }}</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person"></i></span>
-              <input type="text" name="username" class="form-control"
-                     placeholder="Enter your username" required autofocus>
+              <span class="auth-input-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+              <div class="auth-input has-icon">
+                <input type="text" id="username" name="username" class="form-control"
+                       placeholder="{{ t('login_username_hint') }}"
+                       value="{{ request.form.get('username', '') }}"
+                       autocomplete="username" required maxlength="120">
+              </div>
             </div>
           </div>
-          <div class="mb-4">
-            <label class="form-label">Password</label>
+
+          <div class="mb-3">
+            <label class="auth-label" for="password">{{ t('login_password_label') }}</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-lock"></i></span>
-              <input type="password" name="password" id="pwdInput" class="form-control"
-                     placeholder="Enter your password" required>
-              <button type="button" class="btn btn-outline-secondary border-start-0"
-                      style="border:1.5px solid #e2e8f0; border-left:none; border-radius:0 8px 8px 0;"
-                      onclick="togglePwd()">
-                <i class="bi bi-eye" id="eyeIcon"></i>
+              <span class="auth-input-icon"><i class="bi bi-lock" aria-hidden="true"></i></span>
+              <div class="auth-input has-icon">
+                <input type="password" id="password" name="password" class="form-control"
+                       placeholder="{{ t('login_password_hint') }}"
+                       autocomplete="current-password" required>
+              </div>
+              <button type="button" class="btn auth-input-icon" id="lgTogglePwd"
+                      aria-label="{{ t('toggle_password') }}" aria-pressed="false"
+                      style="border-radius:0 10px 10px 0 !important;">
+                <i class="bi bi-eye" aria-hidden="true"></i>
               </button>
             </div>
           </div>
-          <button type="submit" class="btn btn-login-submit">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+
+          <div class="d-flex justify-content-end mb-3">
+            <a href="{{ url_for('auth.forgot_password') }}" class="auth-forgot-link">
+              <i class="bi bi-person-lock" aria-hidden="true"></i> {{ t('login_forgot_admin') }}
+            </a>
+          </div>
+
+          <button type="submit" class="btn auth-btn" id="lgSubmit">
+            <span class="spinner-border auth-spin" role="status" aria-hidden="true" style="display:none;"></span>
+            <span id="lgSubmitText">{{ t('login_submit') }}</span>
           </button>
+
+          <!-- OR divider + register link -->
+          <div class="lg-or" aria-hidden="true">{{ t('or_divider') }}</div>
+          <div class="lg-footer">
+            <span class="text-muted">{{ t('login_no_account') }} </span>
+            <a href="{{ url_for('auth.register') }}">{{ t('login_register_link') }}</a>
+          </div>
         </form>
-
-        <div class="divider">OR</div>
-
-
-      <!-- Footer -->
-      <div class="login-footer">
-        <span class="text-muted" style="font-size:.85rem;">Account မရှိသေးပါသလား? </span>
-        <a href="{{ url_for('auth.register') }}">Register ပြုလုပ်ပါ</a>
       </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script>
-function togglePwd() {
-  const input = document.getElementById('pwdInput');
-  const icon  = document.getElementById('eyeIcon');
-  if (input.type === 'password') {
-    input.type = 'text';
-    icon.className = 'bi bi-eye-slash';
-  } else {
-    input.type = 'password';
-    icon.className = 'bi bi-eye';
-  }
-}
-</script>
+  <script>
+  (function () {
+    /* --- Password show/hide (keyboard accessible, aria-pressed kept in sync) --- */
+    var pwdEl = document.getElementById('password');
+    var toggleBtn = document.getElementById('lgTogglePwd');
+    var iconEl = toggleBtn.querySelector('i');
+    var showTxt = {{ t('pwd_show')|tojson }};
+    var hideTxt = {{ t('pwd_hide')|tojson }};
+    toggleBtn.addEventListener('click', function () {
+      var hidden = pwdEl.type === 'password';
+      pwdEl.type = hidden ? 'text' : 'password';
+      iconEl.className = hidden ? 'bi bi-eye-slash' : 'bi bi-eye';
+      toggleBtn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      toggleBtn.setAttribute('aria-label', hidden ? hideTxt : showTxt);
+    });
+
+    /* --- Submit: disabled + loading state, double-submit prevention --- */
+    var form = document.getElementById('lgForm');
+    var btn = document.getElementById('lgSubmit');
+    var btnText = document.getElementById('lgSubmitText');
+    var spinner = btn.querySelector('.spinner-border');
+    var loadingTxt = {{ t('login_submit_loading')|tojson }};
+    form.addEventListener('submit', function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.classList.add('loading');
+      spinner.style.display = '';
+      if (loadingTxt) btnText.textContent = loadingTxt;
+    });
+
+    /* --- Enter key submits naturally (button type=submit) --- */
+  })();
+  </script>
 </body>
 </html>

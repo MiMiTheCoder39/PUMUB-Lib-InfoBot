@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="{{ lang or 'my' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ t('rt_title') }} — PUMUB LibInfoBot</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .auth-head { background: linear-gradient(135deg, #075457, #0b7475); }
+    .rt-token-band {
+      background: #f6f0e2;
+      border: 1.5px dashed #b98e3e;
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .rt-token-value {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: #7a5c1e;
+      word-break: break-all;
+      -webkit-user-select: all;
+      user-select: all;
+    }
+    .rt-token-caps { font-size: .8rem; color: #475569; margin-top: 6px; }
+  </style>
+</head>
+<body class="auth-page">
+
+  <!-- Top row: brand + language -->
+  <div class="auth-navrow">
+    <a href="{{ url_for('home') }}" class="auth-brand">
+      <span class="auth-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span>
+        <span class="auth-brand-name">{{ t('auth_brand_name') }}</span>
+        <span class="auth-brand-sub">{{ t('auth_brand_sub') }}</span>
+      </span>
+    </a>
+    <div class="auth-lang" role="group" aria-label="{{ t('lang_title') }}">
+      <a href="{{ url_for('auth.set_language', language='my', redirect='/auth/reset/token') }}" {% if lang == 'my' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_my') }}</a>
+      <span class="auth-lang-sep" aria-hidden="true">|</span>
+      <a href="{{ url_for('auth.set_language', language='en', redirect='/auth/reset/token') }}" {% if lang == 'en' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_en') }}</a>
+    </div>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 460px;">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="auth-alert auth-alert-{{ cat }} alert-dismissible" role="alert">
+            <i class="bi {{ 'bi-check-circle' if cat == 'success' else ('bi-info-circle' if cat == 'info' else 'bi-exclamation-circle') }}"></i>
+            <span>{{ msg }}</span>
+            <button type="button" class="auth-alert-close" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Header -->
+      <div class="auth-head">
+        <span class="auth-head-step"><i class="bi bi-2-circle-fill"></i> {{ t('fp_step_badge') }}</span>
+        <div class="auth-head-icon"><i class="bi bi-key-fill"></i></div>
+        <h3>{{ t('rt_title') }}</h3>
+        <p>{{ t('rt_desc') }}</p>
+        <div class="auth-progress">
+          <span class="auth-dot is-done"><i class="bi bi-check2"></i></span>
+          <span class="auth-dotline"></span>
+          <span class="auth-dot is-current" aria-label="{{ t('fp_step2_progress') }}"></span>
+          <span class="auth-dotline"></span>
+          <span class="auth-dot"></span>
+        </div>
+        <div class="auth-progress-labels">
+          <span class="auth-progress-label is-done">{{ t('fp_step1_progress') }}</span>
+          <span class="auth-progress-label is-current">{{ t('fp_step2_progress') }}</span>
+          <span class="auth-progress-label">{{ t('fp_step3_progress') }}</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="auth-body">
+        {% if session.get('reset_token_raw') %}
+          <div class="rt-token-band">
+            <div class="rt-token-value" id="resetToken">{{ session['reset_token_raw'] }}</div>
+            <div class="rt-token-caps">
+              <i class="bi bi-copy me-1"></i>{{ t('rt_token_note') }}
+            </div>
+          </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.reset_token_page') }}" novalidate>
+          <div class="mb-4">
+            <label class="auth-label" for="token">{{ t('rt_token_label') }} <span class="req">*</span></label>
+            <div class="input-group">
+              <span class="auth-input-icon"><i class="bi bi-key"></i></span>
+              <input type="text" id="token" name="token" class="form-control auth-input has-icon"
+                     placeholder="R7K2-M4N8-Q3W6" required autocomplete="off"
+                     style="border-left:none; border-radius: 0 10px 10px 0; font-weight:600; letter-spacing:.06em; text-transform:uppercase;">
+            </div>
+            <div class="field-hint">
+              <i class="bi bi-info-circle me-1"></i> {{ t('rt_token_hint') }}
+            </div>
+          </div>
+
+          <button type="submit" class="btn auth-btn" style="width:100%;">
+            <i class="bi bi-shield-check"></i>{{ t('rt_submit') }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="auth-foot">
+        <a href="{{ url_for('auth.login') }}">
+          <i class="bi bi-arrow-left me-1"></i>{{ t('fp_back_login') }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

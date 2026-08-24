@@ -8,8 +8,8 @@
             <i class="bi bi-arrow-left"></i>
         </a>
         <div>
-            <h2 class="mb-1">Issue Physical Book</h2>
-            <p class="text-muted small mb-0">Confirming handover of book to member</p>
+            <h2 class="mb-1">{{ t('issue_physical_book') }}</h2>
+            <p class="text-muted small mb-0">{{ t('confirm_book_handover') }}</p>
         </div>
     </div>
     <div class="mt-3 mt-md-0">
@@ -24,14 +24,14 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-dark text-white py-3 border-0">
-                <h6 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2"></i>Borrowing Details</h6>
+                <h6 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2"></i>{{ t('borrow_details') }}</h6>
             </div>
             <div class="card-body p-4">
                 <div class="row g-4">
                     <!-- Member Info -->
                     <div class="col-md-6">
                         <div class="p-3 rounded bg-light border-start border-primary border-4 h-100">
-                            <h6 class="text-muted small text-uppercase fw-bold mb-3">Member Details</h6>
+                            <h6 class="text-muted small text-uppercase fw-bold mb-3">{{ t('member_details') }}</h6>
                             <div class="d-flex align-items-center mb-3">
                                 <div class="avatar-circle-sm bg-primary text-white me-3">
                                     {{ br.student_name[0].upper() }}
@@ -49,10 +49,10 @@
                     <!-- Book Info -->
                     <div class="col-md-6">
                         <div class="p-3 rounded bg-light border-start border-info border-4 h-100">
-                            <h6 class="text-muted small text-uppercase fw-bold mb-3">Book Details</h6>
+                            <h6 class="text-muted small text-uppercase fw-bold mb-3">{{ t('book') }} {{ t('details') }}</h6>
                             <div class="d-flex align-items-center mb-3">
                                 {% if br.cover_image %}
-                                    <img src="{{ url_for('static', filename='uploads/covers/' + br.cover_image) }}" 
+                                    <img src="{{ url_for('library_file.file_cover', filename=br.cover_image) }}" 
                                          class="rounded shadow-sm me-3" style="height:50px; width:35px; object-fit:cover;">
                                 {% else %}
                                     <div class="rounded bg-white border d-flex align-items-center justify-content-center me-3" 
@@ -78,14 +78,14 @@
                 <form method="POST" action="{{ url_for('admin.borrow_issue', borrow_id=br.borrow_id) }}">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase">Issue Date</label>
+                            <label class="form-label fw-bold small text-uppercase">{{ t('issue_date') }}</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white"><i class="bi bi-calendar-check"></i></span>
                                 <input type="date" name="borrowed_date" class="form-control" value="{{ today }}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase">Due Date</label>
+                            <label class="form-label fw-bold small text-uppercase">{{ t('due_date') }}</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white"><i class="bi bi-calendar-x"></i></span>
                                 <input type="date" name="due_date" id="dueDateInput" class="form-control" required>
@@ -93,20 +93,14 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-warning border-0 mt-4 d-flex align-items-center py-2 px-3">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        <span class="smaller">
-                            Policy: <strong>{{ br.role | title }}s</strong> can borrow for 
-                            <strong>{{ 30 if br.role == 'teacher' else 14 }} days</strong>.
-                        </span>
-                    </div>
+                    <div class="alert alert-warning border-0 mt-4 d-flex align-items-center py-2 px-3"><i class="bi bi-info-circle-fill me-2"></i><span class="smaller">{{ t('due_date_policy_note') }}</span></div>
 
                     <div class="mt-4 d-flex gap-3">
                         <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm" {{ 'disabled' if br.available_copies <= 0 }}>
-                            <i class="bi bi-check2-all me-2"></i>Complete Issuance
+                            <i class="bi bi-check2-all me-2"></i>{{ t('complete_issuance') }}
                         </button>
                         <a href="{{ url_for('admin.borrows') }}" class="btn btn-outline-secondary px-4">
-                            Cancel
+                            {{ t('cancel') }}
                         </a>
                     </div>
                 </form>
@@ -118,26 +112,26 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm text-center overflow-hidden">
             <div class="card-header bg-primary text-white py-3 border-0">
-                <h6 class="mb-0 fw-bold">Verification Ticket</h6>
+                <h6 class="mb-0 fw-bold">{{ t('verification_ticket') }}</h6>
             </div>
             <div class="card-body p-4">
                 {% if br.borrow_qr %}
                     <div class="p-3 bg-light rounded-lg mb-4">
-                        <img src="{{ url_for('static', filename='uploads/qrcodes/' + br.borrow_qr) }}" 
+                        <img src="{{ url_for('library_file.file_qrcode', filename=br.borrow_qr) }}" 
                              class="img-fluid rounded border shadow-sm bg-white" style="max-height: 200px;">
                     </div>
                 {% else %}
                     <div class="py-5 text-muted">
                         <i class="bi bi-qr-code fs-1 opacity-25 d-block mb-3"></i>
-                        QR Code Unavailable
+                        {{ t('qr_unavailable') }}
                     </div>
                 {% endif %}
                 
                 <div class="p-3 rounded border bg-light">
-                    <div class="smaller text-muted text-uppercase fw-bold mb-1">Status</div>
-                    <div class="status-badge status-approved px-4 mb-3">Ready for Collection</div>
+                    <div class="smaller text-muted text-uppercase fw-bold mb-1">{{ t('status') }}</div>
+                    <div class="status-badge status-approved px-4 mb-3">{{ t('ready_for_collection') }}</div>
                     
-                    <div class="smaller text-muted text-uppercase fw-bold mb-1">Requested On</div>
+                    <div class="smaller text-muted text-uppercase fw-bold mb-1">{{ t('requested_date') }}</div>
                     <div class="fw-bold text-dark">{{ br.request_date.strftime('%d %b %Y, %I:%M %p') }}</div>
                 </div>
             </div>
@@ -145,27 +139,6 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const role = "{{ br.role }}";
-    const days = (role === 'teacher') ? 30 : 14;
-    
-    const bdInput = document.querySelector('input[name="borrowed_date"]');
-    const ddInput = document.getElementById('dueDateInput');
-    
-    function updateDueDate() {
-        if (bdInput.value) {
-            const base = new Date(bdInput.value);
-            base.setDate(base.getDate() + days);
-            ddInput.value = base.toISOString().split('T')[0];
-            ddInput.min = bdInput.value;
-        }
-    }
-    
-    bdInput.addEventListener('change', updateDueDate);
-    updateDueDate(); // Set initial value
-});
-</script>
 
 <style>
 .borrow-ticket-id {

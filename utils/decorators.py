@@ -10,18 +10,46 @@ student_required -> login ဖြစ်ပြီး role == 'student' ဖြစ�
 
 from functools import wraps
 from flask import session, redirect, url_for, flash, request
+from models.user_model import get_user_by_id
+from models.university_records import get_record_by_email
+from utils.i18n import translate
 
 
 def login_required(f):
-    """User session ရှိမရှိ စစ်ဆေးသည်။ Login ဝင်ထားမှသာ page ကို ဝင်ခွင့်ရှိမည်။"""
+    """User session ရှိမရှိ စစ်ဆေးသည်။ Login ဝင်ထားမှသာ page ကို ဝင်ခွင့်ရှိမည်။
 
+    Phase 5: the linked official university record's four-state status
+    is re-checked on every protected request. A record whose status
+    has moved out of 'active' (inactive / graduated / suspended) since
+    the last login is signed out and redirected with a generic status
+    message. Admin accounts (no official record) are never blocked
+    here — their access is controlled by admin_required instead.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
             flash("ကျေးဇူးပြု၍ Login ဝင်ပါ။", "warning")
             return redirect(url_for("auth.login", next=request.path))
+        # Re-verify the official record status live (Phase 5).
+        if session.get("role") in ("student", "teacher"):
+            user = get_user_by_id(session["user_id"])
+            if user and user.get("email"):
+                record = get_record_by_email(user["email"])
+                status = (record["status"] if record else "").strip().lower()
+                if status in ("inactive", "graduated", "suspended"):
+                    session.pop("user_id", None)
+                    session.pop("username", None)
+                    session.pop("name", None)
+                    session.pop("role", None)
+                    session.pop("faculty_id", None)
+                    flash(translate("login_record_status_denied"), "danger")
+                    return redirect(url_for("auth.login"))
+                elif not record:
+                    # Account was registered but its official record was
+                    # removed — keep it signed in (data preserved) but
+                    # note the anomaly; no silent lock-out.
+                    pass
         return f(*args, **kwargs)
-
     return decorated_function
 
 

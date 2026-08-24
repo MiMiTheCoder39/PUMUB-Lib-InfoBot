@@ -1,219 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ 'my' if (lang or 'my') == 'my' else 'en' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register — PUMUB Digital Library</title>
+  <title>{{ t('register_step1_title') }} — PUMUB LibInfoBot</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #095456 0%, #0d7377 50%, #14919b 100%);
-      display: flex; flex-direction: column;
-    }
-    .register-wrapper {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center;
-      padding: 2rem 1rem;
-    }
-    .register-box {
-      width: 100%; max-width: 720px;
-      background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0,0,0,.3);
-    }
-    .register-header {
-      background: linear-gradient(135deg, #095456, #0d7377);
-      padding: 2rem 2rem;
-      text-align: center; color: #fff;
-    }
-    .register-logo {
-      width: 64px; height: 64px;
-      background: rgba(23,184,190,.2);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 0.8rem;
-      font-size: 1.8rem;
-      border: 2px solid rgba(23,184,190,.4);
-    }
-    .register-header h4 { font-weight: 800; margin: 0 0 .3rem; font-size: 1.2rem; }
-    .register-header p  { opacity: .75; font-size: .82rem; margin: 0; }
-    .register-body { padding: 2rem; }
-    .form-label { font-weight: 600; font-size: .82rem; color: #2d3748; margin-bottom: .35rem; text-transform: uppercase; }
-    .form-control, .form-select {
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      padding: .6rem 1rem;
-      font-size: .9rem;
-      transition: all .2s;
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: #0d7377;
-      box-shadow: 0 0 0 3px rgba(13,115,119,.1);
-    }
-    .btn-register-submit {
-      background: linear-gradient(135deg, #0d7377, #14919b);
-      border: none; color: #fff;
-      font-weight: 700; font-size: .95rem;
-      border-radius: 10px; padding: .75rem;
-      letter-spacing: .3px;
-      transition: all .2s;
-      width: 100%;
-    }
-    .btn-register-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(13,115,119,.4);
-      color: #fff;
-    }
-    .email-hint {
-      background: #f0fdfa;
-      border: 1px solid #ccfbf1;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: .78rem;
-      color: #0d7377;
-      margin-top: 6px;
-    }
-    .register-footer { text-align: center; padding: 0 2rem 1.8rem; }
-    .register-footer a { color: #0d7377; font-weight: 600; }
-    .register-footer a:hover { color: #14919b; }
-    .back-link { color: rgba(255,255,255,.7); font-size:.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:.35rem; margin-bottom:1rem; }
-    .back-link:hover { color:#fff; }
+    /* Step 1 small refinements only — main design lives in the shared
+       .auth-* system in style.css (Phase D). */
+    .auth-head { background: linear-gradient(135deg, #075457, #0b7475); }
   </style>
 </head>
-<body>
-<div class="register-wrapper">
-  <div>
-    <div class="text-center mb-3">
-      <a href="{{ url_for('home') }}" class="back-link">
-        <i class="bi bi-arrow-left"></i> Back to Home
-      </a>
+<body class="auth-page">
+
+  <!-- Top row: brand + language -->
+  <div class="auth-navrow">
+    <a href="{{ url_for('home') }}" class="auth-brand">
+      <span class="auth-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span>
+        <span class="auth-brand-name">{{ t('auth_brand_name') }}</span>
+        <span class="auth-brand-sub">{{ t('auth_brand_sub') }}</span>
+      </span>
+    </a>
+    <div class="auth-lang" role="group" aria-label="{{ t('lang_title') }}">
+      <a href="{{ url_for('auth.set_language', language='my', redirect='/auth/register') }}" {% if lang == 'my' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_my') }}</a>
+      <span class="auth-lang-sep" aria-hidden="true">|</span>
+      <a href="{{ url_for('auth.set_language', language='en', redirect='/auth/register') }}" {% if lang == 'en' %}class="is-active" aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ t('lang_switch_en') }}</a>
     </div>
+  </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" style="border-radius:10px; max-width:720px;">
-          <i class="bi bi-exclamation-circle me-2"></i>{{ msg }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}{% endif %}
-    {% endwith %}
+  <div class="auth-wrapper">
+    <div class="auth-card">
 
-    <div class="register-box">
-      <!-- Header -->
-      <div class="register-header">
-        <div class="register-logo"><i class="bi bi-person-plus" style="color: #17b8be;"></i></div>
-        <h4>Member Registration</h4>
-        <p>Join PUMUB Digital Library — University email required</p>
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="auth-alert auth-alert-{{ cat }} alert-dismissible" role="alert">
+            <i class="bi {{ 'bi-check-circle' if cat == 'success' else ('bi-info-circle' if cat == 'info' else 'bi-exclamation-circle') }}"></i>
+            <span>{{ msg }}</span>
+            <button type="button" class="auth-alert-close" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Compact registration header: title only -->
+      <div class="auth-head auth-head-compact">
+        <div class="auth-head-icon"><i class="bi bi-person-badge"></i></div>
+        <h3>{{ t('verify_to_register') }}</h3>
       </div>
 
+      <!-- Essential registration form only -->
       <!-- Body -->
-      <div class="register-body">
-        <form method="POST" action="{{ url_for('auth.register') }}">
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <label class="form-label" id="idLabel">Student ID</label>
-              <input type="text" name="student_id" class="form-control" placeholder="ID Number" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Full Name</label>
-              <input type="text" name="name" class="form-control" placeholder="Full Name" required>
-            </div>
-          </div>
+      <div class="auth-body">
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
 
-          <div class="mb-3">
-            <label class="form-label">Official Email</label>
+          <div class="mb-4">
+            <label class="auth-label" for="email">{{ t('register_email_label') }} <span class="req">*</span></label>
             <div class="input-group">
-              <span class="input-group-text" style="background: #f0fdfa; border-color: #e2e8f0; color: #0d7377;"><i class="bi bi-envelope"></i></span>
-              <input type="email" name="email" class="form-control" 
+              <span class="auth-input-icon"><i class="bi bi-envelope"></i></span>
+              <input type="email" id="email" name="email" class="form-control auth-input has-icon"
                      placeholder="name.year@pumub.edu.mm" required
-                     style="border-left: none; border-radius: 0 8px 8px 0;">
-            </div>
-            <div class="email-hint">
-              <i class="bi bi-shield-check me-1"></i> Only <strong>@pumub.edu.mm</strong> emails are accepted. External emails will be rejected.
+                     value="{{ request.form.get('email', '') }}" autocomplete="email"
+                     style="border-left:none; border-radius: 0 10px 10px 0;">
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Account Role</label>
-              <select name="role" class="form-select" id="roleSelect" onchange="updateLabels()" required>
-                <option value="student" selected>Student</option>
-                <option value="teacher">Teacher</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Faculty / Dept</label>
-              <select name="faculty_dept" id="faculty_dept" class="form-select" required>
-                <option value="" disabled selected>Select Faculty / Dept</option>
-    
-                <!-- Faculty of Computing -->
-                  <optgroup label="Faculty of Computing">
-                    <option value="Faculty of Computing (CS)">Faculty of Computing (CS)</option>
-                    <option value="Faculty of Computing (CT)">Faculty of Computing (CT)</option>
-                  </optgroup>
-    
-                <!-- Faculty of Engineering -->
-                  <optgroup label="Faculty of Engineering">
-                    <option value="Faculty of Engineering (Civil)">Faculty of Engineering (Civil)</option>
-                    <option value="Faculty of Engineering (EC)">Faculty of Engineering (EC)</option>
-                    <option value="Faculty of Engineering (EP)">Faculty of Engineering (EP)</option>
-                    <option value="Faculty of Engineering (Mech)">Faculty of Engineering (Mech)</option>
-                  </optgroup>
-    
-                <!-- Other Departments -->
-                <optgroup label="Other">
-                  <option value="Supporting Subjects">Supporting Subjects(Myanmar)</option>
-                  <option value="Supporting Subjects">Supporting Subjects(English)</option>
-                  <option value="Supporting Subjects">Supporting Subjects(Physic)</option>
-                  <option value="Supporting Subjects">Supporting Subjects(Chemistry)</option>
-                </optgroup>
-            </select>
+          <div class="mb-4">
+            <label class="auth-label" for="university_id">{{ t('register_id_label') }} <span class="req">*</span></label>
+            <div class="input-group">
+              <span class="auth-input-icon"><i class="bi bi-credit-card"></i></span>
+              <input type="text" id="university_id" name="university_id" class="form-control auth-input has-icon"
+                     placeholder="MUB-1350 / CS-2024-001 / T-001" required
+                     value="{{ request.form.get('university_id', '') }}" autocomplete="off"
+                     style="border-left:none; border-radius: 0 10px 10px 0;">
             </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
-              <label class="form-label">Password</label>
-              <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Confirm Password</label>
-              <input type="password" name="confirm_password" class="form-control" placeholder="Re-type password" required>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-register-submit mb-3">
-            <i class="bi bi-person-check me-2"></i>Create Account
+          <button type="submit" class="btn auth-btn">
+            <i class="bi bi-person-check"></i>{{ t('verify_button') }}
           </button>
         </form>
       </div>
 
       <!-- Footer -->
-      <div class="register-footer">
-        <span class="text-muted" style="font-size:.85rem;">Already have an account? </span>
-        <a href="{{ url_for('auth.login') }}">Login here</a>
+      <div class="auth-foot">
+        <span class="text-muted">{{ t('auth_have_account') }} </span>
+        <a href="{{ url_for('auth.login') }}">{{ t('auth_login_here') }}</a>
       </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script>
-function updateLabels() {
-    const role = document.getElementById('roleSelect').value;
-    const label = document.getElementById('idLabel');
-    label.innerText = (role === 'teacher') ? 'STAFF / TEACHER ID' : 'STUDENT ID';
-}
-</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

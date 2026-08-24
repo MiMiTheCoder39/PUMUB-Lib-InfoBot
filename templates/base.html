@@ -1,168 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_language or 'my' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Digital Library{% endblock %} | Polytechnic University (Maubin)</title>
-
-    <!-- Bootstrap 5 CSS -->
+    <title>{% block title %}{{ t('library_footer') }}{% endblock %} | {{ t('university_name') }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
-    <!-- Custom CSS (Teal/Cyan Theme — Pann Satt Lann Inspired) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% if session.get('user_id') and session.get('role') != 'admin' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css') }}">
     {% endif %}
-
     {% block extra_head %}{% endblock %}
 </head>
-<body>
-
+<body class="user-app">
 {% block navbar %}
-<!-- ═══════════════════ DEFAULT NAVBAR (for non-dashboard pages) ═══════════════════
-     No more schoolbg header — Logo (📚 PUMUB Digital Library) + Navbar only.
-     Home page (home.html) overrides this block with its own hero header. -->
-<nav class="psl-navbar">
-    <div class="nav-container">
-        <a href="{{ url_for('home') }}" class="nav-brand-link">
-            <span class="brand-emoji" style="font-size: 1.3rem;">📚</span>
-            <span class="brand-mini">PUMUB Digital Library</span>
-        </a>
-        <ul class="nav-links">
-            {% if session.get('user_id') %}
-                {% if session.get('role') == 'admin' %}
-                    <li><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('admin.books') }}">Books</a></li>
-                    <li><a href="{{ url_for('admin.borrows') }}">Borrows</a></li>
-                    <li><a href="{{ url_for('admin.users') }}">Users</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('student.dashboard') }}">Home</a></li>
-                    <li><a href="{{ url_for('student.dashboard') }}#announcement-section">Announcement</a></li>
-                    <li><a href="{{ url_for('student.dashboard') }}#top-score-section">Top Score</a></li>
-                {% endif %}
-            {% else %}
-                <li><a href="{{ url_for('home') }}">Home</a></li>
-                <li><a href="{{ url_for('home') }}#announcement-section">Announcement</a></li>
-                <li><a href="{{ url_for('home') }}#top-score-section">Top Score</a></li>
-            {% endif %}
-        </ul>
-        <div class="nav-right">
-            {% if session.get('user_id') %}
-                {% if session.get('role') != 'admin' %}
-                <div class="profile-dropdown">
-                    <div class="profile-avatar">
-                        <i class="bi bi-person-fill"></i>
-                    </div>
-                    <div class="profile-dropdown-menu">
-                        <div class="dropdown-header">{{ session.get('name', 'User') }}</div>
-                        <a href="{{ url_for('student.dashboard') }}"><i class="bi bi-person"></i> Profile</a>
-                        <a href="{{ url_for('student.borrow_history') }}"><i class="bi bi-journal-bookmark"></i> Borrow History</a>
-                        <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i> Clearance</a>
-                        <a href="{{ url_for('student.notifications') }}"><i class="bi bi-bell"></i> Notifications</a>
-                        <a href="{{ url_for('student.bookmarks') }}"><i class="bi bi-bookmark"></i> My Bookmarks</a>
-                        <a href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history"></i> View History</a>
-                        <a href="{{ url_for('student.downloads') }}"><i class="bi bi-download"></i> Downloads</a>
-                        <div class="divider"></div>
-                        <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
-                    </div>
-                </div>
-                {% else %}
-                <div class="profile-dropdown">
-                    <div class="profile-avatar">
-                        <i class="bi bi-person-fill"></i>
-                    </div>
-                    <div class="profile-dropdown-menu">
-                        <div class="dropdown-header">Admin</div>
-                        <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin Panel</a>
-                        <div class="divider"></div>
-                        <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
-                    </div>
-                </div>
-                {% endif %}
-            {% else %}
-                <div class="profile-dropdown">
-                    <span class="nav-link-btn" style="padding: 14px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">MY ACCOUNT <i class="bi bi-chevron-down" style="font-size: 0.7rem;"></i></span>
-                    <div class="profile-dropdown-menu">
-                        <a href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
-                        <a href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus"></i> Register</a>
-                    </div>
-                </div>
-                <div class="profile-avatar" onclick="window.location.href='{{ url_for('auth.login') }}'">
-                    <i class="bi bi-person-fill"></i>
-                </div>
-            {% endif %}
+<nav class="user-navbar" aria-label="{{ t('library_footer') }}">
+  <div class="user-nav-inner">
+    <a href="{{ url_for('student.dashboard') if session.get('user_id') and session.get('role') != 'admin' else url_for('home') }}" class="user-brand">
+      <span class="user-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span><strong>PUMUB</strong><small>{{ t('library_footer') }}</small></span>
+    </a>
+    <button class="user-nav-toggle" type="button" aria-controls="userNavMenu" aria-expanded="false" data-user-nav-toggle>
+      <i class="bi bi-list"></i><span class="visually-hidden">{{ t('menu') }}</span>
+    </button>
+    <div class="user-nav-menu" id="userNavMenu" data-user-nav-menu>
+      <div class="user-nav-links">
+      {% if session.get('user_id') and session.get('role') != 'admin' %}
+        <a class="user-nav-link {% if request.endpoint == 'student.dashboard' %}is-active{% endif %}" href="{{ url_for('student.dashboard') }}"><i class="bi bi-house"></i>{{ t('home') }}</a>
+        <div class="user-nav-dropdown">
+          <button type="button" class="user-nav-link user-nav-dropdown-btn {% if request.endpoint in ('student.collection','student.faculties') %}is-active{% endif %}" data-nav-dropdown-toggle aria-expanded="false"><i class="bi bi-mortarboard"></i>{{ t('choose_faculties') }} <i class="bi bi-chevron-down" style="font-size:.62rem"></i></button>
+          <div class="user-account-panel user-nav-dropdown-menu" data-nav-dropdown>
+            <a href="{{ url_for('student.search') }}"><i class="bi bi-grid"></i>{{ t('faculties_all') }}</a>
+            {% for faculty in (all_faculties or []) %}
+            <a href="{{ url_for('student.dashboard', faculty=faculty.faculty_id) }}" data-faculty-scroll="{{ faculty.faculty_id }}"><i class="bi bi-bookmark"></i>{{ faculty.faculty_name }} <small>({{ faculty.department }})</small></a>
+            {% endfor %}
+          </div>
         </div>
+        <a class="user-nav-link {% if request.endpoint == 'student.recommendations' %}is-active{% endif %}" href="{{ url_for('student.recommendations') }}"><i class="bi bi-stars"></i>{{ t('recommendations_nav') }}</a>
+        <a class="user-nav-link {% if request.endpoint in ('student.announcements','student.announcement_detail') %}is-active{% endif %}" href="{{ url_for('student.announcements') }}"><i class="bi bi-megaphone"></i>{{ t('announcements') }}</a>
+        <a class="user-nav-link {% if request.endpoint in ('student.bookmarks','student.my_library','student.history','student.reading_history','student.borrow_history','student.fines') %}is-active{% endif %}" href="{{ url_for('student.my_library') }}"><i class="bi bi-bookshelf"></i>{{ t('my_library') }}</a>
+        <a class="user-nav-link {% if request.endpoint in ('student.library_rules','library_rules_public') %}is-active{% endif %}" href="{{ url_for('student.library_rules') }}"><i class="bi bi-shield-check"></i>{{ t('rules') }}</a>
+      {% elif session.get('user_id') and session.get('role') == 'admin' %}
+        <a class="user-nav-link" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>{{ t('admin_panel') }}</a>
+      {% else %}
+        <a class="user-nav-link {% if request.endpoint == 'home' %}is-active{% endif %}" href="{{ url_for('home') }}">{{ t('home') }}</a>
+        <div class="user-nav-dropdown">
+          <button type="button" class="user-nav-link user-nav-dropdown-btn" data-nav-dropdown-toggle aria-expanded="false"><i class="bi bi-mortarboard"></i>{{ t('choose_faculties') }} <i class="bi bi-chevron-down" style="font-size:.62rem"></i></button>
+          <div class="user-account-panel user-nav-dropdown-menu" data-nav-dropdown>
+            {% for faculty in (all_faculties or []) %}
+            <a href="{{ url_for('home', faculty=faculty.faculty_id) }}" data-faculty-scroll="{{ faculty.faculty_id }}"><i class="bi bi-bookmark"></i>{{ faculty.faculty_name }} <small>({{ faculty.department }})</small></a>
+            {% endfor %}
+          </div>
+        </div>
+        <a class="user-nav-link" href="{{ url_for('home') }}#announcement-section">{{ t('announcements') }}</a>
+      {% endif %}
+      </div>
+      <div class="user-nav-actions">
+        {% if session.get('user_id') and session.get('role') != 'admin' %}
+        <a class="user-icon-link" href="{{ url_for('student.search') }}" aria-label="{{ t('search') }}"><i class="bi bi-search"></i></a>
+        <a class="user-icon-link {% if request.endpoint in ('student.notifications', 'student.notification_read') %}is-active{% endif %}" href="{{ url_for('student.notifications') }}" aria-label="{{ t('notifications') }}" title="{{ t('notifications') }}"><i class="bi bi-bell"></i>{% if unread_notif_count %}<span class="user-notification-dot" aria-label="{{ unread_notif_count }} unread">{{ unread_notif_count if unread_notif_count < 100 else '99+' }}</span>{% endif %}</a>
+        <div class="user-account-menu">
+          <button type="button" class="user-account-trigger" aria-expanded="false" data-account-toggle><span class="user-avatar">{% if profile_image %}<img src="{{ url_for('library_file.file_profile', filename=profile_image) }}" alt="{{ session.get('name', 'User') }}">{% else %}{{ (session.get('name'))[0]|upper }}{% endif %}</span><span class="user-account-name">{{ session.get('name', 'User') }}</span><i class="bi bi-chevron-down"></i></button>
+          <div class="user-account-panel" data-account-panel>
+            <div class="user-account-header"><span class="user-avatar">{% if profile_image %}<img src="{{ url_for('library_file.file_profile', filename=profile_image) }}" alt="{{ session.get('name', 'User') }}">{% else %}{{ (session.get('name'))[0]|upper }}{% endif %}</span><div><strong>{{ session.get('name', 'User') }}</strong><small>{% if session.get('role') == 'student' %}{{ t('role_student') }}{% elif session.get('role') == 'teacher' %}{{ t('role_teacher') }}{% else %}{{ t('admin') }}{% endif %}</small></div></div>
+            <a href="{{ url_for('student.profile') }}"><i class="bi bi-person"></i>{{ t('profile') }}</a>
+            <a href="{{ url_for('student.fines') }}"><i class="bi bi-receipt"></i>{{ t('fines') }}</a>
+            <a href="{{ url_for('student.clearance') }}"><i class="bi bi-shield-check"></i>{{ t('clearance') }}</a>
+            <a href="{{ url_for('student.library_rules') }}"><i class="bi bi-info-circle"></i>{{ t('rules') }}</a>
+            <div class="user-language-row"><span>{{ t('language') }}</span>{% for code, label in supported_languages %}<a href="{{ url_for('student.set_language', language=code) }}" class="{% if current_language == code %}is-active{% endif %}">{{ label }}</a>{% endfor %}</div>
+            <a class="user-account-logout" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i>{{ t('logout') }}</a>
+          </div>
+        </div>
+        {% elif not session.get('user_id') %}
+          <a class="btn btn-sm btn-primary" href="{{ url_for('auth.login') }}">{{ t('login') }}</a>
+        {% endif %}
+      </div>
     </div>
+  </div>
 </nav>
 {% endblock %}
 
-<!-- ═══════════════════ FLASH MESSAGES ═══════════════════ -->
 {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-                <div class="flash-msg {{ category }}">
-                    {% if category == 'danger' %}
-                        <i class="bi bi-exclamation-circle"></i>
-                    {% elif category == 'success' %}
-                        <i class="bi bi-check-circle"></i>
-                    {% elif category == 'warning' %}
-                        <i class="bi bi-exclamation-triangle"></i>
-                    {% else %}
-                        <i class="bi bi-info-circle"></i>
-                    {% endif %}
-                    <span>{{ message }}</span>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+  {% if messages %}<div class="user-flash-stack">{% for category, message in messages %}<div class="user-flash user-flash-{{ category }}" role="status"><i class="bi {% if category == 'success' %}bi-check-circle{% elif category == 'danger' %}bi-exclamation-circle{% elif category == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}
 {% endwith %}
 
-<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
-<main>
-    {% block content %}{% endblock %}
-</main>
+<main class="user-main">{% block content %}{% endblock %}</main>
 
-<!-- ═══════════════════ DEFAULT FOOTER (Teal) ═══════════════════ -->
 {% block footer %}
-<footer class="psl-footer">
-    <div class="footer-grid">
-        <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="{{ url_for('home') }}">Home</a>
-            {% if session.get('user_id') and session.get('role') != 'admin' %}
-            <a href="{{ url_for('student.search') }}">Browse Books</a>
-            <a href="{{ url_for('student.borrow_history') }}">My Borrowings</a>
-            <a href="{{ url_for('student.clearance') }}">Library Clearance</a>
-            {% endif %}
-        </div>
-        <div class="footer-col">
-            <h4>Resources</h4>
-            <a href="#">Textbooks</a>
-            <a href="#">Reference Books</a>
-            <a href="#">Journals</a>
-            <a href="#">Thesis Papers</a>
-        </div>
-        <div class="footer-col">
-            <h4>Contact Us</h4>
-            <p><i class="bi bi-geo-alt me-2"></i>Polytechnic University (Maubin)<br>Maubin, Ayeyarwady Region, Myanmar</p>
-            <p><i class="bi bi-telephone me-2"></i>+95 45 30123</p>
-            <p><i class="bi bi-envelope me-2"></i>library@pumub.edu.mm</p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        &copy; 2026 PUMUB Digital Library. All rights reserved.
-    </div>
+<footer class="user-footer">
+  <div class="user-footer-inner"><div><strong>{{ t('library_footer') }}</strong><span>{{ t('university_name') }}</span></div><nav aria-label="Footer"><a href="{{ url_for('student.dashboard') if session.get('user_id') and session.get('role') != 'admin' else url_for('home') }}">{{ t('home') }}</a>{% if session.get('user_id') and session.get('role') != 'admin' %}<a href="{{ url_for('student.my_library') }}">{{ t('my_library') }}</a>{% endif %}</nav><small>© 2026 {{ t('library_footer') }}. {{ t('copyright') }}</small></div>
 </footer>
 {% endblock %}
 
 {% include 'partials/libinfobot.html' %}
-<!-- Bootstrap JS Bundle -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-{% if session.get('user_id') and session.get('role') != 'admin' %}
-<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>
-{% endif %}
+{% if session.get('user_id') and session.get('role') != 'admin' %}<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>{% endif %}
+<script>
+(function(){
+  const toggle=document.querySelector('[data-user-nav-toggle]'), menu=document.querySelector('[data-user-nav-menu]');
+  if(toggle&&menu){toggle.addEventListener('click',()=>{const open=menu.classList.toggle('is-open');toggle.setAttribute('aria-expanded',open);});}
+  const account=document.querySelector('[data-account-toggle]'), panel=document.querySelector('[data-account-panel]');
+  if(account&&panel){account.addEventListener('click',()=>{const open=panel.classList.toggle('is-open');account.setAttribute('aria-expanded',open);closeNavDropdowns(account);});document.addEventListener('click',e=>{if(!account.contains(e.target)&&!panel.contains(e.target)){panel.classList.remove('is-open');account.setAttribute('aria-expanded','false');}});}
+  document.querySelectorAll('[data-nav-dropdown-toggle]').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();const wrap=btn.closest('.user-nav-dropdown');const open=!wrap.classList.toggle('is-open');btn.setAttribute('aria-expanded',open);closeNavDropdowns(btn);});});
+  const closeNavDropdowns=(keep)=>{document.querySelectorAll('.user-nav-dropdown.is-open').forEach(w=>{if(keep&&!w.contains(keep)){w.classList.remove('is-open');const b=w.querySelector('[data-nav-dropdown-toggle]');if(b)b.setAttribute('aria-expanded','false');}});};
+  document.addEventListener('click',e=>{if(!e.target.closest('.user-nav-dropdown')){document.querySelectorAll('.user-nav-dropdown.is-open').forEach(w=>{w.classList.remove('is-open');const b=w.querySelector('[data-nav-dropdown-toggle]');if(b)b.setAttribute('aria-expanded','false');});}});
+  if(menu&&toggle){const closeMenuOnOutside=(e)=>{if(!menu.contains(e.target)&&!toggle.contains(e.target)){menu.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');}};document.addEventListener('click',closeMenuOnOutside);}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.user-nav-dropdown.is-open').forEach(w=>{w.classList.remove('is-open');const b=w.querySelector('[data-nav-dropdown-toggle]');if(b)b.setAttribute('aria-expanded','false');});if(panel)panel.classList.remove('is-open');if(menu)menu.classList.remove('is-open');}});
+})();
+</script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

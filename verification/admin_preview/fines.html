@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fines · PUMUB Digital Library</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    
+</head>
+<body class="admin-body">
+    <div class="admin-app" id="adminApp">
+        <aside class="admin-sidebar" id="adminSidebar" aria-label="Administration Library">
+            <div class="admin-brand">
+                <a href="/admin/dashboard" class="admin-brand-link">
+                    <span class="admin-brand-mark"><i class="bi bi-stack"></i></span>
+                    <span><strong>PUMUB</strong><small>Administration</small></span>
+                </a>
+                <button class="admin-sidebar-close d-lg-none" type="button" data-admin-sidebar-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <nav class="admin-nav" aria-label="Primary Admin navigation">
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Administration</div>
+                    <a class="admin-nav-link " href="/admin/dashboard"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+                </div>
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Library</div>
+                    <a class="admin-nav-link " href="/admin/books"><i class="bi bi-book"></i><span>Books</span></a>
+                    <a class="admin-nav-link " href="/admin/categories"><i class="bi bi-tags"></i><span>Categories</span></a>
+                    <a class="admin-nav-link " href="/admin/authors"><i class="bi bi-person-badge"></i><span>Authors</span></a>
+                    <a class="admin-nav-link " href="/admin/faculties"><i class="bi bi-building"></i><span>Faculties</span></a>
+                </div>
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Circulation</div>
+                    <a class="admin-nav-link " href="/admin/borrows"><i class="bi bi-arrow-left-right"></i><span>Borrow Requests</span></a>
+                    <a class="admin-nav-link is-active" href="/admin/fines"><i class="bi bi-cash-stack"></i><span>Fines</span></a>
+                </div>
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Users</div>
+                    <a class="admin-nav-link " href="/admin/users"><i class="bi bi-people"></i><span>Students · Teachers · Admins</span></a>
+                </div>
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Insights</div>
+                    <a class="admin-nav-link " href="/admin/charts"><i class="bi bi-bar-chart-line"></i><span>Analytics</span></a>
+                    <a class="admin-nav-link " href="/admin/reports"><i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span></a>
+                </div>
+                <div class="admin-nav-section">
+                    <div class="admin-nav-label">Communication</div>
+                    <a class="admin-nav-link " href="/admin/announcements"><i class="bi bi-megaphone"></i><span>Announcements</span></a>
+                </div>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <div class="admin-user-mini"><span class="admin-avatar"><i class="bi bi-person"></i></span><span><strong>Preview Admin</strong><small>Administration</small></span></div>
+                <a class="admin-logout-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <div class="admin-sidebar-backdrop" data-admin-sidebar-close></div>
+        <section class="admin-main-area">
+            <header class="admin-topbar">
+                <div class="admin-topbar-left">
+                    <button class="admin-sidebar-toggle" type="button" data-admin-sidebar-toggle aria-label="Administration Library"><i class="bi bi-list"></i></button>
+                    <div class="admin-breadcrumb"><span class="admin-breadcrumb-kicker">Administration</span><strong>Fines</strong></div>
+                </div>
+                <div class="admin-topbar-right">
+                    <a class="admin-topbar-icon" href="/admin/announcements" aria-label="Announcements" title="Announcements"><i class="bi bi-bell"></i></a>
+                    <span class="admin-topbar-divider"></span>
+                    <span class="admin-topbar-profile"><span class="admin-avatar admin-avatar-sm"><i class="bi bi-person"></i></span><span><strong>Preview Admin</strong><small>Administration</small></span></span>
+                    <div class="admin-language-links" aria-label="Language"><a href="/admin/language/my" class="admin-language-link ">မြန်မာ</a><a href="/admin/language/en" class="admin-language-link is-active">English</a></div><a class="admin-topbar-logout" href="/auth/logout">Logout</a>
+                </div>
+            </header>
+
+            <main class="admin-content">
+                
+                    
+                
+                
+<div class="admin-page-heading"><div><span class="admin-eyebrow">Fines</span><h1>Fines</h1><p>Unpaid Fines၊ payment status နှင့် Borrow relationship ကိုစစ်ဆေးပါ။</p></div><a href="/admin/reports?report=fines" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-2"></i>Fine Report</a></div>
+
+<section class="admin-kpi-grid admin-kpi-grid-3 mb-4" aria-label="Fines"><div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-receipt"></i></div><div><span>Total Fines</span><strong>2,000 <small>MMK</small></strong></div></div><div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-red"><i class="bi bi-exclamation-circle"></i></div><div><span>Unpaid Fines</span><strong>2,000 <small>MMK</small></strong></div></div><div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-green"><i class="bi bi-check2-circle"></i></div><div><span>Paid</span><strong>0 <small>MMK</small></strong></div></div></section>
+
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>Filter</h2><p>1 records · Search student, book, or Borrow ID</p></div></div><div class="admin-filter-bar admin-filter-bar-compact px-3 pt-3"><div class="admin-filter-actions"><a class="admin-filter-pill " href="/admin/fines">All</a><a class="admin-filter-pill is-active" href="/admin/fines?status=unpaid">Unpaid Fines</a><a class="admin-filter-pill " href="/admin/fines?status=paid">Paid</a></div></div><form method="GET" action="/admin/fines" class="admin-fine-filter"><div class="admin-filter-field admin-filter-search"><label for="fineSearch">Search student, book, or Borrow ID</label><input id="fineSearch" type="search" name="search" value="" class="form-control" placeholder="Search student, book, or Borrow ID"></div><div class="admin-filter-field"><label for="fineFrom">From</label><input id="fineFrom" type="date" name="from" value="" class="form-control"></div><div class="admin-filter-field"><label for="fineTo">To</label><input id="fineTo" type="date" name="to" value="" class="form-control"></div><div class="admin-filter-field"><label for="fineFaculty">Faculty</label><select id="fineFaculty" name="faculty_id" class="form-select"><option value="">All</option></select></div><div class="admin-filter-field"><label for="fineYear">Year</label><select id="fineYear" name="year" class="form-select"><option value="2026" selected>2026</option></select></div><div class="admin-filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply filters</button><a class="btn btn-outline-secondary" href="/admin/fines">Clear</a></div></form></section>
+
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>Fine Trend</h2><p>Generated uses created_at; Paid uses paid_at. <span class="visually-hidden">Generated uses <code>created_at</code>; Paid uses <code>paid_at</code>.</span></p></div></div><div class="admin-chart-area admin-chart-area-wide"><canvas id="monthlyFineChart" aria-label="Fine Trend"></canvas></div></section>
+
+<section class="admin-panel"><div class="admin-panel-head"><div><h2>records</h2><p>1 records · Details contains the complete Borrow/Fine record.</p></div></div><div class="table-responsive admin-table-wrap"><table class="table align-middle mb-0 admin-compact-table"><thead><tr><th>Student</th><th>Book</th><th>Fine</th><th>Status</th><th>Payment date</th><th class="text-end">Details</th></tr></thead><tbody><tr><td><strong>Preview Student</strong><small class="d-block text-muted">ST-001</small></td><td class="admin-cell-truncate" title="Digital Library Operations">Digital Library Operations<small class="d-block text-muted">Library Science</small></td><td><strong>2,000 MMK</strong><small class="d-block text-muted">2 Days overdue</small></td><td><span class="admin-status admin-status-overdue">Unpaid Fines</span></td><td class="text-muted small">—</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-secondary" data-fine-detail='{"amount": "2,000", "author": "Preview Author", "book": "Digital Library Operations", "borrow": "BR-2026-0001", "borrow_status": "overdue", "borrow_url": "/admin/borrows?search=BR-2026-0001", "borrowed": "11 Aug 2026", "category": "Library Science", "due": "13 Aug 2026", "late_days": 2, "method": "\u2014", "paid": "\u2014", "returned": "\u2014", "status": "Unpaid Fines", "student": "Preview Student", "student_id": "ST-001"}' onclick="openFineDetail(this)"><i class="bi bi-eye"></i><span class="visually-hidden">Details</span></button><form method="POST" action="/admin/fines/paid/1" class="d-inline ms-1" onsubmit="return confirm('Paid?')"><select name="payment_method" class="form-select form-select-sm admin-payment-select d-inline-block" aria-label="Payment method"><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select><button class="btn btn-sm btn-success">Paid</button></form></td></tr></tbody></table></div></section>
+
+<div class="modal fade" id="fineDetailModal" tabindex="-1" aria-labelledby="fineDetailTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content admin-detail-modal"><div class="modal-header"><div><h2 class="modal-title" id="fineDetailTitle">Details</h2><p class="mb-0 text-muted smaller">Fine Report · Borrow ID</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="row g-4"><div class="col-md-6"><dl class="row mb-0 admin-detail-list"><dt class="col-5">Student</dt><dd class="col-7" id="fineStudent">—</dd><dt class="col-5">Book</dt><dd class="col-7" id="fineBook">—</dd><dt class="col-5">Author</dt><dd class="col-7" id="fineAuthor">—</dd><dt class="col-5">Category</dt><dd class="col-7" id="fineCategory">—</dd><dt class="col-5">Borrow ID</dt><dd class="col-7" id="fineBorrow">—</dd></dl></div><div class="col-md-6"><dl class="row mb-0 admin-detail-list"><dt class="col-5">Borrowed date</dt><dd class="col-7" id="fineBorrowed">—</dd><dt class="col-5">Due date</dt><dd class="col-7" id="fineDue">—</dd><dt class="col-5">Return date</dt><dd class="col-7" id="fineReturned">—</dd><dt class="col-5">Days overdue</dt><dd class="col-7" id="fineLateDays">—</dd><dt class="col-5">Fine</dt><dd class="col-7" id="fineAmount">—</dd><dt class="col-5">Status</dt><dd class="col-7" id="fineStatus">—</dd><dt class="col-5">Payment date</dt><dd class="col-7" id="finePaid">—</dd><dt class="col-5">Payment method</dt><dd class="col-7" id="fineMethod">—</dd></dl></div></div><div class="mt-4"><a id="fineBorrowLink" class="btn btn-outline-primary" href="#"><i class="bi bi-arrow-left-right me-2"></i>View Borrow Requests</a></div></div></div></div></div>
+
+            </main>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (() => {
+        const app = document.getElementById('adminApp');
+        const open = () => app.classList.add('sidebar-open');
+        const close = () => app.classList.remove('sidebar-open');
+        document.querySelectorAll('[data-admin-sidebar-toggle]').forEach(el => el.addEventListener('click', open));
+        document.querySelectorAll('[data-admin-sidebar-close]').forEach(el => el.addEventListener('click', close));
+        document.querySelectorAll('.admin-nav-link').forEach(el => el.addEventListener('click', close));
+    })();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
+(() => { const rows=[{"generated": 2000, "month": "August", "outstanding": 2000, "paid": 0}]; const el=document.getElementById('monthlyFineChart'); if(el) new Chart(el,{type:'bar',data:{labels:rows.map(r=>r.month),datasets:[{label:"Generated",data:rows.map(r=>r.generated),backgroundColor:'#0b7375'},{label:"Paid",data:rows.map(r=>r.paid),backgroundColor:'#27ae60'},{label:"Outstanding",data:rows.map(r=>r.outstanding),backgroundColor:'#d64545'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{position:'bottom'}}}}); })();
+function openFineDetail(button) { const d=JSON.parse(button.dataset.fineDetail); const map={fineStudent:'student',fineBook:'book',fineAuthor:'author',fineCategory:'category',fineBorrow:'borrow',fineBorrowed:'borrowed',fineDue:'due',fineReturned:'returned',fineLateDays:'late_days',fineAmount:'amount',fineStatus:'status',finePaid:'paid',fineMethod:'method'}; Object.entries(map).forEach(([id,key])=>document.getElementById(id).textContent=d[key] ?? '—'); document.getElementById('fineBorrowLink').href=d.borrow_url || '#'; bootstrap.Modal.getOrCreateInstance(document.getElementById('fineDetailModal')).show(); }
+</script>
+</body>
+</html>

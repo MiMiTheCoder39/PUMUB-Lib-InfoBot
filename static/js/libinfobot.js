@@ -12,6 +12,11 @@
   const typing = root.querySelector('[data-libinfobot-typing]');
   const errorBox = root.querySelector('[data-libinfobot-error]');
   const sendButton = root.querySelector('[data-libinfobot-send]');
+  const copy = (() => {
+    try { return JSON.parse(root.dataset.libinfobotCopy || '{}'); }
+    catch (_) { return {}; }
+  })();
+  const copyText = (key, fallback) => copy[key] || fallback;
   let requestInFlight = false;
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({
@@ -34,9 +39,9 @@
     if (Array.isArray(books) && books.length) {
       html += `<div class="libinfobot-results">${books.map((book) => {
         const id = Number(book.book_id);
-        const title = escapeHtml(book.title || 'Untitled book');
-        const author = escapeHtml(book.author_name || 'Author unavailable');
-        return `<div class="libinfobot-result"><strong>${title}</strong><small>${author}</small>${Number.isInteger(id) ? `<div class="libinfobot-result-actions"><button type="button" class="libinfobot-detail" data-action="book_information" data-book-id="${id}" data-book-title="${title}">Ask about this book</button><button type="button" class="libinfobot-detail" data-action="pdf_summary" data-mode="short" data-book-id="${id}" data-book-title="${title}">Short PDF summary</button><button type="button" class="libinfobot-detail" data-action="pdf_question" data-book-id="${id}" data-book-title="${title}">Ask about PDF</button></div>` : ''}</div>`;
+        const title = escapeHtml(book.title || copyText('untitled', 'Untitled book'));
+        const author = escapeHtml(book.author_name || copyText('author', 'Author unavailable'));
+        return `<div class="libinfobot-result"><strong>${title}</strong><small>${author}</small>${Number.isInteger(id) ? `<div class="libinfobot-result-actions"><button type="button" class="libinfobot-detail" data-action="book_information" data-book-id="${id}" data-book-title="${title}">${copyText('ask_book', 'Ask about this book')}</button><button type="button" class="libinfobot-detail" data-action="pdf_summary" data-mode="short" data-book-id="${id}" data-book-title="${title}">${copyText('pdf_summary', 'Short PDF summary')}</button><button type="button" class="libinfobot-detail" data-action="pdf_question" data-book-id="${id}" data-book-title="${title}">${copyText('ask_pdf', 'Ask about PDF')}</button></div>` : ''}</div>`;
       }).join('')}</div>`;
     }
     item.innerHTML = avatar + html;
@@ -75,11 +80,11 @@
         body: JSON.stringify(payload)
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'LibInfoBot could not answer right now.');
-      const answer = data.answer || data.summary || (data.status === 'not_found' ? 'I could not find a matching book in the library database.' : 'I could not find an answer in the authorized library data.');
+      if (!response.ok) throw new Error(data.error || copyText('error', 'LibInfoBot could not answer right now.'));
+      const answer = data.answer || data.summary || (data.status === 'not_found' ? copyText('no_book', 'I could not find a matching book in the library database.') : copyText('no_answer', 'I could not find an answer in the authorized library data.'));
       addMessage(answer, 'bot', Array.isArray(data.books) ? data.books : []);
     } catch (error) {
-      showError(error.message || 'Something went wrong. Please try again.');
+      showError(error.message || copyText('error', 'Something went wrong. Please try again.'));
     } finally {
       requestInFlight = false;
       setLoading(false);
@@ -105,13 +110,13 @@
     if (!button) return;
     const action = button.dataset.action || 'book_information';
     const bookId = Number(button.dataset.bookId);
-    const title = button.dataset.bookTitle || 'this book';
+    const title = button.dataset.bookTitle || copyText('untitled', 'this book');
     if (action === 'pdf_summary') {
-      ask(`Summarize the PDF for “${title}”.`, bookId, action, button.dataset.mode || 'short');
+      ask(`${copyText('prompt_summary', 'Summarize this PDF.')} “${title}”`, bookId, action, button.dataset.mode || 'short');
     } else if (action === 'pdf_question') {
-      ask(`What is this PDF about?`, bookId, action, 'medium');
+      ask(copyText('prompt_pdf', 'What is this PDF about?'), bookId, action, 'medium');
     } else {
-      ask(`Tell me about “${title}”.`, bookId, action, 'medium');
+      ask(`${copyText('prompt_book', 'Tell me about this book.')} “${title}”`, bookId, action, 'medium');
     }
   });
 })();

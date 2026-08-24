@@ -1,34 +1,59 @@
-{% extends "admin/base_admin.html" %}
-{% block title %}Charts{% endblock %}
+{% extends 'admin/base_admin.html' %}
+{% block title %}{{ t('admin_analytics') }}{% endblock %}
 {% block admin_content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4"><div><h4 class="mb-1"><i class="bi bi-graph-up me-2" style="color:#0d7377"></i>Library Insights &amp; Charts</h4><small class="text-muted">Real-time reports from the library database</small></div></div>
-<div class="row g-3 mb-4">
-{% for label,value,icon,color in [('Total Books',stats.total_books,'bi-book','#0d7377'),('Total Users',stats.total_users,'bi-people','#14919b'),('Active Borrows',stats.active_borrows,'bi-arrow-left-right','#17b8be'),('Pending Requests',stats.pending_requests,'bi-hourglass-split','#095456')] %}<div class="col-12 col-sm-6 col-xl-3"><div class="card shadow-sm border-0 h-100" style="border-left:4px solid {{ color }}"><div class="card-body d-flex justify-content-between"><div><div class="text-muted small">{{ label }}</div><div class="fs-3 fw-bold" style="color:{{ color }}">{{ value }}</div></div><i class="bi {{ icon }} fs-3 opacity-50" style="color:{{ color }}"></i></div></div></div>{% endfor %}
+<div class="admin-page-heading">
+  <div><span class="admin-eyebrow">{{ t('admin_analytics') }}</span><h1>{{ t('admin_analytics') }}</h1><p>{{ t('charts_subtitle') }}</p></div>
+  <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-2"></i>{{ t('admin_reports') }}</a>
 </div>
+
+<section class="admin-period-panel admin-panel mb-4">
+  <div><strong>{{ t('admin_reporting_period') }}</strong><small>{{ period_label }} · {{ t('charts_period_note') }}</small></div>
+  <div class="admin-period-pills">{% for value, label in [('7d',t('period_7d')),('30d',t('period_30d')),('3m',t('period_3m')),('6m',t('period_6m')),('1y',t('period_1y'))] %}<a class="admin-filter-pill {{ 'is-active' if period == value else '' }}" href="{{ url_for('admin.charts', period=value) }}">{{ label }}</a>{% endfor %}</div>
+</section>
+
+<section class="admin-kpi-grid admin-kpi-grid-5 mb-4">
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-book"></i></div><div><span>{{ t('total_books') }}</span><strong>{{ stats.total_books }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-blue"><i class="bi bi-mortarboard"></i></div><div><span>{{ t('total_students') }}</span><strong>{{ stats.total_students }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-green"><i class="bi bi-arrow-left-right"></i></div><div><span>{{ t('active_borrows') }}</span><strong>{{ stats.active_borrows }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-red"><i class="bi bi-exclamation-octagon"></i></div><div><span>{{ t('overdue') }}</span><strong>{{ borrow_stats.overdue }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-amber"><i class="bi bi-cash-stack"></i></div><div><span>{{ t('unpaid_fines') }}</span><strong>{{ "{:,.0f}".format(fine_summary.get('unpaid_total', 0)) }} <small>MMK</small></strong></div></div>
+</section>
+
 <div class="row g-4">
-{% for title,id,data,message,size in [('Most Borrowed Books','mostBorrowedChart',most_borrowed,'No borrowing data available yet.','large'),('Books per Category','categoryChart',category_counts,'No category data available yet.','large'),('Users by Role','roleChart',role_stats,'No user-role data available yet.','small'),('Borrow Status','statusChart',status_stats,'No borrowing status data available yet.','small'),('Monthly Downloads','monthlyChart',monthly,'No download data available yet.','small')] %}<div class="col-12 {% if size == 'large' %}col-lg-7{% else %}col-md-6 col-lg-4{% endif %}"><div class="card shadow-sm border-0 h-100"><div class="card-header bg-white fw-bold" style="color:#095456;border-bottom:2px solid #0d7377">{{ title }}</div><div class="card-body"><div class="chart-wrap {{ 'chart-wrap-lg' if size == 'large' else '' }}" data-empty="{{ 'true' if not data else 'false' }}"><canvas id="{{ id }}"></canvas><div class="chart-empty">{{ message }}</div></div></div></div></div>{% endfor %}
+  <div class="col-12 col-xl-8"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('borrowing_trend') }}</h2><p>{{ period_label }} · {{ t('issued_records') }}</p></div></div><div class="admin-chart-area admin-chart-large" data-empty="{{ 'true' if not borrow_trend or not borrow_trend|selectattr('total')|list else 'false' }}"><canvas id="borrowTrendChart" aria-label="{{ t('borrowing_trend') }}"></canvas><div class="admin-empty-state"><i class="bi bi-graph-up"></i><span>{{ t('no_data_period') }}</span><small>{{ t('try_another_period') }}</small></div></div></section></div>
+  <div class="col-12 col-xl-4"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('current_borrow_status') }}</h2><p>{{ t('lifecycle_sequence') }}</p></div></div><div class="admin-chart-area admin-chart-small" data-empty="{{ 'true' if not status_stats else 'false' }}"><canvas id="statusChart" aria-label="{{ t('current_borrow_status') }}"></canvas><div class="admin-empty-state"><i class="bi bi-pie-chart"></i><span>{{ t('no_records') }}</span></div></div></section></div>
+  <div class="col-12 col-lg-6"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('fine_trend') }}</h2><p>{{ period_label }} · {{ t('created_paid_explanation') }}</p></div><a href="{{ url_for('admin.fines') }}" class="admin-text-link">{{ t('admin_fines') }} <i class="bi bi-arrow-right"></i></a></div><div class="admin-chart-area admin-chart-fine" data-empty="{{ 'true' if not fine_trend or not fine_trend|selectattr('generated')|list else 'false' }}"><canvas id="fineTrendChart" aria-label="{{ t('fine_trend') }}"></canvas><div class="admin-empty-state"><i class="bi bi-cash-stack"></i><span>{{ t('no_data_period') }}</span></div></div></section></div>
+  <div class="col-12 col-lg-6"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('collected_vs_outstanding') }}</h2><p>{{ period_label }} · {{ t('fine_overview_detail') }}</p></div></div><div class="admin-kpi-grid admin-kpi-grid-3 mb-0"><div class="admin-kpi-card admin-kpi-card-sm"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-receipt"></i></div><div><span>{{ t('total_fines') }}</span><strong>{{ "{:,.0f}".format(fine_summary.get('all_time_total', 0)) }} <small>MMK</small></strong></div></div><div class="admin-kpi-card admin-kpi-card-sm"><div class="admin-kpi-icon admin-kpi-green"><i class="bi bi-check2-circle"></i></div><div><span>{{ t('collected_amount') }}</span><strong class="text-success">{{ "{:,.0f}".format(fine_summary.get('paid_total', 0)) }} <small>MMK</small></strong></div></div><div class="admin-kpi-card admin-kpi-card-sm"><div class="admin-kpi-icon admin-kpi-red"><i class="bi bi-exclamation-circle"></i></div><div><span>{{ t('unpaid_fines') }}</span><strong class="text-danger">{{ "{:,.0f}".format(fine_summary.get('unpaid_total', 0)) }} <small>MMK</small></strong></div></div></div></section></div>
+  <div class="col-12"><section class="admin-panel"><div class="admin-panel-head"><div><h2>{{ t('download_activity') }}</h2><p>{{ t('download_activity_note') }}</p></div></div><div class="admin-chart-area admin-chart-large" data-empty="{{ 'true' if not downloads_trend or not downloads_trend|selectattr('total')|list else 'false' }}"><canvas id="downloadChart" aria-label="{{ t('download_activity') }}"></canvas><div class="admin-empty-state"><i class="bi bi-download"></i><span>{{ t('no_data_period') }}</span></div></div></section></div>
+  <div class="col-12">
+    <details class="admin-advanced-details">
+      <summary class="admin-advanced-summary">{{ t('advanced_breakdowns') }}</summary>
+      <div class="admin-advanced-body">
+        <div class="row g-4 pt-3">
+          <div class="col-12 col-lg-6"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('most_borrowed_books') }}</h2><p>Top 10 · {{ t('issued_records') }}</p></div></div><div class="admin-chart-area admin-chart-large" data-empty="{{ 'true' if not most_borrowed else 'false' }}"><canvas id="mostBorrowedChart" aria-label="{{ t('most_borrowed_books') }}"></canvas><div class="admin-empty-state"><i class="bi bi-book"></i><span>{{ t('no_records') }}</span></div></div></section></div>
+          <div class="col-12 col-lg-6"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('borrow_by_faculty') }}</h2><p>{{ t('faculty_source') }}</p></div></div><div class="admin-chart-area admin-chart-large" data-empty="{{ 'true' if not faculty_counts else 'false' }}"><canvas id="facultyChart" aria-label="{{ t('borrow_by_faculty') }}"></canvas><div class="admin-empty-state"><i class="bi bi-building"></i><span>{{ t('no_records') }}</span></div></div></section></div>
+          <div class="col-12 col-lg-6"><section class="admin-panel h-100"><div class="admin-panel-head"><div><h2>{{ t('borrow_by_category') }}</h2><p>{{ t('category_source') }}</p></div></div><div class="admin-chart-area admin-chart-large" data-empty="{{ 'true' if not category_counts else 'false' }}"><canvas id="categoryChart" aria-label="{{ t('borrow_by_category') }}"></canvas><div class="admin-empty-state"><i class="bi bi-tags"></i><span>{{ t('no_records') }}</span></div></div></section></div>
+        </div>
+      </div>
+    </details>
+  </div>
 </div>
-<style>.chart-wrap{height:280px;position:relative}.chart-wrap-lg{height:330px}.chart-empty{display:none;height:100%;align-items:center;justify-content:center;text-align:center;color:#64748b}.chart-wrap[data-empty="true"] canvas{display:none}.chart-wrap[data-empty="true"] .chart-empty{display:flex}</style>
 {% endblock %}
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-(function(){
-  const palette=['#0d7377','#14919b','#17b8be','#e8b923','#2e9e6c','#d64541','#095456','#aab6bc'];
-  const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}};
-  function values(rows,key){return rows.map(function(row){return Number(row[key]||0);});}
-  function labels(rows,key){return rows.map(function(row){return String(row[key]||'');});}
-  function draw(id,type,rows,labelKey,valueKey,options){const el=document.getElementById(id);if(!el||!rows.length)return;new Chart(el,{type:type,data:{labels:labels(rows,labelKey),datasets:[{label:'Count',data:values(rows,valueKey),backgroundColor:type==='line'?'rgba(13,115,119,.18)':palette,borderColor:type==='line'?'#0d7377':palette,borderWidth:2,borderRadius:type==='bar'?5:0,fill:type==='line',tension:.35}]},options:Object.assign({},common,options||{})});}
-  const mostBorrowed={{ most_borrowed|tojson }};
-  const categoryCounts={{ category_counts|tojson }};
-  const roleStats={{ role_stats|tojson }};
-  const statusStats={{ status_stats|tojson }};
-  const monthly={{ monthly|tojson }};
-  draw('mostBorrowedChart','bar',mostBorrowed,'title','borrow_count',{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}});
-  draw('categoryChart','doughnut',categoryCounts,'category_name','book_count');
-  draw('roleChart','doughnut',roleStats,'role','cnt');
-  draw('statusChart','doughnut',statusStats,'status','cnt');
-  draw('monthlyChart','line',monthly,'month','total',{scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
+(() => {
+  const palette=['#0b7375','#2f80ed','#27ae60','#e9a23b','#d64545','#8067b7','#7c8b9a'];
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{mode:'index',intersect:false}}};
+  const draw=(id,type,labels,datasets,options={})=>{const el=document.getElementById(id);if(!el)return;new Chart(el,{type,data:{labels,datasets},options:Object.assign({},base,options)});};
+  const shortLabel=value=>{const text=String(value||'—');return text.length>28?text.slice(0,27)+'…':text;};
+  const trend={{ borrow_trend|tojson }}; draw('borrowTrendChart','line',trend.map(r=>r.period),[{label:{{ t('borrow_count_label')|tojson }},data:trend.map(r=>Number(r.total||0)),borderColor:'#0b7375',backgroundColor:'rgba(11,115,117,.14)',fill:true,tension:.35,pointRadius:3}],{scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
+  const status={{ status_stats|tojson }}; const statusLabels={pending:{{ t('pending')|tojson }},approved:{{ t('approved')|tojson }},borrowed:{{ t('borrowed')|tojson }},overdue:{{ t('overdue')|tojson }},returned:{{ t('returned')|tojson }},rejected:{{ t('rejected')|tojson }}}; draw('statusChart','doughnut',status.map(r=>statusLabels[r.status]||r.status),[{data:status.map(r=>Number(r.cnt||0)),backgroundColor:palette,borderWidth:2,borderColor:'#fff'}],{cutout:'66%'});
+  const books={{ most_borrowed|tojson }}; draw('mostBorrowedChart','bar',books.map(r=>shortLabel(r.title)),[{label:{{ t('borrow_count_label')|tojson }},data:books.map(r=>Number(r.borrow_count||0)),backgroundColor:'#0b7375',borderRadius:5}],{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}});
+  const faculties={{ faculty_counts|tojson }}; draw('facultyChart','bar',faculties.map(r=>shortLabel(r.faculty_name)),[{label:{{ t('borrow_count_label')|tojson }},data:faculties.map(r=>Number(r.borrow_count||0)),backgroundColor:'#2f80ed',borderRadius:5}],{scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}});
+  const categories={{ category_counts|tojson }}; draw('categoryChart','bar',categories.map(r=>shortLabel(r.category_name)),[{label:{{ t('borrow_count_label')|tojson }},data:categories.map(r=>Number(r.borrow_count||0)),backgroundColor:'#27ae60',borderRadius:5}],{scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}});
+  const fines={{ fine_trend|tojson }}; draw('fineTrendChart','line',fines.map(r=>r.period),[{label:{{ t('generated_label')|tojson }},data:fines.map(r=>Number(r.generated||0)),borderColor:'#0b7375',backgroundColor:'rgba(11,115,117,.12)',fill:true,tension:.35},{label:{{ t('paid_label')|tojson }},data:fines.map(r=>Number(r.paid||0)),borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,.08)',fill:true,tension:.35}],{scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
+  const downloads={{ downloads_trend|tojson }}; if(downloads && downloads.length) draw('downloadChart','line',downloads.map(r=>r.month),[{label:{{ t('download_label')|tojson }},data:downloads.map(r=>Number(r.total||0)),borderColor:'#2f80ed',backgroundColor:'rgba(47,128,237,.12)',fill:true,tension:.35,pointRadius:3}],{scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}});
 })();
 </script>
 {% endblock %}

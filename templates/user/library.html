@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "user/book_card.html" import book_card with context %}
+{% block title %}{{ t('my_library') }}{% endblock %}
+{% block content %}
+<div class="user-page">
+  <div class="user-library-hero">
+    <span class="user-eyebrow" style="color: rgba(255,255,255,.75)"><i class="bi bi-journal-bookmark"></i>{{ t('my_library') }}</span>
+    <h1>{{ t('my_library') }}</h1>
+    <p>{{ t('my_library_intro') }}</p>
+  </div>
+
+  <nav class="user-library-tabs mt-4" aria-label="{{ t('my_library') }}">
+    <a class="user-library-tab {% if tab == 'continue' %}is-active{% endif %}" href="{{ url_for('student.library', tab='continue') }}"><i class="bi bi-play-circle me-1"></i>{{ t('library_tab_continue') }}</a>
+    <a class="user-library-tab {% if tab == 'bookmarks' %}is-active{% endif %}" href="{{ url_for('student.library', tab='bookmarks') }}"><i class="bi bi-bookmark me-1"></i>{{ t('library_tab_bookmarks') }}</a>
+    <a class="user-library-tab {% if tab == 'borrowed' %}is-active{% endif %}" href="{{ url_for('student.library', tab='borrowed') }}"><i class="bi bi-journal-bookmark me-1"></i>{{ t('library_tab_borrowed') }}</a>
+    <a class="user-library-tab {% if tab == 'history' %}is-active{% endif %}" href="{{ url_for('student.reading_history') }}"><i class="bi bi-clock-history me-1"></i>{{ t('library_tab_history') }}</a>
+  </nav>
+
+  {% if tab == 'continue' %}
+    {% if continue_reading %}
+      {% for row in continue_reading %}
+      <a class="user-library-row" href="{{ url_for('student.read_book', book_id=row.book_id) }}">
+        {% if row.cover_image %}<img src="{{ url_for('library_file.file_cover', filename=row.cover_image) }}" alt="{{ row.title }}">{% else %}<i class="bi bi-book" style="font-size:1.2rem;color:#72a5a6;flex:0 0 40px;width:40px;display:grid;place-items:center"></i>{% endif %}
+        <span class="ulr-title">{{ row.title }}</span>
+        <span class="ulr-sub">{{ t('continue_reading') }} <i class="bi bi-chevron-right"></i></span>
+      </a>
+      {% endfor %}
+      <div class="text-end mt-3"><a class="user-btn user-btn-outline" href="{{ url_for('student.reading_history') }}">{{ t('more') }} <i class="bi bi-arrow-right"></i></a></div>
+    {% else %}
+      <div class="user-empty"><i class="bi bi-play-circle"></i><strong>{{ t('empty_continue_reading') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>
+    {% endif %}
+
+  {% elif tab == 'bookmarks' %}
+    {% if bookmarks %}<div class="user-book-grid">{% for book in bookmarks %}{{ book_card(book) }}{% endfor %}</div>{% else %}<div class="user-empty"><i class="bi bi-bookmark"></i><strong>{{ t('empty_bookmarks') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>{% endif %}
+
+
+  {% elif tab == 'borrowed' %}
+    {% if borrowed %}
+      {% for row in borrowed %}
+      <a class="user-library-row" href="{{ url_for('student.borrow_history') }}">
+        {% if row.cover_image %}<img src="{{ url_for('library_file.file_cover', filename=row.cover_image) }}" alt="{{ row.book_title }}">{% else %}<i class="bi bi-journal-bookmark{% if row.status == 'overdue' %} text-danger{% endif %}" style="font-size:1.2rem;color:#72a5a6;flex:0 0 40px;width:40px;display:grid;place-items:center"></i>{% endif %}
+        <span class="ulr-title">{{ row.book_title or t('book') }}</span>
+        <span class="ulr-sub">{{ t(row.status if row.status in ('pending','approved','borrowed','overdue','returned','rejected') else 'active') }} <i class="bi bi-chevron-right"></i></span>
+      </a>
+      {% endfor %}
+    {% else %}
+      <div class="user-empty"><i class="bi bi-journal-x"></i><strong>{{ t('empty_borrowed') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

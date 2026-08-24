@@ -1,238 +1,311 @@
+{# ════════════════════════════════════════════════════════════
+   PUBLIC HOME PAGE — v12 unified with User Dashboard.
+   Same user-navbar / user-footer / chat widget as dashboard.
+   Guest navbar links: Home | Choose Faculties ▼ | Announcement | 🔍 | My Account ▼
+   All book tiles + View All pills → login page.
+════════════════════════════════════════════════════════════ #}
 {% extends "base.html" %}
-{% block title %}Home - PUMUB Digital Library{% endblock %}
+{% block title %}Home - PUMUB LibInfoBot{% endblock %}
 
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css') }}">
+<style>
+/* tiny home-only tweaks on top of the shared dashboard CSS */
+.ds-guest-footer{margin-top:44px}
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- ═══════════════════════════════════════════════════════════
-     HERO HEADER — School Image Background (photo2 style: full-school photo,
-     teal-tinted dark overlay, rounded bottom corners)
-═══════════════════════════════════════════════════════════ -->
-<header class="psl-hero">
-    <div class="psl-hero-inner">
-        <div class="brand-row">
-            <span class="brand-emoji">📚</span>
-            <h1 class="brand-title">Lib InfoBot</h1>
-        </div>
-        <p class="brand-subtitle">Access thousands of academic resources, research papers, and textbooks from your university's official digital repository.</p>
-        <form class="psl-search-bar" action="{{ url_for('auth.login') }}" method="GET">
-            <input type="text" name="q" placeholder="Search title, author, or ISBN..." disabled>
-            <button type="button" onclick="window.location.href='{{ url_for('auth.login') }}'" aria-label="Search">
-                <i class="bi bi-search"></i>
-            </button>
-        </form>
-    </div>
-</header>
-<!-- ═══════════════════════════════════════════════════════════
-     STICKY NAVIGATION BAR (White + Teal Border)
-     📚 PUMUB Digital Library | Home | ရွေးချယ်ရန်ဌာနများ ▼ |
-     Announcement | Top Score | MY ACCOUNT ▼
-═══════════════════════════════════════════════════════════ -->
-<nav class="psl-navbar">
-    <div class="nav-container">
-        <a href="{{ url_for('home') }}" class="nav-brand-link">
-            <span class="brand-emoji" style="font-size: 1.3rem;">📚</span>
-            <span class="brand-mini">Lib InfoBot</span>
-        </a>
-        <ul class="nav-links">
-            <li><a href="{{ url_for('home') }}" class="active">HOME</a></li>
-            <li>
-                <span class="nav-link-btn">ရွေးချယ်ရန်ဌာနများ <i class="bi bi-chevron-down" style="font-size: 0.65rem;"></i></span>
-                <div class="nav-dropdown">
-                    {% for faculty in faculties %}
-                    <a href="#faculty-{{ faculty.faculty_id }}">{{ faculty.faculty_name }} ({{ faculty.department }})</a>
-                    {% endfor %}
-                </div>
-            </li>
-            <li><a href="#announcement-section">Announcement</a></li>
-            <li><a href="#top-score-section">Top Score</a></li>
-        </ul>
-        <div class="nav-right">
-            <div class="profile-dropdown">
-                <span class="nav-link-btn" style="padding: 14px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">MY ACCOUNT <i class="bi bi-chevron-down" style="font-size: 0.65rem;"></i></span>
-                <div class="profile-dropdown-menu">
-                    <a href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
-                    <a href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus"></i> Register</a>
-                </div>
+<div class="ds-dashboard ds-guest">
+
+  {# ══════ GUEST NAVBAR — exact copy of the user-dashboard navbar, links limited to guest set ══════ #}
+  <nav class="user-navbar" aria-label="PUMUB LibInfoBot">
+    <div class="user-nav-inner">
+      <a href="{{ url_for('home') }}" class="user-brand">
+        <span class="user-brand-mark"><i class="bi bi-book-half"></i></span>
+        <span><strong>PUMUB</strong><small>{{ t('library_footer') }}</small></span>
+      </a>
+      <button class="user-nav-toggle" type="button" aria-controls="homeNavMenu" aria-expanded="false" data-user-nav-toggle>
+        <i class="bi bi-list"></i><span class="visually-hidden">Menu</span>
+      </button>
+      <div class="user-nav-menu" id="homeNavMenu" data-user-nav-menu>
+        <div class="user-nav-links">
+          <a class="user-nav-link is-active" href="{{ url_for('home') }}"><i class="bi bi-house"></i>{{ t('home') }}</a>
+          <div class="user-nav-dropdown">
+            <button type="button" class="user-nav-link user-nav-dropdown-btn" data-nav-dropdown-toggle aria-expanded="false"><i class="bi bi-mortarboard"></i>{{ t('choose_faculties') }} <i class="bi bi-chevron-down" style="font-size:.62rem"></i></button>
+            <div class="user-account-panel user-nav-dropdown-menu" data-nav-dropdown>
+              <a href="{{ url_for('home') }}"><i class="bi bi-grid"></i>{{ t('faculties_all') }}</a>
+              {% for faculty in faculties %}
+              <a href="{{ url_for('home', faculty=faculty.faculty_id) }}" data-faculty-scroll="{{ faculty.faculty_id }}"><i class="bi bi-bookmark"></i>{{ faculty.faculty_name }} <small>({{ faculty.department }})</small></a>
+              {% endfor %}
             </div>
-            <div class="profile-avatar" onclick="window.location.href='{{ url_for('auth.login') }}'">
-                <i class="bi bi-person-fill"></i>
+          </div>
+          <a class="user-nav-link" href="#announcements-heading"><i class="bi bi-megaphone"></i>{{ t('announcements') }}</a>
+          <a class="user-nav-link {% if request.endpoint == 'library_rules_public' %}is-active{% endif %}" href="{{ url_for('library_rules_public') }}"><i class="bi bi-shield-check"></i>{{ t('rules') }}</a>
+        </div>
+        <div class="user-nav-actions">
+          <a class="user-icon-link" href="{{ url_for('auth.login') }}" aria-label="{{ t('search') }}"><i class="bi bi-search"></i></a>
+          <div class="user-account-menu">
+            <button type="button" class="user-account-trigger" aria-expanded="false" data-account-toggle><span class="user-avatar">G</span><span class="user-account-name">My Account</span><i class="bi bi-chevron-down"></i></button>
+            <div class="user-account-panel" data-account-panel>
+              <div class="user-account-header"><span class="user-avatar">G</span><div><strong>PUMUB LibInfoBot</strong><small>{{ t('library_footer') }}</small></div></div>
+              <a href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i>Login</a>
+              <a href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus"></i>Register</a>
+              <div class="user-language-row"><span>{{ t('language') }}</span><a href="{{ url_for('auth.set_language', language='my') }}?redirect={{ url_for('home') }}" class="{% if current_language == 'my' %}is-active{% endif %}">မြန်မာ</a><a href="{{ url_for('auth.set_language', language='en') }}?redirect={{ url_for('home') }}" class="{% if current_language == 'en' %}is-active{% endif %}">English</a></div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</nav>
+  </nav>
 
-<!-- ═══════════════════════════════════════════════════════════
-     MOST BORROWED BOOKS — 3D Shelf Display (5 per row, 2 rows)
-     Anchor: #top-score-section (Top Score nav button jumps here)
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title" id="top-score-section">အငှားအများဆုံးစာအုပ်များ</h2>
-<p class="section-subtitle">Most Borrowed Books — Top Score Selection</p>
-
-<div class="book-shelf-container">
-    <div class="book-shelf">
-        <div class="book-shelf-row">
-            {% for book in most_borrowed_books[:5] %}
-            <a href="{{ url_for('auth.login') }}" class="shelf-book">
-                <div class="book-cover-wrapper">
-                    {% if book.cover_image %}
-                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
-                    {% else %}
-                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
-                    {% endif %}
-                </div>
-                <div class="book-title">{{ book.title }}</div>
-                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="book-shelf-plank"></div>
-
-        {% if most_borrowed_books|length > 5 %}
-        <div class="book-shelf-row" style="margin-top: 25px;">
-            {% for book in most_borrowed_books[5:10] %}
-            <a href="{{ url_for('auth.login') }}" class="shelf-book">
-                <div class="book-cover-wrapper">
-                    {% if book.cover_image %}
-                        <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="book-cover" alt="{{ book.title }}">
-                    {% else %}
-                        <div class="book-no-cover"><i class="bi bi-journal"></i></div>
-                    {% endif %}
-                </div>
-                <div class="book-title">{{ book.title }}</div>
-                <div class="book-author">{{ book.author_name or 'Unknown' }}</div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="book-shelf-plank"></div>
-        {% endif %}
+  {# ══════ HERO — school photo background ══════ #}
+  <section class="ds-hero" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-stars"></i> {{ t('explore_library') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('hero_subtitle') }}</p>
+      <div class="ds-search-bar">
+        <label class="visually-hidden" for="ds-search">Search</label>
+        <input id="ds-search" type="search" name="q" placeholder="{{ t('search_placeholder') }}" autocomplete="off" readonly onclick="window.location.href='{{ url_for('auth.login') }}'" style="cursor:pointer" aria-label="Login to search">
+        <button type="button" class="ds-search-btn" onclick="window.location.href='{{ url_for('auth.login') }}'" aria-label="Login"><i class="bi bi-search"></i></button>
+      </div>
     </div>
-</div>
+  </section>
 
-<div class="section-view-more">
-    <a href="{{ url_for('auth.login') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     ANNOUNCEMENT SECTION (Admin announcements jump here)
-     Anchor: #announcement-section
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title" id="announcement-section">ကြေညာချက်များ</h2>
-<p class="section-subtitle">Announcement</p>
-
-<div class="announcement-grid">
-    {% for ann in announcements %}
-    <div class="announcement-card">
-        <div class="ann-date-badge"><i class="bi bi-megaphone-fill"></i></div>
-        <h4 class="ann-title">{{ ann.title }}</h4>
-        <p class="ann-body">{{ ann.content[:150] }}{% if ann.content|length > 150 %}...{% endif %}</p>
-        <span class="ann-date"><i class="bi bi-calendar3 me-1"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
+  {# ══════ MOST BORROWED SHELF ══════ #}
+  {% if most_borrowed_books %}
+  <section class="ds-section" aria-labelledby="popular-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="popular-heading"><i class="bi bi-fire"></i> {{ t('most_borrowed') }}</h2>
     </div>
-    {% else %}
-    <div class="announcement-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
-        <i class="bi bi-megaphone" style="font-size: 2rem; opacity: .5;"></i>
-        <p class="mt-2">No announcements yet. Please login to view updates.</p>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-popular" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-popular" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-popular">{% for book in most_borrowed_books[:5] %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
     </div>
+    <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('auth.login') }}">{{ t('explore_more') }} <i class="bi bi-arrow-right"></i></a></div>
+  </section>
+  {% endif %}
+
+  {# ══════ RECENTLY ADDED SHELF ══════ #}
+  {% if recent_books %}
+  <section class="ds-section" aria-labelledby="recent-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="recent-heading"><i class="bi bi-clock-history"></i> {{ t('recently_added') }}</h2>
+    </div>
+    <div class="ds-shelf-container">
+      <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-recent" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+      <span class="ds-nav-arrow ds-nav-next" data-target="shelf-recent" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+      <div class="ds-shelf-row ds-row-5 ds-shelf-scroll" id="shelf-recent">{% for book in recent_books[:5] %}{{ ds_tile(book) }}{% endfor %}</div>
+      <div class="ds-shelf-plank"></div>
+    </div>
+    <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('auth.login') }}">{{ t('explore_more') }} <i class="bi bi-arrow-right"></i></a></div>
+  </section>
+  {% endif %}
+
+  {# ══════ FACULTY SHELVES (4 per row) ══════ #}
+  {% set shelf_faculties = faculties|selectattr('book_count')|list %}
+  {% if shelf_faculties %}
+  <section class="ds-section" aria-labelledby="faculties-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="faculties-heading"><i class="bi bi-mortarboard-fill"></i> {{ t('faculties_heading') }}</h2>
+    </div>
+    {% for faculty in shelf_faculties %}
+    {% if faculty.books %}
+    <div class="ds-faculty-block" id="faculty-{{ faculty.faculty_id }}">
+      <div class="ds-faculty-head">
+        <h3 class="ds-faculty-name"><i class="bi bi-bookshelf"></i> {{ faculty.faculty_name }}{% if faculty.department %} <small>({{ faculty.department }})</small>{% endif %}</h3>
+        <span class="ds-count-badge">{{ faculty.book_count }} {{ t('books_found') }}</span>
+      </div>
+      <div class="ds-shelf-container">
+        <span class="ds-nav-arrow ds-nav-prev" data-target="shelf-faculty-{{ faculty.faculty_id }}" aria-label="Previous"><i class="bi bi-chevron-left"></i></span>
+        <span class="ds-nav-arrow ds-nav-next" data-target="shelf-faculty-{{ faculty.faculty_id }}" aria-label="Next"><i class="bi bi-chevron-right"></i></span>
+        <div class="ds-shelf-row ds-row-4 ds-shelf-scroll" id="shelf-faculty-{{ faculty.faculty_id }}">{% for book in faculty.books %}{{ ds_tile(book) }}{% endfor %}</div>
+        <div class="ds-shelf-plank"></div>
+      </div>
+      <div class="ds-view-all"><a class="ds-pill" href="{{ url_for('auth.login') }}">{{ t('explore_more') }} <i class="bi bi-arrow-right"></i></a></div>
+    </div>
+    {% endif %}
     {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ══════ CATEGORIES — fanned covers ══════ #}
+  {% if categories %}
+  <section class="ds-section" aria-labelledby="categories-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="categories-heading"><i class="bi bi-grid-fill"></i> {{ t('browse_categories') }}</h2>
+    </div>
+    <div class="ds-cat-grid">
+      {% for category in categories %}
+      <a class="ds-cat-card" style="--cat-bg: var(--ds-cat-bg-{{ loop.index0 % 4 }})" href="{{ url_for('auth.login') }}">
+        <span class="ds-cat-covers">
+          {% set catbooks = category.books or [] %}
+          {% if catbooks|length >= 2 %}<span class="ds-cat-side ds-cat-left"><img src="{{ url_for('library_file.file_cover', filename=catbooks[0].cover_image) }}" alt="" loading="lazy"></span>{% endif %}
+          {% if catbooks|length >= 1 %}<span class="ds-cat-center"><img src="{{ url_for('library_file.file_cover', filename=catbooks[0 if catbooks|length == 1 else 1].cover_image) }}" alt="{{ category.category_name }}" loading="lazy"></span>{% else %}<span class="ds-cat-center ds-cat-fallback"><i class="bi bi-journal"></i></span>{% endif %}
+          {% if catbooks|length >= 3 %}<span class="ds-cat-side ds-cat-right"><img src="{{ url_for('library_file.file_cover', filename=catbooks[2].cover_image) }}" alt="" loading="lazy"></span>{% endif %}
+        </span>
+        <span class="ds-cat-name">{{ category.category_name }}{% if category.book_count is defined %}<small>{{ category.book_count }} {{ t('books_found') }}</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══════ ANNOUNCEMENTS ══════ #}
+  {% if announcements %}
+  <section class="ds-section" aria-labelledby="announcements-heading">
+    <div class="ds-section-head">
+      <h2 class="ds-section-title" id="announcements-heading"><i class="bi bi-megaphone-fill"></i> {{ t('announcements') }}</h2>
+    </div>
+    <div class="ds-ann-list">
+      {% for ann in announcements %}
+      <a class="ds-ann-card" href="{{ url_for('auth.login') }}">
+        <span class="ds-ann-icon"><i class="bi bi-megaphone"></i></span>
+        <span class="ds-ann-body">
+          <span class="ds-ann-title">{{ ann.title }}</span>
+          <span class="ds-ann-snippet">{{ ann.content[:180] }}{% if ann.content|length > 180 %}…{% endif %}</span>
+          <span class="ds-ann-date"><i class="bi bi-calendar-event me-1"></i>{{ ann.date.strftime('%d %b %Y') if ann.date else '' }}</span>
+        </span>
+        <span class="ds-ann-more"><i class="bi bi-chevron-right"></i></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══════ FOOTER — exact copy of the user-dashboard footer (shared on both sides) ══════ #}
+  <footer class="user-footer ds-guest-footer">
+    <div class="user-footer-inner">
+      <div><strong>{{ t('library_footer') }}</strong><span>{{ t('university_name') }}</span></div>
+      <nav aria-label="Footer"><a href="{{ url_for('home') }}">{{ t('home') }}</a><a href="{{ url_for('auth.login') }}">{{ t('browse_books') }}</a></nav>
+      <small>&copy; 2026 {{ t('library_footer') }}. {{ t('copyright') }}</small>
+    </div>
+  </footer>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     FACULTY BOOK SHELVES — 4 books per row per faculty
-     Dropdown names like "Faculty of Computing (CS)"
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title">ဌာနအလိုက် စာအုပ်စဉ်များ</h2>
-<p class="section-subtitle">Faculty Book Shelves</p>
+{# ══════ ASK LIBINFOBOT — same widget as the user dashboard (guest: "login to chat" notice) ══════ #}
+<div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book")}|tojson }}'>
+  <button class="libinfobot-launcher" type="button" data-libinfobot-toggle aria-controls="home-libinfobot-panel" aria-expanded="false" aria-label="{{ t('widget_open') }}">
+    <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+    <span class="libinfobot-launcher-label">{{ t('widget_ask') }}</span>
+  </button>
 
-{% for faculty in faculties %}
-<div class="book-shelf-container" id="faculty-{{ faculty.faculty_id }}">
-    <h3 class="faculty-shelf-title">{{ faculty.faculty_name }} ({{ faculty.department }})</h3>
-    <p style="font-size: 0.8rem; color: var(--text-muted); padding: 0 20px; margin-bottom: 15px;">{{ faculty.department }} Books - Selection</p>
-    
-    <div class="book-grid">
-        {% for book in faculty.books[:4] %}
-        <a href="{{ url_for('auth.login') }}" class="book-grid-item">
-            {% if book.cover_image %}
-                <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" class="cover-img" alt="{{ book.title }}">
-            {% else %}
-                <div class="cover-img" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%); display: flex; align-items: center; justify-content: center; height: 250px;">
-                    <i class="bi bi-journal" style="font-size: 2rem; color: #fff;"></i>
-                </div>
-            {% endif %}
-            <div class="book-info">
-                <div class="title">{{ book.title }}</div>
-                <div class="author">{{ book.author_name or '—' }}</div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    
-    <div class="section-view-more">
-        <a href="{{ url_for('auth.login') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-    </div>
-</div>
-{% endfor %}
-
-<!-- ═══════════════════════════════════════════════════════════
-     BOOK CATEGORIES — Category Cards WITH book covers inside
-     (photo5 style: 3-4 book covers grouped per category)
-═══════════════════════════════════════════════════════════ -->
-<h2 class="section-title">စာအုပ်အမျိုးအစားများ</h2>
-<p class="section-subtitle">Book Categories</p>
-
-<div class="category-grid category-grid-shelves">
-    {% for category in categories %}
-    <a href="{{ url_for('auth.login') }}" class="category-card category-card-shelf">
-        <div class="cat-shelf-books">
-            {% for book in (category.get('books', []) or [])[:3] %}
-                {% if book.cover_image %}
-                    <img src="{{ url_for('static', filename='uploads/covers/' + book.cover_image) }}" alt="{{ book.title }}" class="cat-shelf-img" style="background: none;">
-                {% endif %}
-            {% endfor %}
-            {% if not category.get('books', []) %}
-            <div class="cat-shelf-empty"><i class="bi bi-book"></i></div>
-            {% endif %}
+  <section class="libinfobot-panel" id="home-libinfobot-panel" data-libinfobot-panel hidden aria-label="{{ t('widget_chat') }}">
+    <header class="libinfobot-header">
+      <div class="libinfobot-identity">
+        <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <div>
+          <strong>LibInfoBot</strong>
+          <small><span class="libinfobot-status-dot"></span> {{ t('widget_assistant') }}</small>
         </div>
-        <div class="cat-name">{{ category.category_name }}</div>
-        {% if category.book_count is defined %}
-        <div class="cat-count">{{ category.book_count }} စာအုပ်</div>
-        {% endif %}
-    </a>
-    {% endfor %}
+      </div>
+      <button class="libinfobot-close" type="button" data-libinfobot-toggle aria-label="{{ t('widget_minimize') }}"><i class="bi bi-dash-lg"></i></button>
+    </header>
+
+    <div class="libinfobot-messages" data-libinfobot-messages aria-live="polite">
+      <div class="libinfobot-message bot">
+        <span class="libinfobot-message-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <div class="libinfobot-bubble">{{ t('guest_widget_greeting') }}</div>
+      </div>
+    </div>
+
+    <form class="libinfobot-form" data-libinfobot-form style="display:none">
+      <label class="visually-hidden" for="home-libinfobot-input">{{ t('widget_message_label') }}</label>
+      <textarea id="home-libinfobot-input" data-libinfobot-input rows="1" maxlength="2000" placeholder="{{ t('widget_placeholder') }}"></textarea>
+      <button type="submit" data-libinfobot-send aria-label="{{ t('widget_send') }}"><i class="bi bi-send-fill"></i></button>
+    </form>
+    <p class="libinfobot-disclaimer">{{ t('guest_widget_login') }}</p>
+  </section>
 </div>
 
-<div class="section-view-more">
-    <a href="{{ url_for('auth.login') }}" class="btn-view-more">ပိုမိုရှာရန်</a>
-</div>
+<script>
+(function(){
+  /* Guest chat widget: opening the panel shows a login prompt instead of a chat. */
+  var launcher=document.querySelector('.libinfobot-launcher');
+  var panel=document.querySelector('[data-libinfobot-panel]');
+  var msgs=document.querySelector('[data-libinfobot-messages]');
+  if(launcher&&panel){
+    launcher.addEventListener('click',function(){
+      var open=!panel.classList.toggle('is-open');
+      panel.hidden=!open;
+      launcher.setAttribute('aria-expanded',open);
+      if(open){
+        panel.querySelectorAll('.libinfobot-login-card').length||
+        (function(){
+          var card=document.createElement('div');
+          card.className='libinfobot-login-card';
+          card.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 16px;margin:8px 12px;border:1px solid #d6eaea;border-radius:12px;background:#eef7f7;text-align:center';
+          card.innerHTML=`<strong style="font-size:.82rem;color:#0c4f52">{{ t('widget_chat') }}</strong><span style="font-size:.75rem;color:#577">{{ t('guest_widget_login_hint') }}</span><a href="{{ url_for('auth.login') }}" class="libinfobot-login-btn" style="display:inline-block;padding:8px 18px;border-radius:10px;background:#0c7a7b;color:#fff;font-size:.78rem;font-weight:700;text-decoration:none">{{ t('login_submit') }}</a>`;
+          msgs.appendChild(card);
+        })();
+        panel.scrollTop=0;
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}
 
-<!-- ═══════════════════════════════════════════════════════════
-     FOOTER (TEAL)
-═══════════════════════════════════════════════════════════ -->
-<footer class="psl-footer">
-    <div class="footer-grid">
-        <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="{{ url_for('home') }}">Home</a>
-            <a href="{{ url_for('auth.login') }}">Browse Books</a>
-            <a href="{{ url_for('auth.login') }}">My Borrowings</a>
-            <a href="{{ url_for('auth.login') }}">Library Clearance</a>
-        </div>
-        <div class="footer-col">
-            <h4>Resources</h4>
-            <a href="{{ url_for('auth.login') }}">Textbooks</a>
-            <a href="{{ url_for('auth.login') }}">Reference Books</a>
-            <a href="{{ url_for('auth.login') }}">Journals</a>
-            <a href="{{ url_for('auth.login') }}">Thesis Papers</a>
-        </div>
-        <div class="footer-col">
-            <h4>Contact Us</h4>
-            <p><i class="bi bi-geo-alt me-2"></i>Polytechnic University (Maubin)<br>Maubin, Ayeyarwady Region, Myanmar</p>
-            <p><i class="bi bi-telephone me-2"></i>+95 45 30123</p>
-            <p><i class="bi bi-envelope me-2"></i>library@pumub.edu.mm</p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        &copy; 2026 PUMUB Digital Library. All rights reserved.
-    </div>
-</footer>
+{# ══════ tile macro (guest: every tile links to login) ══════ #}
+{% macro ds_tile(book) %}
+<a class="ds-tile" href="{{ url_for('auth.login') }}" title="{{ book.title }}">
+  <span class="ds-book">
+  {% if book.cover_image %}
+    <img src="{{ url_for('library_file.file_cover', filename=book.cover_image) }}" alt="{{ book.title }}" loading="lazy">
+  {% else %}
+    <span class="ds-tile-fallback"><i class="bi bi-book"></i></span>
+  {% endif %}
+  </span>
+</a>
+{% endmacro %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>
+<script>
+(function(){
+  function scrollRow(el, dir){
+    if(!el) return;
+    var tile = el.querySelector('.ds-tile');
+    if(!tile) return;
+    var step = tile.offsetWidth + 20;
+    el.scrollBy({left: dir * step, behavior:'smooth'});
+  }
+  document.querySelectorAll('.ds-nav-arrow').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      scrollRow(el, btn.classList.contains('ds-nav-prev') ? -1 : 1);
+    });
+  });
+  /* NOTE: navbar dropdown handlers (mobile toggle, account dropdown, nav dropdowns) are already
+     attached once by base.html — duplicating them here caused every click to toggle twice (open→close).
+     Only home-specific behaviors live in this block. */
+  /* Faculty dropdown → scroll to shelf */
+  document.querySelectorAll('[data-faculty-scroll]').forEach(a=>{
+    a.addEventListener('click',()=>{
+      var id=a.getAttribute('data-faculty-scroll');
+      var target=document.getElementById('faculty-'+id);
+      if(target){window.setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),150);}
+    });
+  });
+  /* ?faculty= deep link */
+  var params = new URLSearchParams(window.location.search);
+  var fid = params.get('faculty');
+  if (fid) {
+    fid = String(fid).replace(/[^0-9]/g, '');
+    if (fid) {
+      var anchor = document.getElementById('faculty-' + fid);
+      window.addEventListener('load', function(){
+        if (anchor) { window.setTimeout(function(){ anchor.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 300); }
+      });
+    }
+  }
+})();
+</script>
 {% endblock %}

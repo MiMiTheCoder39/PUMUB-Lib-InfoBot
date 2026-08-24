@@ -37,6 +37,7 @@ def _get_all_books_for_recommend():
         FROM books b
         LEFT JOIN authors a ON b.author_id = a.author_id
         LEFT JOIN categories c ON b.category_id = c.category_id
+        WHERE COALESCE(b.is_archived, 0) = 0
     """)
     rows = cur.fetchall()
     cur.close()

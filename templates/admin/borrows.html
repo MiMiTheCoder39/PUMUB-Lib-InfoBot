@@ -4,38 +4,40 @@
 {% block admin_content %}
 <div class="dashboard-header d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-1">Borrow & Circulation</h2>
-        <p class="text-muted small mb-0">Manage book issuances, returns, and overdue tracking</p>
+        <h2 class="mb-1">{{ t('admin_borrow_requests') }}</h2>
+        <p class="text-muted small mb-0">{{ t('borrow_management_intro') }}</p>
     </div>
     <div class="mt-3 mt-md-0">
         <button type="button" class="btn btn-primary shadow-sm" onclick="startScanner()">
-            <i class="bi bi-qr-code-scan me-2"></i>Open QR Scanner
+            <i class="bi bi-qr-code-scan me-2"></i>{{ t('open_scanner') }}
         </button>
     </div>
 </div>
 
 <!-- Quick Stats -->
 <div class="row g-3 mb-4">
-    {% for label, val, color_class in [
-        ('Pending', stats.pending, 'bg-warning'),
-        ('Approved', stats.approved, 'bg-primary'),
-        ('Borrowed', stats.borrowed, 'bg-success'),
-        ('Overdue', stats.overdue, 'bg-danger'),
-        ('Returned', stats.returned, 'bg-secondary')
+    {% for key, label, val, color_class in [
+        ('pending', t('pending'), stats.pending, 'bg-warning'),
+        ('approved', t('approved'), stats.approved, 'bg-primary'),
+        ('borrowed', t('borrowed'), stats.borrowed, 'bg-success'),
+        ('overdue', t('overdue'), stats.overdue, 'bg-danger'),
+        ('returned', t('returned'), stats.returned, 'bg-secondary')
     ] %}
     <div class="col-md-2 col-6">
+        <a href="{{ borrow_status_urls[key] }}" class="text-decoration-none">
         <div class="card border-0 shadow-sm h-100 text-center py-3">
-            <h3 class="fw-bold mb-0 {{ 'text-warning' if label == 'Pending' else 'text-primary' if label == 'Approved' else 'text-success' if label == 'Borrowed' else 'text-danger' if label == 'Overdue' else 'text-muted' }}">
+            <h3 class="fw-bold mb-0 {{ 'text-warning' if key == 'pending' else 'text-primary' if key == 'approved' else 'text-success' if key == 'borrowed' else 'text-danger' if key == 'overdue' else 'text-muted' }}">
                 {{ val }}
             </h3>
             <div class="small text-muted">{{ label }}</div>
         </div>
+        </a>
     </div>
     {% endfor %}
     <div class="col-md-2 col-12">
         <div class="card border-0 shadow-sm h-100 bg-soft-danger text-center py-3">
             <h4 class="fw-bold mb-0 text-danger">{{ "{:,.0f}".format(fine_total) }}</h4>
-            <div class="smaller text-danger fw-bold">Unpaid Fines</div>
+            <div class="smaller text-danger fw-bold">{{ t('unpaid_fines') }}</div>
         </div>
     </div>
 </div>
@@ -45,7 +47,7 @@
     <div class="card-header bg-dark text-white py-3 border-0">
         <div class="d-flex align-items-center">
             <i class="bi bi-search me-2"></i>
-            <h6 class="mb-0 fw-bold">Manual Borrow Lookup</h6>
+            <h6 class="mb-0 fw-bold">{{ t('manual_lookup') }}</h6>
         </div>
     </div>
     <div class="card-body p-4">
@@ -54,15 +56,15 @@
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-upc-scan"></i></span>
                     <input type="text" name="borrow_id_code" class="form-control border-start-0 ps-0" 
-                           placeholder="Enter Borrow ID (e.g., BR-2026-0001)" required style="font-family: monospace;">
+                           placeholder="{{ t('borrow_id_placeholder') }}" required style="font-family: monospace;">
                 </div>
                 <div class="form-text small mt-2">
-                    <i class="bi bi-info-circle me-1"></i> Enter the ID from the student's ticket or use the QR scanner above.
+                    <i class="bi bi-info-circle me-1"></i> {{ t('borrow_lookup_help') }}
                 </div>
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-dark w-100 fw-bold">
-                    Retrieve Record
+                    {{ t('view') }}
                 </button>
             </div>
         </form>
@@ -70,31 +72,24 @@
 </div>
 
 <!-- Requests Table -->
-<div class="card border-0 shadow-sm mb-4"><div class="card-body py-3"><form method="GET" action="{{ url_for('admin.borrows') }}" class="row g-2 align-items-end"><div class="col-12 col-md-5"><label class="form-label small text-muted mb-1">Search</label><input name="search" value="{{ search or '' }}" class="form-control" placeholder="Student, book, or borrow ID"></div><div class="col-12 col-md-4"><label class="form-label small text-muted mb-1">Status</label><select name="status" class="form-select"><option value="">All statuses</option>{% for value, label in [('pending','Pending'),('approved','Approved'),('borrowed','Borrowed'),('overdue','Overdue'),('returned','Returned'),('rejected','Rejected')] %}<option value="{{ value }}" {{ 'selected' if status_filter == value else '' }}>{{ label }}</option>{% endfor %}</select></div><div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-filter me-1"></i>Filter</button></div><div class="col-6 col-md-1"><a class="btn btn-outline-secondary w-100" href="{{ url_for('admin.borrows') }}" title="Clear filters"><i class="bi bi-x-lg"></i></a></div></form></div></div>
+<section class="admin-panel mb-4"><div class="admin-panel-head"><div><h2>{{ t('filter') }}</h2><p>{{ request_page.total }} {{ t('records') }} · {{ t('search_records') }}</p></div></div><div class="admin-tabs px-3 pt-3">{% for key, label in [('all',t('all')),('pending',t('pending')),('approved',t('approved')),('borrowed',t('borrowed')),('overdue',t('overdue')),('returned',t('returned')),('rejected',t('rejected'))] %}<a class="admin-tab {{ 'is-active' if (key == 'all' and not status_filter) or status_filter == key else '' }}" href="{{ borrow_status_urls[key] }}">{{ label }}{% if key in ('pending','approved','borrowed','overdue','returned') %}<span class="admin-tab-count small text-muted">{{ stats[key] or 0 }}</span>{% endif %}</a>{% endfor %}</div><form method="GET" action="{{ url_for('admin.borrows') }}" class="admin-report-filters"><div class="admin-filter-field admin-filter-search"><label for="borrowSearch">{{ t('search_records') }}</label><input id="borrowSearch" name="search" value="{{ search or '' }}" class="form-control" placeholder="{{ t('search_records') }}"></div><div class="admin-filter-field"><label for="borrowStatus">{{ t('status') }}</label><select id="borrowStatus" name="status" class="form-select"><option value="">{{ t('all') }}</option>{% for value, label in [('pending',t('pending')),('approved',t('approved')),('borrowed',t('borrowed')),('overdue',t('overdue')),('returned',t('returned')),('rejected',t('rejected'))] %}<option value="{{ value }}" {{ 'selected' if status_filter == value else '' }}>{{ label }}</option>{% endfor %}</select></div><div class="admin-filter-field"><label for="borrowFaculty">{{ t('faculty') }}</label><select id="borrowFaculty" name="faculty_id" class="form-select"><option value="">{{ t('all') }}</option>{% for faculty in faculties %}<option value="{{ faculty.faculty_id }}" {{ 'selected' if faculty.faculty_id == faculty_id else '' }}>{{ faculty.faculty_name }}{% if faculty.department %} · {{ faculty.department }}{% endif %}</option>{% endfor %}</select></div><div class="admin-filter-field"><label for="borrowCategory">{{ t('category') }}</label><select id="borrowCategory" name="category_id" class="form-select"><option value="">{{ t('all') }}</option>{% for category in categories %}<option value="{{ category.category_id }}" {{ 'selected' if category.category_id == category_id else '' }}>{{ category.category_name }}</option>{% endfor %}</select></div><div class="admin-filter-field"><label for="borrowFrom">{{ t('from_date') }}</label><input id="borrowFrom" type="date" name="from" value="{{ start_date }}" class="form-control"></div><div class="admin-filter-field"><label for="borrowTo">{{ t('to_date') }}</label><input id="borrowTo" type="date" name="to" value="{{ end_date }}" class="form-control"></div><div class="admin-report-filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-filter me-1"></i>{{ t('apply_filters') }}</button><a class="btn btn-outline-secondary" href="{{ url_for('admin.borrows') }}">{{ t('clear_filters') }}</a></div></form></section>
 <div class="card border-0 shadow-sm mb-4 overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light border-bottom">
                 <tr>
-                    <th class="ps-4">Ticket ID</th>
-                    <th>Student / Member</th>
-                    <th>Book Title</th>
-                    <th>Timeline</th>
-                    <th>Status</th>
-                    <th class="text-end pe-4">Actions</th>
+                    <th class="ps-4">{{ t('student') }}</th>
+                    <th>{{ t('book') }}</th>
+                    <th>{{ t('requested_date') }}</th>
+                    <th>{{ t('status') }}</th>
+                    <th>{{ t('fine') }}</th>
+                    <th class="text-end pe-4">{{ t('details') }}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in requests %}
                 <tr class="{{ 'bg-soft-danger' if r.status == 'overdue' else '' }}">
                     <td class="ps-4">
-                        {% if r.borrow_id_code %}
-                            <div class="borrow-ticket-id-sm">{{ r.borrow_id_code }}</div>
-                        {% else %}
-                            <span class="text-muted smaller italic">Pending ID</span>
-                        {% endif %}
-                    </td>
-                    <td>
                         <div class="fw-bold text-dark">{{ r.student_name }}</div>
                         <div class="text-muted smaller">{{ r.student_id or 'N/A' }}</div>
                     </td>
@@ -102,69 +97,83 @@
                         <div class="text-truncate fw-500" style="max-width: 200px;" title="{{ r.book_title }}">
                             {{ r.book_title }}
                         </div>
-                        <div class="smaller text-muted">{{ r.available_copies }} copies available</div>
+                        <div class="smaller text-muted">{{ r.available_copies }} {{ t('copies_available') }} · {{ r.active_borrow_count or 0 }} {{ t('active_count_short') }}</div>
                     </td>
                     <td>
-                        <div class="smaller">
-                            <div class="mb-1"><span class="text-muted">Req:</span> {{ r.request_date.strftime('%d %b') if r.request_date else '—' }}</div>
-                            {% if r.due_date %}
-                                <div>
-                                    <span class="text-muted">Due:</span> 
-                                    <span class="{{ 'text-danger fw-bold' if r.status == 'overdue' else '' }}">
-                                        {{ r.due_date.strftime('%d %b') }}
-                                    </span>
-                                </div>
-                            {% endif %}
-                        </div>
+                        <div class="smaller">{{ r.request_date.strftime('%d %b %Y') if r.request_date else '—' }}</div>
+                        {% if r.due_date %}<small class="text-muted d-block">{{ t('due_date') }}: {{ r.due_date.strftime('%d %b') }}</small>{% endif %}
                     </td>
                     <td>
                         {% set badge_map = {
-                            'pending':  ('status-pending',  'Pending'),
-                            'approved': ('status-approved', 'Approved'),
-                            'borrowed': ('status-borrowed', 'Borrowed'),
-                            'overdue':  ('status-overdue',  'Overdue'),
-                            'returned': ('status-returned', 'Returned'),
-                            'rejected': ('status-rejected', 'Rejected'),
+                            'pending':  ('status-pending',  t('pending')),
+                            'approved': ('status-approved', t('approved')),
+                            'borrowed': ('status-borrowed', t('borrowed')),
+                            'overdue':  ('status-overdue',  t('overdue')),
+                            'returned': ('status-returned', t('returned')),
+                            'rejected': ('status-rejected', t('rejected')),
                         } %}
                         {% set bc = badge_map.get(r.status, ('status-pending','—')) %}
-                        <span class="status-badge {{ bc[0] }}">{{ bc[1] }}</span>
+                        <span class="admin-status admin-status-{{ r.status }}">{{ bc[1] }}</span>
+                    </td>
+                    <td>
+                        {% if r.status == 'overdue' %}
+                            <div class="text-warning-emphasis fw-semibold">{{ r.late_days }} {{ t('days_late') }}</div>
+                            {% if r.fine_amount %}<small class="text-danger fw-bold">{{ "{:,.0f}".format(r.fine_amount) }} MMK · {{ t('final_fine') }}</small><small class="d-block {{ 'text-success' if r.fine_paid else 'text-danger' }}">{{ t('paid') if r.fine_paid else t('unpaid_fines') }}</small>{% elif r.estimated_fine %}<small class="text-muted">{{ "{:,.0f}".format(r.estimated_fine) }} MMK · {{ t('estimated_fine') }}</small>{% else %}<small class="text-muted">{{ t('no_fine_recorded') }}</small>{% endif %}
+                        {% elif r.fine_amount %}
+                            <div class="text-danger fw-bold">{{ "{:,.0f}".format(r.fine_amount) }} MMK</div>
+                            <small class="{{ 'text-success' if r.fine_paid else 'text-danger' }}">{{ t('paid') if r.fine_paid else t('unpaid_fines') }}</small>
+                        {% elif r.status == 'borrowed' and r.estimated_fine %}
+                            <div class="text-muted">{{ "{:,.0f}".format(r.estimated_fine) }} MMK · {{ t('estimated_fine') }}</div>
+                        {% else %}
+                            <span class="text-muted smaller">—</span>
+                        {% endif %}
                     </td>
                     <td class="text-end pe-4">
-                        <div class="btn-group">
+                        <div class="d-flex justify-content-end align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="{{ t('view_details') }}" data-borrow-detail='{{ {"student": r.student_name, "student_id": r.student_id or "N/A", "faculty": r.faculty_name or "—", "book": r.book_title, "author": r.author_name or "—", "category": r.category_name or "—", "borrow_id": r.borrow_id_code or r.borrow_id, "status": r.status, "request_date": r.request_date.strftime("%d %b %Y") if r.request_date else "—", "issued_date": (r.issued_date or r.borrowed_date).strftime("%d %b %Y") if (r.issued_date or r.borrowed_date) else "—", "due_date": r.due_date.strftime("%d %b %Y") if r.due_date else "—", "return_date": r.return_date.strftime("%d %b %Y") if r.return_date else "—", "active_borrow_count": r.active_borrow_count or 0, "late_days": r.late_days or 0, "estimated_fine": "{:,.0f}".format(r.estimated_fine or 0), "fine_amount": "{:,.0f}".format(r.fine_amount or 0), "fine_id": r.fine_id, "fine_paid": "Paid" if r.fine_paid else "Unpaid", "fine_url": url_for("admin.fines", search=r.borrow_id_code or r.borrow_id)}|tojson|e }}' onclick="openBorrowDetail(this)"><i class="bi bi-eye"></i><span class="visually-hidden">{{ t('view_details') }}</span></button>
+                            <div class="btn-group">
                             {% if r.status == 'pending' %}
                                 <form method="POST" action="{{ url_for('admin.borrow_approve', borrow_id=r.borrow_id) }}" class="d-inline">
-                                    <button class="btn btn-sm btn-outline-success border-0" title="Approve Request" onclick="return confirm('Approve this borrow request?')">
+                                    <button class="btn btn-sm btn-outline-success border-0" title="{{ t('approve') }}" onclick="return confirm('{{ t('approve') }}?')">
                                         <i class="bi bi-check-circle-fill"></i>
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.borrow_reject', borrow_id=r.borrow_id) }}" class="d-inline">
-                                    <button class="btn btn-sm btn-outline-danger border-0" title="Reject Request" onclick="return confirm('Reject this borrow request?')">
+                                    <button class="btn btn-sm btn-outline-danger border-0" title="{{ t('reject') }}" onclick="return confirm('{{ t('confirm_reject') }}')">
                                         <i class="bi bi-x-circle-fill"></i>
                                     </button>
                                 </form>
                             {% elif r.status == 'approved' %}
                                 <a href="{{ url_for('admin.borrow_scan', borrow_id_code=r.borrow_id_code) }}" 
                                    class="btn btn-sm btn-warning fw-bold px-3 rounded-pill">
-                                    Issue Book
+                                    {{ t('issue_book') }}
                                 </a>
                             {% elif r.status in ('borrowed', 'overdue') %}
-                                <form method="POST" action="{{ url_for('admin.borrow_return', borrow_id=r.borrow_id) }}" class="d-inline">
-                                    <button class="btn btn-sm btn-primary fw-bold px-3 rounded-pill" onclick="return confirm('Mark this book as returned?')">
-                                        Return Book
+                                <form method="POST" action="{{ url_for('admin.borrow_return', borrow_id=r.borrow_id) }}" class="d-inline" onsubmit="return confirmReturn(this)">
+                                    <input type="hidden" name="confirm_return" value="1">
+                                    <button type="submit" class="btn btn-sm btn-primary fw-bold px-3 rounded-pill"
+                                            data-student="{{ r.student_name|e }}"
+                                            data-book="{{ r.book_title|e }}"
+                                            data-status="{{ r.status|e }}"
+                                            data-due="{{ r.due_date.strftime('%Y-%m-%d') if r.due_date else '—' }}"
+                                            data-late-days="{{ r.late_days or 0 }}"
+                                            data-estimated-fine="{{ r.estimated_fine or 0 }}">
+                                        {{ t('return_book') }}
                                     </button>
                                 </form>
                             {% else %}
                                 <span class="text-muted smaller">—</span>
                             {% endif %}
+                            </div>
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
                     <td colspan="6" class="text-center py-5">
-                        <div class="text-muted">
+                            <div class="text-muted">
                             <i class="bi bi-inbox fs-1 opacity-25 d-block mb-3"></i>
-                            No borrow requests found.
+                            {% if status_filter == 'pending' %}<strong>{{ t('no_pending_requests') }}</strong><small class="d-block mt-2">{{ t('all_requests_reviewed') }}</small>{% else %}<strong>{{ t('no_borrow_records') }}</strong><small class="d-block mt-2">{{ t('try_another_period') }}</small>{% endif %}
                         </div>
                     </td>
                 </tr>
@@ -172,24 +181,45 @@
             </tbody>
         </table>
     </div>
+    {% if request_page.pages > 1 %}<nav class="admin-pagination" aria-label="Borrow pagination"><span>{{ request_page.page }} / {{ request_page.pages }}</span><div>{% if request_page.page > 1 %}<a href="{{ pagination_prev_url }}" class="btn btn-sm btn-outline-secondary">{{ t('previous') }}</a>{% endif %}{% if request_page.page < request_page.pages %}<a href="{{ pagination_next_url }}" class="btn btn-sm btn-outline-secondary">{{ t('next') }}</a>{% endif %}</div></nav>{% endif %}
 </div>
+
+<script>
+function confirmReturn(form) {
+    const button = form.querySelector('button[type="submit"]');
+    const lateDays = Number(button.dataset.lateDays || 0);
+    const estimatedFine = Number(button.dataset.estimatedFine || 0);
+    const status = button.dataset.status || '';
+    let message = `Book: ${button.dataset.book}\nStudent: ${button.dataset.student}\nDue Date: ${button.dataset.due}`;
+    if (status === 'overdue' || lateDays > 0) {
+        message += `\n\n{{ t('overdue') }}\n{{ t('days_late') }}: ${lateDays}\n{{ t('estimated_fine') }}: ${estimatedFine.toLocaleString()} MMK`;
+    }
+    message += '\n\n{{ t('confirm_return') }}';
+    return window.confirm(message);
+}
+</script>
+
+<div class="modal fade" id="borrowDetailModal" tabindex="-1" aria-labelledby="borrowDetailTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content admin-detail-modal"><div class="modal-header"><div><h2 class="modal-title" id="borrowDetailTitle">{{ t('details') }}</h2><p class="mb-0 text-muted smaller">{{ t('admin_borrow_requests') }} · {{ t('status') }}</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="row g-4"><div class="col-md-5"><dl class="row mb-0 admin-detail-list"><dt class="col-5">{{ t('student') }}</dt><dd class="col-7" id="borrowStudent">—</dd><dt class="col-5">{{ t('student_id') }}</dt><dd class="col-7" id="borrowStudentId">—</dd><dt class="col-5">{{ t('faculty') }}</dt><dd class="col-7" id="borrowFaculty">—</dd><dt class="col-5">{{ t('book') }}</dt><dd class="col-7" id="borrowBook">—</dd><dt class="col-5">{{ t('author') }}</dt><dd class="col-7" id="borrowAuthor">—</dd><dt class="col-5">{{ t('category') }}</dt><dd class="col-7" id="borrowCategory">—</dd><dt class="col-5">{{ t('borrow_id') }}</dt><dd class="col-7" id="borrowCode">—</dd><dt class="col-5">{{ t('active_borrow_count') }}</dt><dd class="col-7" id="borrowActiveCount">—</dd></dl></div><div class="col-md-7"><dl class="row mb-3 admin-detail-list"><dt class="col-5">{{ t('requested_date') }}</dt><dd class="col-7" id="borrowRequested">—</dd><dt class="col-5">{{ t('borrowed_date') }}</dt><dd class="col-7" id="borrowIssued">—</dd><dt class="col-5">{{ t('due_date') }}</dt><dd class="col-7" id="borrowDue">—</dd><dt class="col-5">{{ t('return_date') }}</dt><dd class="col-7" id="borrowReturned">—</dd><dt class="col-5">{{ t('status') }}</dt><dd class="col-7" id="borrowStatus">—</dd><dt class="col-5">{{ t('fine') }}</dt><dd class="col-7" id="borrowFine">—</dd></dl><h3 class="admin-timeline-title">{{ t('admin_borrow_requests') }}</h3><div class="admin-borrow-timeline" id="borrowTimeline"></div><a id="borrowFineLink" class="btn btn-sm btn-outline-primary mt-2" href="#" hidden><i class="bi bi-cash-stack me-1"></i>{{ t('view') }} {{ t('admin_fines') }}</a></div></div></div></div></div></div>
+<script>
+function openBorrowDetail(button) { const data=JSON.parse(button.dataset.borrowDetail); const values={borrowStudent:'student',borrowStudentId:'student_id',borrowFaculty:'faculty',borrowBook:'book',borrowAuthor:'author',borrowCategory:'category',borrowCode:'borrow_id',borrowActiveCount:'active_borrow_count',borrowRequested:'request_date',borrowIssued:'issued_date',borrowDue:'due_date',borrowReturned:'return_date'}; Object.entries(values).forEach(([id,key])=>document.getElementById(id).textContent=data[key] ?? '—'); document.getElementById('borrowStatus').textContent=data.status||'—'; document.getElementById('borrowFine').textContent=Number(data.fine_amount||0)>0 ? `${data.fine_amount} MMK (${data.fine_paid})` : (Number(data.estimated_fine||0)>0 ? `${data.estimated_fine} MMK {{ t('estimated_fine') }}` : '—'); const fineLink=document.getElementById('borrowFineLink'); fineLink.hidden=!data.fine_id; fineLink.href=data.fine_url||'#'; const order=['pending','approved','borrowed','overdue','returned']; const labels={pending:{{ t('request_submitted')|tojson }},approved:{{ t('approved')|tojson }},borrowed:{{ t('book_issued')|tojson }},overdue:{{ t('overdue')|tojson }},returned:{{ t('returned')|tojson }}}; const completed={{ t('completed')|tojson }}; const notReached={{ t('not_reached')|tojson }}; const current=order.indexOf(data.status); document.getElementById('borrowTimeline').innerHTML=order.map((status,index)=>`<div class="admin-timeline-step ${index<=current?'is-complete':''} ${status===data.status?'is-current':''}"><span class="admin-timeline-dot"><i class="bi ${index<=current?'bi-check2':'bi-circle'}"></i></span><div><strong>${labels[status]}</strong><small>${status==='pending'?data.request_date:status==='overdue'?`${data.late_days} {{ t('days_late') }}`:status==='returned'?(data.return_date||{{ t('transaction_closed')|tojson }}):(index<=current?completed:notReached)}</small></div></div>`).join(''); bootstrap.Modal.getOrCreateInstance(document.getElementById('borrowDetailModal')).show(); }
+</script>
 
 <!-- QR Scanner Modal -->
 <div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2"></i>Borrow QR Scanner</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2"></i>{{ t('borrow_qr_scanner') }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopScanner()"></button>
             </div>
             <div class="modal-body text-center p-4">
                 <div id="reader" style="width: 100%; min-height: 300px; background: #f8fafc; border-radius: 12px; overflow: hidden;" class="border mb-3"></div>
                 <div class="alert alert-info border-0 smaller py-2 mb-0">
-                    <i class="bi bi-info-circle me-1"></i> Point the student's borrow QR code at the camera.
+                    <i class="bi bi-info-circle me-1"></i> {{ t('point_qr_camera') }}
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" onclick="stopScanner()">Cancel</button>
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" onclick="stopScanner()">{{ t('cancel') }}</button>
             </div>
         </div>
     </div>
@@ -209,7 +239,7 @@ function startScanner() {
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
             console.error(err);
-            alert("Camera access denied or unavailable.");
+            alert({{ t('camera_access_error')|tojson }});
             modal.hide();
         });
 }
@@ -237,34 +267,4 @@ function stopScanner() {
 }
 </script>
 
-<style>
-.borrow-ticket-id-sm {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #0f172a;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: 700;
-    font-size: 0.75rem;
-    display: inline-block;
-}
-.status-badge {
-    padding: 0.35rem 0.75rem;
-    border-radius: 30px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: inline-block;
-}
-.status-pending { background: #fef3c7; color: #92400e; }
-.status-approved { background: #dcfce7; color: #166534; }
-.status-borrowed { background: #dbeafe; color: #1e40af; }
-.status-overdue { background: #fee2e2; color: #991b1b; }
-.status-returned { background: #f1f5f9; color: #475569; }
-.status-rejected { background: #1e293b; color: #ffffff; }
-
-.bg-soft-danger { background-color: rgba(153, 27, 27, 0.05); }
-.smaller { font-size: 0.75rem; }
-.fw-500 { font-weight: 500; }
-</style>
 {% endblock %}

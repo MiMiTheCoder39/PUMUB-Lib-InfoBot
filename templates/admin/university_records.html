@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ t('ur_page_title') }}{% endblock %}
+{% block admin_content %}
+<div class="admin-page-heading">
+  <div><span class="admin-eyebrow">{{ t('ur_nav') }}</span><h1>{{ t('ur_page_title') }}</h1><p>{{ t('ur_page_subtitle') }}</p></div>
+  <a href="{{ url_for('admin.university_record_add') }}" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>{{ t('ur_add_record') }}</a>
+</div>
+<section class="admin-panel mb-4">
+  <div class="admin-panel-head"><div><h2>{{ t('ur_records_table') }}</h2><p class="mb-0">{{ records_page.total }} {{ t('records') }}</p></div>
+    <div class="admin-seg-tabs" role="tablist" aria-label="{{ t('ur_role') }}">
+      <a class="admin-seg-tab {{ 'is-active' if not role_filter else '' }}" href="{{ url_for('admin.university_records', search=search, status=status_filter, faculty_id=faculty_filter) }}">{{ t('filter_all_label') }}<span class="admin-tab-count">{{ record_summary.total }}</span></a>
+      <a class="admin-seg-tab {{ 'is-active' if role_filter == 'student' else '' }}" href="{{ url_for('admin.university_records', role='student', search=search, status=status_filter, faculty_id=faculty_filter) }}">{{ t('students') }}<span class="admin-tab-count">{{ record_summary.students or 0 }}</span></a>
+      <a class="admin-seg-tab {{ 'is-active' if role_filter == 'teacher' else '' }}" href="{{ url_for('admin.university_records', role='teacher', search=search, status=status_filter, faculty_id=faculty_filter) }}">{{ t('teachers') }}<span class="admin-tab-count">{{ record_summary.teachers or 0 }}</span></a>
+    </div>
+  </div>
+  <form method="GET" class="admin-unified-filter">
+    <div class="admin-filter-field admin-filter-search"><label for="urSearch">{{ t('ur_search_placeholder') }}</label><input id="urSearch" name="search" value="{{ search }}" class="form-control" placeholder="{{ t('ur_search_placeholder') }}" autocomplete="off"></div>
+    <div class="admin-filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>{{ t('search_btn') }}</button>{% if search or status_filter or faculty_filter %}<a class="btn btn-outline-secondary" href="{{ url_for('admin.university_records') }}">{{ t('clear_filters') }}</a>{% endif %}</div>
+  </form>
+</section>
+<section class="admin-panel">
+  <div class="admin-panel-head"><div><h2>{{ t('ur_records_table') }}</h2><p>{{ records_page.total }} {{ t('records') }}</p></div></div>
+  <div class="table-responsive"><table class="table align-middle mb-0 admin-compact-table admin-table-fixed"><thead><tr>
+    <th style="min-width:90px">{{ t('ur_university_id') }}</th>
+    <th style="min-width:140px">{{ t('name') }}</th>
+    <th style="min-width:165px">{{ t('ur_university_email') }}</th>
+    <th style="min-width:88px">{{ t('ur_role') }}</th>
+    <th style="min-width:120px">{{ t('ur_faculty') }}</th>
+    <th style="min-width:105px">{{ t('ur_department') }}</th>
+    <th style="min-width:120px">{{ t('ur_year') }}</th>
+    <th style="min-width:115px">{{ t('ur_status') }}</th>
+    <th style="min-width:88px">{{ t('ur_registered') }}</th>
+    <th class="text-end" style="width:122px">{{ t('ur_actions') }}</th>
+  </tr></thead><tbody>
+  {% for r in records_page.records %}
+  <tr>
+    <td data-label="{{ t('ur_university_id') }}" class="admin-ur-id-cell">{{ r.university_id or '—' }}</td>
+    <td data-label="{{ t('name') }}" class="admin-name-cell"><strong>{{ r.full_name }}</strong></td>
+    <td data-label="{{ t('ur_university_email') }}"><span class="admin-ellipsis admin-email-cell">{{ r.university_email }}</span></td>
+    <td data-label="{{ t('ur_role') }}"><span class="admin-status {{ 'admin-status-approved' if r.role == 'student' else 'admin-status-borrowed' }}"><i class="bi {{ 'bi-mortarboard' if r.role == 'student' else 'bi-person-workspace' }} me-1"></i>{{ t('students') if r.role == 'student' else ('teachers' if r.role == 'teacher' else r.role|title) }}</span></td>
+    <td data-label="{{ t('ur_faculty') }}">{{ r.faculty_name or '—' }}</td>
+    <td data-label="{{ t('ur_department') }}">{{ r.department or '—' }}</td>
+    <td data-label="{{ t('ur_year') }}">{{ r.year or '—' }}</td>
+    <td data-label="{{ t('ur_status') }}"><span class="admin-status {{ status_badge_class(r.status) }}"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>{{ status_label(r.status) }}</span></td>
+    <td data-label="{{ t('ur_registered') }}">{% if r.registered %}<span class="admin-status admin-status-registered"><i class="bi bi-person-check me-1"></i>{{ t('ur_registered') }}</span>{% else %}<span class="admin-status admin-status-not-registered"><i class="bi bi-person-x me-1"></i>{{ t('ur_not_registered') }}</span>{% endif %}</td>
+    <td class="text-end"><div class="admin-table-actions">
+      <a href="{{ url_for('admin.university_record_edit', record_id=r.record_id) }}" class="admin-act-btn" aria-label="{{ t('edit') }}" title="{{ t('edit') }}"><i class="bi bi-pencil"></i></a>{% if not r.registered %}<button type="button" class="admin-act-btn danger" aria-label="{{ t('delete') }}" title="{{ t('delete') }}" data-bs-toggle="modal" data-bs-target="#urDeleteModal" onclick="window.confirmUrDelete({{ r.record_id }}, '{{ r.full_name | replace("'", "\\'") }}')"><i class="bi bi-trash"></i></button>{% else %}<button type="button" class="admin-act-btn text-muted" aria-label="{{ t('view') }}" title="{{ t('ur_registered_edit_note') }}" data-bs-toggle="modal" data-bs-target="#urRegModal" onclick="window.showUrRegEdit({{ r.record_id }})"><i class="bi bi-pencil-square"></i></button>{% endif %}
+    </div></td>
+  </tr>
+  {% else %}<tr><td colspan="10"><div class="admin-empty-state admin-empty-inline"><i class="bi bi-card-checklist"></i><span>{{ t('ur_no_records') }}</span><small>{{ t('ur_empty_search_hint') }}</small></div></td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% if records_page.pages > 1 %}<nav class="admin-pagination" aria-label="University records pagination"><span>{{ records_page.page }} / {{ records_page.pages }}</span><div>{% if records_page.page > 1 %}<a href="{{ pagination_prev_url }}" class="btn btn-sm btn-outline-secondary" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>{% endif %}{% if records_page.page < records_page.pages %}<a href="{{ pagination_next_url }}" class="btn btn-sm btn-outline-secondary" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>{% endif %}</div></nav>{% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<div class="modal fade" id="urDeleteModal" tabindex="-1" aria-labelledby="urDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="urDeleteModalLabel"><i class="bi bi-exclamation-triangle text-danger me-2"></i>{{ t('delete') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body"><p>{{ t('ur_delete_record_confirm') }}</p><p class="mb-0"><strong id="urDeleteTargetInfo"></strong></p></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+        <form id="urDeleteForm" method="POST" style="display:inline"><button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>{{ t('ur_delete_confirm_btn') }}</button></form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="urRegModal" tabindex="-1" aria-labelledby="urRegModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="urRegModalLabel"><i class="bi bi-info-circle me-2"></i>{{ t('ur_registered_edit_note') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body"><p>{{ t('ur_registered_edit_note') }}</p><div class="d-flex gap-2 justify-content-end"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('cancel') }}</button><a id="urRegEditLink" class="btn btn-primary" href="#">{{ t('edit_status') }}</a></div></div>
+    </div>
+  </div>
+</div>
+<script>(()=>{window.confirmUrDelete=(id,name)=>{const f=document.getElementById('urDeleteForm');f.action=`/admin/university-records/delete/${id}`;document.getElementById('urDeleteTargetInfo').textContent=name;};window.showUrRegEdit=(id)=>{document.getElementById('urRegEditLink').href=`/admin/university-records/edit/${id}`;};})();</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t('browse_categories') }}{% endblock %}
+{% block content %}
+<div class="user-page">
+  <nav class="user-breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('student.dashboard') }}">{{ t('home') }}</a><i class="bi bi-chevron-right"></i><span>{{ t('browse_categories') }}</span></nav>
+  <div class="user-page-heading"><div><span class="user-eyebrow"><i class="bi bi-grid"></i>{{ t('by_faculty') }}</span><h1>{{ t('browse_categories') }}</h1><p>{{ t('explore_library') }}</p></div><a class="user-btn user-btn-soft" href="{{ url_for('student.search') }}"><i class="bi bi-search"></i>{{ t('search_books') }}</a></div>
+  {% if categories %}
+  <div class="user-category-grid">
+    {% for category in categories %}
+    <a class="user-category-card" href="{{ url_for('student.collection', kind='category', collection_id=category.category_id) }}">
+      <span><i class="bi bi-book me-2"></i>{{ category.category_name }}</span>
+      <small class="user-category-count">{{ category.book_count }} {{ t('books_found_short') }}</small>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="user-empty"><i class="bi bi-grid"></i><strong>{{ t('no_search_results') }}</strong><p>{{ t('explore_library') }} — {{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>
+  {% endif %}
+</div>
+{% endblock %}

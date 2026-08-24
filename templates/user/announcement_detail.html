@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ ann.title }} — {{ t('announcements_page_title') }} — PUMUB LibInfoBot{% endblock %}
+
+{% block content %}
+<div class="user-container" style="max-width: 900px;">
+  <nav class="user-breadcrumb" aria-label="breadcrumb">
+    <a href="{{ url_for('student.dashboard') }}">{{ t('home') }}</a>
+    <span><i class="bi bi-chevron-right"></i></span>
+    <a href="{{ url_for('student.announcements') }}">{{ t('announcements_page_title') }}</a>
+    <span><i class="bi bi-chevron-right"></i></span>
+    <span aria-current="page">{{ ann.title }}</span>
+  </nav>
+
+  <article class="user-ann-detail-card">
+    <span class="user-ann-icon user-ann-icon-lg"><i class="bi bi-megaphone-fill"></i></span>
+    <header class="user-ann-detail-head">
+      <h1 class="user-ann-title" style="font-size: 1.5rem; margin: 0;">{{ ann.title }}</h1>
+      <div class="user-ann-meta-row">
+        <span class="user-ann-date"><i class="bi bi-calendar3"></i>{{ ann.date.strftime('%d %b %Y, %H:%M') if ann.date else '' }}</span>
+        {% if ann.get('created_by_name') %}<span class="user-ann-author"><i class="bi bi-person-badge"></i>{{ ann.created_by_name }}</span>{% endif %}
+      </div>
+    </header>
+    <div class="user-ann-detail-body">
+      {{ ann.content if ann.content else '' }}
+    </div>
+    <div class="user-ann-detail-foot">
+      <a class="user-section-link" href="{{ url_for('student.announcements') }}"><i class="bi bi-arrow-left"></i>{{ t('back_to_announcements') }}</a>
+    </div>
+  </article>
+</div>
+{% endblock %}

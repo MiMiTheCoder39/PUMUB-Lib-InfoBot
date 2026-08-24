@@ -1,206 +1,74 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}User Management{% endblock %}
-
+{% block title %}{{ t('users') }}{% endblock %}
 {% block admin_content %}
-<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-1">User Management</h2>
-        <p class="text-muted small mb-0">Manage library members, roles, and account status</p>
-    </div>
-    <a href="{{ url_for('admin.user_add') }}" class="btn btn-primary shadow-sm">
-        <i class="bi bi-person-plus me-2"></i>Add New Member
-    </a>
+<div class="admin-page-heading">
+  <div><span class="admin-eyebrow">{{ t('ur_nav') }}</span><h1>{{ t('member_management') }}</h1><p>{{ t('manage_members') }}</p></div>
 </div>
 
-<!-- Filters and Actions -->
-<div class="row g-3 mb-4 align-items-center">
-    <div class="col-md-8">
-        <div class="btn-group shadow-sm" role="group">
-            <a href="{{ url_for('admin.users') }}" class="btn {{ 'btn-primary' if not inactive_only else 'btn-outline-primary' }}">
-                All Members
-            </a>
-            <a href="{{ url_for('admin.users', inactive=1) }}" class="btn {{ 'btn-primary' if inactive_only else 'btn-outline-primary' }}">
-                <i class="bi bi-clock-history me-1"></i>Inactive (6+ Months)
-            </a>
-        </div>
+<section class="admin-kpi-grid admin-kpi-grid-4 mb-4" aria-label="{{ t('users') }}">
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-blue"><i class="bi bi-people"></i></div><div><span>{{ t('total_users') }}</span><strong>{{ user_summary.total or 0 }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-teal"><i class="bi bi-mortarboard"></i></div><div><span>{{ t('students') }}</span><strong>{{ user_summary.students or 0 }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-green"><i class="bi bi-person-workspace"></i></div><div><span>{{ t('teachers') }}</span><strong>{{ user_summary.teachers or 0 }}</strong></div></div>
+  <div class="admin-kpi-card"><div class="admin-kpi-icon admin-kpi-amber"><i class="bi bi-person-check"></i></div><div><span>{{ t('active') }}</span><strong>{{ user_summary.active or 0 }}</strong></div></div>
+</section>
+
+<section class="admin-panel mb-4">
+  <div class="admin-panel-head"><div><h2>{{ t('users') }}</h2><p class="mb-0">{{ users_page.total }} {{ t('records') }}</p></div>
+    <div class="admin-seg-tabs" role="tablist" aria-label="{{ t('role') }}">
+      {% set base_url = url_for('admin.users', search=search, status=status_filter if status_filter else '', faculty_id=faculty_id if faculty_id else '') %}
+      <a class="admin-seg-tab {{ 'is-active' if not role_filter else '' }}" href="{{ url_for('admin.users', search=search, status=status_filter if status_filter else '', faculty_id=faculty_id if faculty_id else '') }}">{{ t('filter_all_label') }}<span class="admin-tab-count">{{ users_page.total }}</span></a>
+      <a class="admin-seg-tab {{ 'is-active' if role_filter == 'student' else '' }}" href="{{ url_for('admin.users', role='student', search=search, status=status_filter if status_filter else '', faculty_id=faculty_id if faculty_id else '') }}">{{ t('students') }}<span class="admin-tab-count">{{ user_summary.students or 0 }}</span></a>
+      <a class="admin-seg-tab {{ 'is-active' if role_filter == 'teacher' else '' }}" href="{{ url_for('admin.users', role='teacher', search=search, status=status_filter if status_filter else '', faculty_id=faculty_id if faculty_id else '') }}">{{ t('teachers') }}<span class="admin-tab-count">{{ user_summary.teachers or 0 }}</span></a>
     </div>
-    <div class="col-md-4 text-md-end">
-        <button type="button" id="bulkDeleteBtn" class="btn btn-danger shadow-sm d-none" onclick="confirmBulkDelete()">
-            <i class="bi bi-trash me-2"></i>Delete Selected
-        </button>
-    </div>
-</div>
+  </div>
+  <form method="GET" class="admin-unified-filter">
+    <div class="admin-filter-field admin-filter-search"><label for="userSearch">{{ t('search_users_placeholder') }}</label><input id="userSearch" name="search" value="{{ search }}" class="form-control" placeholder="{{ t('search_users_placeholder') }}" autocomplete="off"></div>
+    <div class="admin-filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>{{ t('search_btn') }}</button>{% if search or status_filter or faculty_id %}<a class="btn btn-outline-secondary" href="{{ url_for('admin.users') }}">{{ t('clear_filters') }}</a>{% endif %}</div>
+  </form>
+</section>
 
 <form id="bulkDeleteForm" method="POST" action="{{ url_for('admin.users_bulk_delete') }}">
-    <div class="card border-0 shadow-sm overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light border-bottom">
-                    <tr>
-                        <th style="width: 40px;" class="ps-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="selectAll">
-                            </div>
-                        </th>
-                        <th>Member Details</th>
-                        <th>Faculty / Department</th>
-                        <th>Role</th>
-                        <th>Last Active</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in users %}
-                    <tr>
-                        <td class="ps-4">
-                            {% if u.user_id != session.get('user_id') and u.role != 'admin' %}
-                                <div class="form-check">
-                                    <input class="form-check-input user-checkbox" type="checkbox" name="user_ids" value="{{ u.user_id }}">
-                                </div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-circle-sm bg-primary text-white me-3">
-                                    {{ u.name[0].upper() }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-dark">{{ u.name }}</div>
-                                    <div class="text-muted small">{{ u.student_id or 'No ID' }} • {{ u.email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="small fw-500">{{ u.faculty_name or 'General' }}</div>
-                            <div class="text-muted smaller">{{ u.department or '—' }}</div>
-                        </td>
-                        <td>
-                            <span class="badge {{ 'bg-soft-danger text-danger' if u.role=='admin' else 'bg-soft-primary text-primary' if u.role=='teacher' else 'bg-soft-info text-info' }}">
-                                {{ u.role | title }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="small">
-                                {% if u.last_login %}
-                                    {{ u.last_login.strftime('%d %b %Y') }}
-                                {% else %}
-                                    <span class="text-muted italic">Never</span>
-                                {% endif %}
-                            </div>
-                            <div class="text-muted smaller">Joined {{ u.created_at.strftime('%b %Y') }}</div>
-                        </td>
-                        <td>
-                            {% if u.is_active %}
-                                <span class="status-indicator status-active"></span> Active
-                            {% else %}
-                                <span class="status-indicator status-overdue"></span> Suspended
-                            {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a href="{{ url_for('admin.user_edit', user_id=u.user_id) }}" class="btn btn-sm btn-outline-secondary border-0" title="Edit Profile">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                
-                                {% if u.is_active %}
-                                    <button type="button" class="btn btn-sm btn-outline-warning border-0" title="Suspend" onclick="toggleStatus({{ u.user_id }}, 0)">
-                                        <i class="bi bi-person-x"></i>
-                                    </button>
-                                {% else %}
-                                    <button type="button" class="btn btn-sm btn-outline-success border-0" title="Activate" onclick="toggleStatus({{ u.user_id }}, 1)">
-                                        <i class="bi bi-person-check"></i>
-                                    </button>
-                                {% endif %}
-
-                                {% if u.user_id != session.get('user_id') and u.role != 'admin' %}
-                                    <button type="button" class="btn btn-sm btn-outline-danger border-0" title="Delete" onclick="confirmDelete({{ u.user_id }}, '{{ u.name }}')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center py-5">
-                            <div class="text-muted">
-                                <i class="bi bi-people fs-1 opacity-25 d-block mb-3"></i>
-                                No users found matching the criteria.
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<section class="admin-panel">
+  <div class="admin-panel-head"><div><h2>{{ t('member_details') }}</h2><p>{{ users_page.total }} {{ t('records') }}</p></div><button type="button" id="bulkDeleteBtn" class="btn btn-danger d-none" onclick="confirmBulkDelete()"><i class="bi bi-trash me-1"></i>{{ t('delete') }} (0)</button></div>
+  <div class="table-responsive admin-table-wrap"><table class="table align-middle mb-0 admin-compact-table admin-table-fixed"><thead><tr>
+    <th class="ps-3" style="width:40px"><input class="form-check-input" type="checkbox" id="selectAll" aria-label="Select all"></th>
+    <th style="min-width:130px">{{ t('ur_university_id') }}</th>
+    <th style="min-width:160px">{{ t('name') }}</th>
+    <th style="min-width:180px">{{ t('email') }}</th>
+    <th style="min-width:90px">{{ t('role') }}</th>
+    <th style="min-width:130px">{{ t('faculty') }}</th>
+    <th style="min-width:110px">{{ t('ur_department') }}</th>
+    <th style="min-width:84px">{{ t('status') }}</th>
+    <th style="min-width:105px">{{ t('ur_registered_date') }}</th>
+    <th class="text-end" style="width:130px">{{ t('actions') }}</th>
+  </tr></thead><tbody>
+  {% for u in users %}<tr>
+    <td class="ps-3">{% if u.user_id != session.get('user_id') and u.role != 'admin' and not u.is_active %}<input class="form-check-input user-checkbox" type="checkbox" name="user_ids" value="{{ u.user_id }}" aria-label="{{ t('select') }} {{ u.name }}">{% endif %}</td>
+    <td data-label="{{ t('ur_university_id') }}">{{ u.student_id or '—' }}</td>
+    <td data-label="{{ t('name') }}" class="admin-name-cell"><strong>{{ u.name }}</strong><small>{{ u.username }}</small></td>
+    <td data-label="{{ t('email') }}"><span class="admin-ellipsis admin-email-cell">{{ u.email or '—' }}</span></td>
+    <td data-label="{{ t('role') }}"><span class="admin-status {{ 'admin-status-approved' if u.role == 'student' else 'admin-status-borrowed' }}"><i class="bi {{ 'bi-mortarboard' if u.role == 'student' else 'bi-person-workspace' }} me-1"></i>{{ t('students') if u.role == 'student' else ('teachers' if u.role == 'teacher' else 'admins') }}</span></td>
+    <td data-label="{{ t('faculty') }}"><span class="fw-500">{{ u.faculty_name or '—' }}</span></td>
+    <td data-label="{{ t('ur_department') }}">{{ u.department or '—' }}</td>
+    <td data-label="{{ t('status') }}">{% if u.is_active %}<span class="admin-status admin-status-active"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>{{ t('active') }}</span>{% else %}<span class="admin-status admin-status-inactive"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>{{ t('inactive') }}</span>{% endif %}</td>
+    <td data-label="{{ t('ur_registered_date') }}">{% if u.created_at %}{{ u.created_at.strftime("%d %b %Y") }}{% else %}—{% endif %}</td>
+    <td class="text-end"><div class="admin-table-actions"><button type="button" class="admin-act-btn" data-bs-toggle="modal" data-bs-target="#userDetail{{ u.user_id }}" aria-label="{{ t('view') }} {{ u.name }}" title="{{ t('view') }}"><i class="bi bi-eye"></i></button>{% if u.is_active %}<button type="button" class="admin-act-btn" title="{{ t('inactive') }}" onclick="toggleStatus({{ u.user_id }}, 0)"><i class="bi bi-person-x"></i></button>{% else %}<button type="button" class="admin-act-btn" title="{{ t('active') }}" onclick="toggleStatus({{ u.user_id }}, 1)"><i class="bi bi-person-check"></i></button>{% endif %}{% if u.role != 'admin' %}<a href="{{ url_for('admin.user_reset_password', user_id=u.user_id) }}" class="admin-act-btn" data-reset-password data-user-id="{{ u.user_id }}" data-user-name="{{ u.name }}" aria-label="{{ t('admin_reset_password') }}" title="{{ t('admin_reset_password') }}"><i class="bi bi-key"></i></a>{% endif %}{% if u.user_id != session.get('user_id') and u.role != 'admin' and not u.is_active %}<button type="button" class="admin-act-btn danger" aria-label="{{ t('delete') }}" onclick="confirmDelete({{ u.user_id }}, {{ u.name|tojson }})" title="{{ t('delete') }}"><i class="bi bi-trash"></i></button>{% endif %}</div></td>
+  </tr>
+  {% else %}<tr><td colspan="10"><div class="admin-empty-state admin-empty-inline"><i class="bi bi-people"></i><span>{{ t('no_users') }}</span><small>{{ t('try_another_search') }}</small></div></td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% if users_page.pages > 1 %}<nav class="admin-pagination" aria-label="User pagination"><span>{{ users_page.page }} / {{ users_page.pages }}</span><div>{% if users_page.page > 1 %}<a href="{{ pagination_prev_url }}" class="btn btn-sm btn-outline-secondary" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>{% endif %}{% if users_page.page < users_page.pages %}<a href="{{ pagination_next_url }}" class="btn btn-sm btn-outline-secondary" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>{% endif %}</div></nav>{% endif %}
+</section>
 </form>
 
-<!-- Hidden Forms for Actions -->
-<form id="statusForm" method="POST" style="display:none;"></form>
-<form id="deleteForm" method="POST" style="display:none;"></form>
+{% for u in users %}<div class="modal fade" id="userDetail{{ u.user_id }}" tabindex="-1" aria-labelledby="userDetailTitle{{ u.user_id }}" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content admin-detail-modal"><div class="modal-header"><div class="d-flex align-items-center gap-3"><span class="user-modal-avatar">{% if u.profile_image %}<img src="{{ url_for('library_file.file_profile', filename=u.profile_image) }}" alt="{{ u.name }}">{% else %}{{ (u.name or 'U')[0]|upper }}{% endif %}</span><div><h2 class="modal-title" id="userDetailTitle{{ u.user_id }}">{{ u.name }}</h2><p class="mb-0 text-muted smaller">{{ u.student_id or '' }}</p></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><div class="modal-body"><dl class="row admin-detail-list mb-0"><dt class="col-5">{{ t('ur_university_id') }}</dt><dd class="col-7">{{ u.student_id or '—' }}</dd><dt class="col-5">{{ t('username') }}</dt><dd class="col-7">{{ u.username }}</dd><dt class="col-5">{{ t('email') }}</dt><dd class="col-7">{{ u.email }}</dd><dt class="col-5">{{ t('faculty') }}</dt><dd class="col-7">{{ u.faculty_name or '—' }}</dd><dt class="col-5">{{ t('ur_department') }}</dt><dd class="col-7">{{ u.department or '—' }}</dd><dt class="col-5">{{ t('role') }}</dt><dd class="col-7">{{ u.role|title }}</dd><dt class="col-5">{{ t('current_borrows') }}</dt><dd class="col-7">{{ u.active_borrow_count or 0 }}</dd><dt class="col-5">{{ t('outstanding_fines') }}</dt><dd class="col-7">{{ "{:,.0f}".format(u.outstanding_fines or 0) }} MMK</dd><dt class="col-5">{{ t('status') }}</dt><dd class="col-7">{% if u.is_active %}<span class="admin-status admin-status-active">{{ t('active') }}</span>{% else %}<span class="admin-status admin-status-inactive">{{ t('inactive') }}</span>{% endif %}</dd><dt class="col-5">{{ t('ur_registered_date') }}</dt><dd class="col-7">{% if u.created_at %}{{ u.created_at.strftime("%d %b %Y") }}{% else %}—{% endif %}</dd></dl></div></div></div></div>{% endfor %}
 
-<script>
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.user-checkbox');
-    checkboxes.forEach(cb => cb.checked = this.checked);
-    updateBulkDeleteVisibility();
-});
-
-document.querySelectorAll('.user-checkbox').forEach(cb => {
-    cb.addEventListener('change', updateBulkDeleteVisibility);
-});
-
-function updateBulkDeleteVisibility() {
-    const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
-    const btn = document.getElementById('bulkDeleteBtn');
-    if (checkedCount > 0) {
-        btn.classList.remove('d-none');
-        btn.innerHTML = `<i class="bi bi-trash me-2"></i>Delete Selected (${checkedCount})`;
-    } else {
-        btn.classList.add('d-none');
-    }
-}
-
-function toggleStatus(userId, status) {
-    const form = document.getElementById('statusForm');
-    form.action = `/admin/users/toggle/${userId}/${status}`;
-    form.submit();
-}
-
-function confirmDelete(userId, name) {
-    if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
-        const form = document.getElementById('deleteForm');
-        form.action = `/admin/users/delete/${userId}`;
-        form.submit();
-    }
-}
-
-function confirmBulkDelete() {
-    const count = document.querySelectorAll('.user-checkbox:checked').length;
-    if (confirm(`Are you sure you want to delete all ${count} selected accounts? This will permanently remove their records.`)) {
-        document.getElementById('bulkDeleteForm').submit();
-    }
-}
-</script>
-
-<style>
-.avatar-circle-sm {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.9rem;
-}
-.bg-soft-primary { background-color: rgba(37, 99, 235, 0.1); }
-.bg-soft-danger { background-color: rgba(220, 38, 38, 0.1); }
-.bg-soft-info { background-color: rgba(8, 145, 178, 0.1); }
-.smaller { font-size: 0.75rem; }
-.italic { font-style: italic; }
-.fw-500 { font-weight: 500; }
-</style>
+  <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordTitle" aria-hidden="true" style="display:none;background:rgba(10,35,45,.55);"><div class="modal-dialog modal-dialog-centered"><div class="modal-content admin-detail-modal"><div class="modal-header"><div><h2 class="modal-title" id="resetPasswordTitle">{{ t('admin_reset_password') }}</h2><p class="mb-0 text-muted smaller"><span id="resetPasswordUserName"></span></p></div><button type="button" class="btn-close" aria-label="{{ t('close') }}" onclick="closeResetPassword()"></button></div><form id="resetPasswordForm" method="POST"><div class="modal-body"><div class="alert alert-warning small"><i class="bi bi-exclamation-triangle me-1"></i>{{ t('admin_reset_password_notice') }}</div><label class="form-label" for="temporaryPassword">{{ t('admin_temporary_password') }}</label><input type="password" class="form-control" id="temporaryPassword" name="temporary_password" required minlength="8" autocomplete="new-password"><div class="form-text">{{ t('admin_reset_password_hint') }}</div><label class="form-label mt-3" for="confirmTemporaryPassword">{{ t('confirm_password') }}</label><input type="password" class="form-control" id="confirmTemporaryPassword" name="confirm_password" required minlength="8" autocomplete="new-password"></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" onclick="closeResetPassword()">{{ t('cancel') }}</button><button type="submit" class="btn btn-primary"><i class="bi bi-key me-1"></i>{{ t('admin_reset_password') }}</button></div></form></div></div></div>
+  <form id="statusForm" method="POST" class="d-none"></form><form id="deleteForm" method="POST" class="d-none"></form>
 {% endblock %}
+{% block extra_scripts %}<style>
+#resetPasswordModal.is-visible{display:block!important;position:fixed;inset:0;z-index:1080;overflow-y:auto}
+#resetPasswordModal.is-visible .modal-dialog{min-height:calc(100% - 1rem);display:flex;align-items:center}
+</style><script>
+(() => { const selectAll=document.getElementById('selectAll'); const btn=document.getElementById('bulkDeleteBtn'); const boxes=()=>Array.from(document.querySelectorAll('.user-checkbox')); const update=()=>{const count=boxes().filter(x=>x.checked).length; btn.classList.toggle('d-none', !count); btn.innerHTML=`<i class="bi bi-trash me-1"></i>{{ t('delete') }} (${count})`;}; if(selectAll){selectAll.addEventListener('change',()=>{boxes().forEach(x=>x.checked=selectAll.checked);update();});} boxes().forEach(x=>x.addEventListener('change',update)); window.toggleStatus=(id,status)=>{const f=document.getElementById('statusForm');f.action=`/admin/users/toggle/${id}/${status}`;f.submit();}; window.confirmDelete=(id,name)=>{if(confirm({{ t('confirm_delete')|tojson }}+' '+name)){const f=document.getElementById('deleteForm');f.action=`/admin/users/delete/${id}`;f.submit();}}; window.openResetPassword=(id,name)=>{const modalEl=document.getElementById('resetPasswordModal');const form=document.getElementById('resetPasswordForm');if(!modalEl||!form){window.location.href=`/admin/users/reset-password/${id}`;return;}form.action=`/admin/users/reset-password/${id}`;document.getElementById('resetPasswordUserName').textContent=name;form.reset();modalEl.style.display='block';modalEl.classList.add('is-visible');modalEl.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');setTimeout(()=>document.getElementById('temporaryPassword').focus(),50);}; window.closeResetPassword=()=>{const modalEl=document.getElementById('resetPasswordModal');if(!modalEl)return;modalEl.classList.remove('is-visible');modalEl.style.display='none';modalEl.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}; document.querySelectorAll('[data-reset-password]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();window.openResetPassword(link.dataset.userId,link.dataset.userName); })); window.confirmBulkDelete=()=>{if(confirm({{ t('confirm_delete')|tojson }})){document.getElementById('bulkDeleteForm').submit();}}; })();
+</script>{% endblock %}

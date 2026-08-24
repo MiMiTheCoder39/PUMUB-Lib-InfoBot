@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from "user/book_card.html" import book_card with context %}
+{% block title %}{{ t('my_library') }}{% endblock %}
+{% block content %}
+<div class="ds-dashboard">
+
+  {# ══════ HERO — library photo background (PUMUB LibInfoBot card) ══════ #}
+  <section class="ds-hero ds-hero-library" aria-labelledby="ds-hero-title">
+    <div class="ds-hero-inner">
+      <span class="ds-hero-eyebrow"><i class="bi bi-collection"></i> {{ t('explore_the_library') }}</span>
+      <h1 id="ds-hero-title">PUMUB LibInfoBot</h1>
+      <p class="ds-hero-sub">{{ t('my_library') }}</p>
+      <form class="ds-search-bar" action="{{ url_for('student.search') }}" method="GET">
+        <label class="visually-hidden" for="ds-search">{{ t('search_placeholder') }}</label>
+        <input id="ds-search" type="search" name="q" placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+        <button type="submit" class="ds-search-btn" aria-label="{{ t('search_button') }}"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+  </section>
+
+  <div class="ds-section">
+  {# ── Header: My Library title row (compact, below the hero) ── #}
+  <div class="ds-list-title-row">
+    <h2 class="ds-list-title" id="mylibrary-title">{{ t('my_library') }}</h2>
+  </div>
+
+  {# ── Segmented tab navigation ───────────────────────── #}
+  <nav class="user-hub-tabs" aria-label="{{ t('my_library') }}">
+    <a class="user-hub-tab {% if tab == 'bookmarks' %}is-active{% endif %}" href="{{ url_for('student.my_library', tab='bookmarks') }}">
+      <i class="bi bi-bookmark-heart-fill"></i>{{ t('hub_bookmarks') }}
+      {% if bookmarks|length %}<small>{{ bookmarks|length }}</small>{% endif %}
+    </a>
+    <a class="user-hub-tab {% if tab == 'continue' %}is-active{% endif %}" href="{{ url_for('student.my_library', tab='continue') }}">
+      <i class="bi bi-clock-history"></i>{{ t('hub_continue_reading') }}
+      {% if recently_read|length %}<small>{{ recently_read|length }}</small>{% endif %}
+    </a>
+    <a class="user-hub-tab {% if tab == 'borrowed' %}is-active{% endif %}" href="{{ url_for('student.my_library', tab='borrowed') }}">
+      <i class="bi bi-journal-bookmark-fill"></i>{{ t('hub_borrowed') }}
+      {% if active_borrows|length %}<small>{{ active_borrows|length }}</small>{% endif %}
+    </a>
+    <a class="user-hub-tab {% if tab == 'history' %}is-active{% endif %}" href="{{ url_for('student.my_library', tab='history') }}">
+      <i class="bi bi-clock"></i>{{ t('hub_history') }}
+    </a>
+  </nav>
+
+  {# ── TAB: Bookmarks ─────────────────────────────────── #}
+  {% if tab == 'bookmarks' %}
+  <section class="user-hub-panel">
+    {% if bookmarks %}
+    <div class="row g-4">
+      {% for b in bookmarks %}
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2">{{ book_card(b) }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="user-hub-empty">
+      <i class="bi bi-bookmark-dash"></i>
+      <h3 class="h5 mt-3">{{ t('hub_empty_bookmarks_title') }}</h3>
+      <p class="text-muted">{{ t('hub_empty_bookmarks_body') }}</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.search') }}">{{ t('hub_action_explore') }}</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.dashboard', faculty=1) }}">{{ t('hub_action_faculties') }}</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.recommendations') }}">{{ t('hub_action_recommendations') }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── TAB: Continue Reading (real recently read, no invented progress) ── #}
+  {% elif tab == 'continue' %}
+  <section class="user-hub-panel">
+    {% if recently_read %}
+    <p class="text-muted small mb-3">{{ t('hub_recently_read_note') }}</p>
+    <div class="row g-4">
+      {% for b in recently_read %}
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+        <div class="position-relative">
+          {{ book_card(b) }}
+          <span class="user-recent-chip" title="{{ b.read_date }}">{{ b.read_date }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="user-hub-empty">
+      <i class="bi bi-book"></i>
+      <h3 class="h5 mt-3">{{ t('hub_empty_continue_title') }}</h3>
+      <p class="text-muted">{{ t('hub_empty_continue_body') }}</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.search') }}">{{ t('hub_action_explore') }}</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.recommendations') }}">{{ t('hub_action_recommendations') }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── TAB: Borrowed ──────────────────────────────────── #}
+  {% elif tab == 'borrowed' %}
+  <section class="user-hub-panel">
+    {% if borrows %}
+    <div class="user-borrow-list">
+      {% for b in borrows %}
+      <article class="user-borrow-row">
+        {% if b.cover_image %}<img class="user-borrow-cover" src="{{ url_for('library_file.file_cover', filename=b.cover_image) }}" alt="{{ b.book_title }}">{% else %}<span class="user-borrow-cover user-borrow-fallback"><i class="bi bi-book"></i></span>{% endif %}
+        <div class="user-borrow-body">
+          <a class="user-borrow-title" href="{{ url_for('student.book_details', book_id=b.book_id) }}">{{ b.book_title }}</a>
+          <p class="text-muted small mb-1">{{ b.author_name or t('unknown_author') }}</p>
+          <p class="mb-0 small">{{ t('hub_borrow_requested') }} {{ b.request_date }}
+            {% if b.borrowed_date %} · {{ t('hub_borrow_from') }} {{ b.borrowed_date }}{% endif %}
+            {% if b.due_date %} · {{ t('hub_borrow_due') }} {{ b.due_date }}{% endif %}
+          </p>
+        </div>
+        <div class="user-borrow-status">
+          <span class="user-status-badge user-status-{{ b.status }}">{{ t(b.status == 'borrowed' and 'hub_status_borrowed' or b.status == 'overdue' and 'hub_status_overdue' or b.status == 'pending' and 'hub_status_pending' or b.status == 'approved' and 'hub_status_approved' or b.status == 'returned' and 'hub_status_returned' or 'hub_status_rejected') }}</span>
+          {% if b.status in ('overdue','borrowed') and b.fine_amount %}
+          <span class="user-fine-note">{{ t('hub_fine_note') }} {{ "%.0f"|format(b.fine_amount * 200 if (b.fine_amount or 0) < 1 else b.fine_amount) }}</span>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="user-hub-empty">
+      <i class="bi bi-journal-plus"></i>
+      <h3 class="h5 mt-3">{{ t('hub_empty_borrowed_title') }}</h3>
+      <p class="text-muted">{{ t('hub_empty_borrowed_body') }}</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.search') }}">{{ t('hub_action_explore') }}</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.dashboard', faculty=1) }}">{{ t('hub_action_faculties') }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── TAB: History ───────────────────────────────────── #}
+  {% else %}
+  <section class="user-hub-panel">
+    {% if read_history %}
+    <h3 class="h5 mb-3"><i class="bi bi-eye-fill text-muted me-1"></i>{{ t('hub_history_read') }}</h3>
+    <div class="row g-4 mb-5">
+      {% for b in read_history %}
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+        <div class="position-relative">
+          {{ book_card(b) }}
+          <span class="user-recent-chip" title="{{ b.read_date }}">{{ b.read_date }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="user-hub-empty">
+      <i class="bi bi-clock-history"></i>
+      <h3 class="h5 mt-3">{{ t('hub_empty_history_title') }}</h3>
+      <p class="text-muted">{{ t('hub_empty_history_body') }}</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.search') }}">{{ t('hub_action_explore') }}</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('student.recommendations') }}">{{ t('hub_action_recommendations') }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,54 +1,115 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}Book Management{% endblock %}
-
+{% block title %}{{ t('book_management') }}{% endblock %}
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4><i class="bi bi-book"></i> Book Management</h4>
-    <a href="{{ url_for('admin.book_add') }}" class="btn btn-library">
-        <i class="bi bi-plus-circle"></i> Add Book
-    </a>
+<div class="admin-page-heading"><div><span class="admin-eyebrow">{{ t('books') }}</span><h1>{{ t('book_management') }}</h1><p>{{ book_summary.total_books or 0 }} {{ t('books') }} · {{ book_summary.physical_books or 0 }} {{ t('physical_books') }} · {{ book_summary.digital_books or 0 }} {{ t('digital_books') }}</p></div><a href="{{ url_for('admin.book_add') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>{{ t('add_book') }}</a></div>
+
+{# Phase 3 — Archive lifecycle workspace tabs #}
+<div class="admin-tabs" role="tablist">
+  <a class="admin-tab {{ 'is-active' if not archive_mode }}" href="{{ url_for('admin.books') }}" role="tab">
+    <i class="bi bi-journals me-1"></i>{{ t('books_tab_active') }}<span class="admin-tab-count">{{ book_summary.total_books or 0 }}</span>
+  </a>
+  <a class="admin-tab {{ 'is-active' if archive_mode }}" href="{{ url_for('admin.books', archive='1') }}" role="tab">
+    <i class="bi bi-archive me-1"></i>{{ t('books_tab_archived') }}<span class="admin-tab-count">{{ archived_count }}</span>
+  </a>
 </div>
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead style="background:#095456;color:white;">
-                    <tr><th>#</th><th>Cover</th><th>Title</th><th>Author</th><th>Category</th><th>Type</th><th>Views</th><th>Downloads</th><th>QR</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {% for b in books %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>
-                            {% if b.cover_image %}
-                                <img src="{{ url_for('static', filename='uploads/covers/'+b.cover_image) }}" style="height:40px;width:30px;object-fit:cover;" class="rounded">
-                            {% else %}<i class="bi bi-journal"></i>{% endif %}
-                        </td>
-                        <td class="text-truncate" style="max-width:160px;">{{ b.title }}</td>
-                        <td><small>{{ b.author_name or '—' }}</small></td>
-                        <td><small>{{ b.category_name or '—' }}</small></td>
-                        <td><span class="badge bg-info text-dark">{{ b.resource_type }}</span></td>
-                        <td>{{ b.view_count }}</td>
-                        <td>{{ b.download_count }}</td>
-                        <td>
-                            {% if b.qr_code %}
-                                <img src="{{ url_for('static', filename='uploads/qrcodes/'+b.qr_code) }}" style="height:35px;">
-                            {% else %}—{% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('admin.book_edit', book_id=b.book_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                            <form method="POST" action="{{ url_for('admin.book_delete', book_id=b.book_id) }}" class="d-inline"
-                                  onsubmit="return confirm('{{ b.title }} ကို ဖျက်မှာ သေချာပါသလား?')">
-                                <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="10" class="text-center text-muted py-3">Book မရှိသေးပါ။</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+
+<section class="admin-panel">
+  <div class="admin-panel-head"><div><h2>{{ t('manage_inventory') }}</h2><p>{{ t('books_filter_hint') }}</p></div>
+    <form method="GET" action="{{ url_for('admin.books') }}" class="d-flex flex-wrap gap-2 admin-panel-actions">
+      {% if archive_mode %}<input type="hidden" name="archive" value="1">{% endif %}
+      <input type="search" name="search" class="form-control form-control-sm books-search-wide" placeholder="{{ t('search_placeholder') }}" value="{{ search or '' }}">
+      {% if not archive_mode %}
+      {% if faculty_id_list %}<input type="hidden" name="faculty_id" value="{{ faculty_id_list }}">{% endif %}
+      {% if availability %}<input type="hidden" name="availability" value="{{ availability }}">{% endif %}
+      {% if resource_type %}<input type="hidden" name="resource_type" value="{{ resource_type }}">{% endif %}
+      {% endif %}
+      <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('apply_filters') }}</button>
+      <a href="{{ url_for('admin.books', archive=('1' if archive_mode else '')) }}" class="btn btn-sm btn-outline-secondary">{{ t('clear_filters') }}</a>
+    </form>
+  </div>
+
+  <div class="table-responsive" style="padding:0 18px 14px;">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        {% if archive_mode %}
+        <tr><th>{{ t('title') }}</th><th>{{ t('isbn') }}</th><th>{{ t('author') }}</th><th>{{ t('resource_type') }}</th><th class="text-end">{{ t('actions') }}</th></tr>
+        {% else %}
+        <tr><th>{{ t('cover') }}</th><th>{{ t('title') }}</th><th>{{ t('author') }}</th><th>{{ t('department') }}</th><th>{{ t('category') }}</th><th>{{ t('book_state') }}</th><th>{{ t('copies') }}</th><th>{{ t('resource_type') }}</th><th class="text-end">{{ t('actions') }}</th></tr>
+        {% endif %}
+      </thead>
+      <tbody>
+        {% for b in books %}
+        <tr>
+          {% if archive_mode %}
+          <td class="text-truncate" style="max-width:320px;" title="{{ b.title }}"><strong>{{ b.title }}</strong></td>
+          <td><small class="text-muted">{{ b.isbn or '—' }}</small></td>
+          <td><small>{{ b.books_author_name or '—' }}</small></td>
+          <td><span class="badge bg-light text-dark border">{{ b.resource_type|replace('_',' ')|title }}</span></td>
+          <td class="text-end">
+            <form method="POST" action="{{ url_for('admin.book_restore', book_id=b.book_id) }}" class="d-inline">
+              <button class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1"></i>{{ t('restore_book') }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.book_permanent_delete', book_id=b.book_id) }}" class="d-inline"
+                  onsubmit="return confirm('{{ t('permanent_delete_confirm') }}');">
+              <button class="btn btn-sm btn-danger"><i class="bi bi-trash me-1"></i>{{ t('permanent_delete_book') }}</button>
+            </form>
+          </td>
+          {% else %}
+          <td>
+            {% if b.cover_image %}
+              <img src="{{ url_for('library_file.file_cover', filename=b.cover_image) }}" class="admin-cover-thumb" alt="{{ b.title }}">
+            {% else %}<span class="admin-cover-placeholder"><i class="bi bi-journal"></i></span>{% endif %}
+          </td>
+          <td class="text-truncate" style="max-width:220px;" title="{{ b.title }}"><strong>{{ b.title }}</strong>
+            {% if b.pdf_file %}<a href="{{ url_for('admin.book_edit', book_id=b.book_id) }}" class="text-muted d-block" style="font-size:.72rem;" title="PDF — {{ t('digital_version_section') }}"><i class="bi bi-file-earmark-pdf"></i></a>{% endif %}
+          </td>
+          <td><small>{{ b.books_author_name or b.authors_author_name or '—' }}</small></td>
+          <td><small>{{ b.department or '—' }}</small></td>
+          <td><small>{{ b.category_name or '—' }}</small></td>
+          <td>
+            {% set state_badges = [] %}
+            {% if b.is_physical == 1 %}
+              <span class="badge bg-primary" title="{{ t('state_physical') }}"><i class="bi bi-book"></i></span>
+            {% endif %}
+            {% if b.pdf_file %}
+              <span class="badge bg-info text-dark" title="{{ t('state_digital') }}"><i class="bi bi-file-earmark-pdf"></i></span>
+            {% endif %}
+          </td>
+          <td>
+            {% if b.resource_type == 'ebook' and not b.is_physical %}
+              <span class="text-muted" style="font-size:.8rem;">—</span>
+            {% else %}
+              <span style="font-size:.85rem;" class="{% if b.available_copies > 0 %}text-success{% else %}text-muted{% endif %}">{{ b.available_copies if b.available_copies is not none else 0 }}/{{ b.total_copies or 0 }}</span>
+            {% endif %}
+            {% if b.active_borrow_count %}<br><small class="text-muted">{{ b.active_borrow_count }} {{ t('active_count') }}</small>{% endif %}
+          </td>
+          <td><span class="badge bg-light text-dark border">{{ b.resource_type|replace('_',' ')|title }}</span></td>
+          <td class="text-end">
+            <a href="{{ url_for('admin.book_edit', book_id=b.book_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+            <form method="POST" action="{{ url_for('admin.book_archive', book_id=b.book_id) }}" class="d-inline">
+              <button class="btn btn-sm btn-outline-secondary" title="{{ t('archive_book') }} — {{ t('archive_hint') }}"
+                      onclick="return confirm('{{ t('archive_confirm') }}');">
+                <i class="bi bi-archive me-1"></i>{{ t('archive_book') }}
+              </button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="{{ 9 if not archive_mode else 5 }}" class="text-center text-muted py-3">{{ t('no_records') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if books_page.pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center px-3 pb-3">
+    <small class="text-muted">{{ t('records') }} {{ books_page.total }} — {{ t('page') }} {{ books_page.page }}/{{ books_page.pages }}</small>
+    <nav>
+      <a href="{{ pagination_prev_url }}" class="btn btn-sm btn-outline-secondary {% if books_page.page <= 1 %}disabled{% endif %}">{{ t('previous') }}</a>
+      <a href="{{ pagination_next_url }}" class="btn btn-sm btn-outline-secondary {% if books_page.page >= books_page.pages %}disabled{% endif %}">{{ t('next') }}</a>
+    </nav>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

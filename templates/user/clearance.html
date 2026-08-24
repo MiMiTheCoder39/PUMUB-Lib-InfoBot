@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Library Clearance{% endblock %}
+{% block title %}{{ t('library_clearance') }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -7,30 +7,30 @@
         <div class="col-md-8">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Library Clearance Status</h5>
+                    <h5 class="mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>{{ t('library_clearance_status') }}</h5>
                 </div>
                 <div class="card-body p-4 text-center">
                     {% if status.cleared %}
                         <div class="mb-4">
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
                         </div>
-                        <h3 class="text-success fw-bold">Cleared</h3>
-                        <p class="text-muted">သင့်တွင် ပေးရန်ကျန်သော စာအုပ်နှင့် ဒဏ်ကြေးများ မရှိပါ။</p>
+                        <h3 class="text-success fw-bold">{{ t('cleared') }}</h3>
+                        <p class="text-muted">{{ t('clearance_cleared_note') }}</p>
                         <div class="alert alert-success mt-4">
                             <i class="bi bi-info-circle me-2"></i>
-                            Library မှ No-Dues Clearance အောင်မြင်ပြီး ဖြစ်ပါသည်။
+                            {{ t('clearance_success_note') }}
                         </div>
                     {% else %}
                         <div class="mb-4">
                             <i class="bi bi-exclamation-circle-fill text-danger" style="font-size: 5rem;"></i>
                         </div>
-                        <h3 class="text-danger fw-bold">Not Cleared</h3>
-                        <p class="text-muted">Clearance ရရှိရန် အောက်ပါအချက်များကို ဖြေရှင်းပေးပါ။</p>
+                        <h3 class="text-danger fw-bold">{{ t('not_cleared') }}</h3>
+                        <p class="text-muted">{{ t('clearance_resolve_note') }}</p>
                         
                         <div class="row mt-4 text-start">
                             <div class="col-md-6 mb-3">
                                 <div class="p-3 bg-light rounded border">
-                                    <h6 class="text-muted small mb-1">Unreturned Books</h6>
+                                    <h6 class="text-muted small mb-1">{{ t('unreturned_books') }}</h6>
                                     <h4 class="{{ 'text-danger' if status.unreturned_count > 0 else 'text-success' }} mb-0">
                                         {{ status.unreturned_count }}
                                     </h4>
@@ -38,7 +38,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="p-3 bg-light rounded border">
-                                    <h6 class="text-muted small mb-1">Unpaid Fines</h6>
+                                    <h6 class="text-muted small mb-1">{{ t('unpaid_fines_label') }}</h6>
                                     <h4 class="{{ 'text-danger' if status.unpaid_fines > 0 else 'text-success' }} mb-0">
                                         {{ status.unpaid_fines | int }} MMK
                                     </h4>
@@ -48,16 +48,16 @@
                         
                         <div class="alert alert-warning mt-2 text-start">
                             <i class="bi bi-info-circle me-2"></i>
-                            ကျေးဇူးပြု၍ ငှားယူထားသော စာအုပ်များကို ပြန်အပ်ပြီး ဒဏ်ကြေးများကို Library Admin ထံတွင် ပေးဆောင်ပါ။
+                            {{ t('clearance_payment_note') }}
                         </div>
                     {% endif %}
                     
                     <div class="mt-4 pt-3 border-top">
                         <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary px-4">
-                            Back to Dashboard
+                            {{ t('back_to_dashboard') }}
                         </a>
                         <a href="{{ url_for('student.borrow_history') }}" class="btn btn-library px-4 ms-2">
-                            View Borrow History
+                            {{ t('view_borrow_history') }}
                         </a>
                     </div>
                 </div>

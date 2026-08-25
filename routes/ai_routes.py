@@ -32,6 +32,16 @@ def _rate_limit_response():
     return response
 
 
+def _ai_unavailable_response(question: str = ""):
+    language = detect_message_language(question or "")
+    message = (
+        "လက်ရှိ AI ဝန်ဆောင်မှု ခဏမရသေးပါ။ ခဏအကြာ ပြန်မေးကြည့်ပါ။"
+        if language == "my"
+        else "The AI service is temporarily unavailable. Please try again shortly."
+    )
+    return jsonify({"error": message}), 503
+
+
 def _validate_question(payload):
     if not isinstance(payload, dict):
         return None, (jsonify({"error": "JSON object body is required"}), 400)
@@ -81,7 +91,7 @@ def ai_chat():
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:
         current_app.logger.exception("LibInfoBot AI request failed: %s", exc)
-        return jsonify({"error": str(exc)}), 502
+        return _ai_unavailable_response(question)
 
 
 @ai_bp.get("/health")
@@ -135,7 +145,8 @@ def ai_book_information():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:
-        return jsonify({"error": str(exc)}), 502
+        current_app.logger.exception("Book information AI request failed: %s", exc)
+        return _ai_unavailable_response(question)
 
 
 @ai_bp.post("/pdf-summary")
@@ -165,7 +176,8 @@ def ai_pdf_summary():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:
-        return jsonify({"error": str(exc)}), 502
+        current_app.logger.exception("PDF summary AI request failed: %s", exc)
+        return _ai_unavailable_response(str(payload.get("question") or ""))
 
 
 @ai_bp.post("/pdf-question")
@@ -196,7 +208,8 @@ def ai_pdf_question():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:
-        return jsonify({"error": str(exc)}), 502
+        current_app.logger.exception("PDF question AI request failed: %s", exc)
+        return _ai_unavailable_response(question)
 
 
 @ai_bp.post("/book-search")
@@ -216,4 +229,5 @@ def ai_book_search():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except AIServiceError as exc:
-        return jsonify({"error": str(exc)}), 502
+        current_app.logger.exception("Book search AI request failed: %s", exc)
+        return _ai_unavailable_response(question)

@@ -81,6 +81,36 @@ def _chunk_terms(text: str) -> set[str]:
     return {term.lower() for term in re.findall(r"[\w]{3,}", text or "")}
 
 
+def _local_summary(text: str, language: str, mode: str) -> str:
+    """Create a short extractive summary without calling an external provider."""
+    normalized = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not normalized:
+        return (
+            "ဒီ PDF ထဲက စာသားကို အကျဉ်းချုပ်ရန် ထုတ်ယူမရပါ။"
+            if str(language).lower().startswith("my")
+            else "No extractable text was found in this PDF."
+        )
+
+    sentences = [
+        part.strip(" -•")
+        for part in re.split(r"(?<=[.!?။])\s+|\n+", normalized)
+        if part.strip(" -•")
+    ]
+    if len(sentences) < 2:
+        words = normalized.split()
+        step = 55
+        sentences = [" ".join(words[index:index + step]) for index in range(0, len(words), step)]
+
+    limit = 3 if mode == "short" else (5 if mode == "medium" else 8)
+    selected = [sentence[:360].strip() for sentence in sentences[:limit] if sentence.strip()]
+    if not selected:
+        selected = [normalized[:360]]
+    bullets = "\n".join(f"- {sentence}" for sentence in selected)
+    if str(language).lower().startswith("my"):
+        return "AI ဝန်ဆောင်မှုခဏမရသေးတဲ့အတွက် PDF ထဲကစာသားကို အခြေခံပြီး အကျဉ်းချုပ်ထားပါတယ်။\n\n" + bullets
+    return "The AI service is temporarily unavailable, so this is an extractive summary based on the PDF text.\n\n" + bullets
+
+
 def _relevant_chunks(question: str, chunks: list[str], top_k: int) -> list[str]:
     if not chunks:
         return []
@@ -116,29 +146,41 @@ def summarize_pdf(book_id: int, role: str | None, mode: str = "medium", *, langu
             "warnings": extracted.get("warnings", []),
         }
 
-    # Bound the number of intermediate summaries to the configured document size.
-    max_summary_chunks = int(current_app.config.get("PDF_SUMMARY_MAX_CHUNKS", 24))
+    # Keep provider usage bounded; if a provider is unavailable, fall back to local extraction.
+    max_summary_chunks = min(int(current_app.config.get("PDF_SUMMARY_MAX_CHUNKS", 24)), 8)
     working_chunks = chunks[:max_summary_chunks]
     chunk_summaries = []
-    for chunk in working_chunks:
-        chunk_summaries.append(summarize_text(
-            chunk,
-            max_output_tokens=220 if mode == "short" else 320,
-        ))
-    final_context = [
-        "AUTHORITATIVE PDF EXCERPTS AND INTERMEDIATE SUMMARIES. Use only these facts.",
-        *chunk_summaries,
-    ]
-    summary = answer_from_context(
-        SUMMARY_MODES[mode],
-        final_context,
-        max_output_tokens=300 if mode == "short" else (600 if mode == "medium" else 1000),
-        system_prompt=(
-            "Write a natural, readable summary using only the supplied PDF excerpts and intermediate summaries. "
-            "Do not invent facts. Keep it concise: answer the main point first, then give 3-6 key points or short sentences. "
-            + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
-        ),
-    )
+    used_local_fallback = False
+    try:
+        for chunk in working_chunks:
+            chunk_summaries.append(summarize_text(
+                chunk,
+                max_output_tokens=220 if mode == "short" else 320,
+            ))
+    except AIServiceError:
+        used_local_fallback = True
+
+    if used_local_fallback:
+        summary = _local_summary(extracted.get("text", ""), language, mode)
+    else:
+        final_context = [
+            "AUTHORITATIVE PDF EXCERPTS AND INTERMEDIATE SUMMARIES. Use only these facts.",
+            *chunk_summaries,
+        ]
+        try:
+            summary = answer_from_context(
+                SUMMARY_MODES[mode],
+                final_context,
+                max_output_tokens=300 if mode == "short" else (600 if mode == "medium" else 1000),
+                system_prompt=(
+                    "Write a natural, readable summary using only the supplied PDF excerpts and intermediate summaries. "
+                    "Do not invent facts. Keep it concise: answer the main point first, then give 3-6 key points or short sentences. "
+                    + ("Respond in Myanmar language." if str(language).lower().startswith("my") else "Respond in English.")
+                ),
+            )
+        except AIServiceError:
+            summary = _local_summary(extracted.get("text", ""), language, mode)
+            used_local_fallback = True
     return {
         "status": "ok",
         "mode": mode,
@@ -146,7 +188,7 @@ def summarize_pdf(book_id: int, role: str | None, mode: str = "medium", *, langu
         "summary": summary,
         "pages_processed": extracted.get("pages_processed", 0),
         "truncated": extracted.get("truncated", False),
-        "warnings": extracted.get("warnings", []),
+        "warnings": extracted.get("warnings", []) + (["AI provider unavailable; used local PDF-text summary."] if used_local_fallback else []),
     }
 
 

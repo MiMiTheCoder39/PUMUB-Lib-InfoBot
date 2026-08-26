@@ -9,6 +9,7 @@ Status values: pending, approved, borrowed, overdue, returned, rejected
 
 from models.db import mysql
 from datetime import datetime, date
+import os
 
 FINE_RATE_MMK_PER_DAY = 200
 
@@ -88,8 +89,14 @@ def create_borrow_request(user_id, book_id):
 # ─── STEP 2: Admin Approve ────────────────────────────────────
 
 def approve_borrow(borrow_id, qr_folder, base_url="http://127.0.0.1:5000"):
-    """Approve a pending request once and return its stable ticket code."""
+    """Approve a pending request once and return its stable ticket code.
+
+    The generated QR is written to the configured local storage folder first,
+    then uploaded to private R2 when R2 is enabled. The database keeps only
+    the filename so the protected QR route can serve it in either mode.
+    """
     from utils.qrcode_gen import generate_borrow_qr
+    from utils.r2_storage import is_enabled as r2_is_enabled, upload_path
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT status, borrow_id_code FROM borrow_requests WHERE borrow_id=%s", (borrow_id,))
@@ -106,6 +113,13 @@ def approve_borrow(borrow_id, qr_folder, base_url="http://127.0.0.1:5000"):
 
     borrow_id_code = _generate_borrow_code()
     qr_filename = generate_borrow_qr(borrow_id_code, qr_folder, base_url)
+
+    # qrcode_gen writes the PNG to the configured storage folder. In an
+    # R2-backed deployment, persist the generated object under qrcodes/ before
+    # committing the borrow record so Admin and User protected routes can read it.
+    if r2_is_enabled():
+        upload_path(os.path.join(qr_folder, qr_filename), "qrcodes", qr_filename)
+
     cur.execute("""
         UPDATE borrow_requests
         SET status='approved', approve_date=%s, borrow_id_code=%s, borrow_qr=%s

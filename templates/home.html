@@ -25,7 +25,7 @@
   <nav class="user-navbar" aria-label="PUMUB LibInfoBot">
     <div class="user-nav-inner">
       <a href="{{ url_for('home') }}" class="user-brand">
-        <span class="user-brand-mark"><i class="bi bi-book-half"></i></span>
+        <span class="user-brand-mark"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt="PUMUB LibInfoBot logo"></span>
         <span><strong>PUMUB</strong><small>{{ t('library_footer') }}</small></span>
       </a>
       <button class="user-nav-toggle" type="button" aria-controls="homeNavMenu" aria-expanded="false" data-user-nav-toggle>
@@ -192,14 +192,14 @@
 {# ══════ ASK LIBINFOBOT — same widget as the user dashboard (guest: "login to chat" notice) ══════ #}
 <div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book")}|tojson }}'>
   <button class="libinfobot-launcher" type="button" data-libinfobot-toggle aria-controls="home-libinfobot-panel" aria-expanded="false" aria-label="{{ t('widget_open') }}">
-    <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+    <span class="libinfobot-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
     <span class="libinfobot-launcher-label">{{ t('widget_ask') }}</span>
   </button>
 
   <section class="libinfobot-panel" id="home-libinfobot-panel" data-libinfobot-panel hidden aria-label="{{ t('widget_chat') }}">
     <header class="libinfobot-header">
       <div class="libinfobot-identity">
-        <span class="libinfobot-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <span class="libinfobot-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
         <div>
           <strong>LibInfoBot</strong>
           <small><span class="libinfobot-status-dot"></span> {{ t('widget_assistant') }}</small>
@@ -210,7 +210,7 @@
 
     <div class="libinfobot-messages" data-libinfobot-messages aria-live="polite">
       <div class="libinfobot-message bot">
-        <span class="libinfobot-message-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <span class="libinfobot-message-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
         <div class="libinfobot-bubble">{{ t('guest_widget_greeting') }}</div>
       </div>
     </div>

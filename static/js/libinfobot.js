@@ -35,7 +35,7 @@
     const item = document.createElement('div');
     item.className = `libinfobot-message ${kind}`;
     const avatar = kind === 'bot'
-      ? '<span class="libinfobot-message-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>'
+      ? '<span class="libinfobot-message-avatar" aria-hidden="true"><img src="/static/images/pumub-libinfobot-logo.png" alt=""></span>'
       : '';
     let html = `<div class="libinfobot-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
 

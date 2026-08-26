@@ -43,6 +43,14 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 2.2rem;
       color: rgba(255,255,255,.9);
+      overflow: hidden;
+    }
+    .lg-head-icon img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      border-radius: 50%;
     }
     .lg-head h1 {
       margin: 0 0 .45rem;
@@ -124,7 +132,7 @@
 
       <!-- Compact login header: title only -->
       <div class="lg-head lg-head-compact">
-        <div class="lg-head-icon" aria-hidden="true"><i class="bi bi-book"></i></div>
+        <div class="lg-head-icon" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt="PUMUB LibInfoBot logo"></div>
         <h1 id="lg-hero-title">{{ t('member_login') }}</h1>
       </div>
 

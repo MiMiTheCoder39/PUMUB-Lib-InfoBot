@@ -2810,14 +2810,24 @@ canvas {
 }
 
 /* Borrow QR, navigation, and PDF reader final responsive safeguards */
+.user-nav-menu {
+  min-width: 0;
+}
 .user-nav-links {
   min-width: 0;
-  overflow: hidden;
+  flex: 1 1 auto;
+  overflow: visible;
 }
 .user-nav-links .user-nav-link,
 .user-nav-links .user-nav-dropdown {
   min-width: 0;
   max-width: 100%;
+}
+.user-nav-dropdown {
+  flex: 0 1 auto;
+}
+.user-nav-dropdown-menu {
+  z-index: 1055;
 }
 .user-nav-links .user-nav-link {
   overflow: hidden;

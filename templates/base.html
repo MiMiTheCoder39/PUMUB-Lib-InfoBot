@@ -17,7 +17,7 @@
 <nav class="user-navbar" aria-label="{{ t('library_footer') }}">
   <div class="user-nav-inner">
     <a href="{{ url_for('student.dashboard') if session.get('user_id') and session.get('role') != 'admin' else url_for('home') }}" class="user-brand">
-      <span class="user-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span class="user-brand-mark"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt="PUMUB LibInfoBot logo"></span>
       <span><strong>PUMUB</strong><small>{{ t('library_footer') }}</small></span>
     </a>
     <button class="user-nav-toggle" type="button" aria-controls="userNavMenu" aria-expanded="false" data-user-nav-toggle>

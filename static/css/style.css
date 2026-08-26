@@ -2374,3 +2374,55 @@ a:hover {
   height: 100%;
   object-fit: cover;
 }
+
+/* PUMUB LibInfoBot brand logo */
+.user-brand-mark {
+    overflow: hidden;
+    background: #fff;
+    padding: 2px;
+}
+.user-brand-mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 9px;
+}
+.auth-brand-mark {
+    overflow: hidden;
+    background: #fff;
+    padding: 2px;
+}
+.auth-brand-mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+.libinfobot-avatar,
+.libinfobot-message-avatar {
+    overflow: hidden;
+    background: #fff;
+    padding: 2px;
+}
+.libinfobot-avatar img,
+.libinfobot-message-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.admin-brand-mark {
+    overflow: hidden;
+    background: #fff;
+    padding: 2px;
+}
+.admin-brand-mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px;
+}

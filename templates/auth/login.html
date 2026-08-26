@@ -8,6 +8,42 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
+    /* Photo 1-style login presentation with the supplied library photo. */
+    body.auth-page {
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background: #dce9e7 url("{{ url_for('static', filename='images/login-library-background.jpg') }}") center center / cover fixed no-repeat;
+    }
+    body.auth-page::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: rgba(235, 247, 245, .58);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+    }
+    body.auth-page > * {
+      position: relative;
+      z-index: 1;
+    }
+    body.auth-page .auth-navrow {
+      background: rgba(245, 252, 251, .68);
+      border-radius: 0 0 18px 18px;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    body.auth-page .auth-wrapper {
+      padding-top: .25rem;
+      padding-bottom: 2.5rem;
+    }
+    body.auth-page .auth-card {
+      box-shadow: 0 24px 70px rgba(8, 58, 60, .24), 0 4px 18px rgba(8, 58, 60, .12);
+      border: 1px solid rgba(255,255,255,.75);
+    }
+
     /* Login page — Phase 4 centered one-column design,
        teal-gradient welcome header (user-approved reference).
        Reuses the shared .auth-* visual system from style.css
@@ -90,6 +126,24 @@
       padding: .3rem 0 .3rem;
       text-align: center;
     }
+
+    @media (max-width: 640px) {
+      body.auth-page {
+        background-attachment: scroll;
+      }
+      body.auth-page .auth-navrow {
+        border-radius: 0 0 14px 14px;
+      }
+      body.auth-page .auth-wrapper {
+        padding: 0 .75rem 1.5rem;
+      }
+      body.auth-page .auth-card {
+        width: 100%;
+      }
+    }
+
+    /* End Photo 1-style login presentation. */
+
   </style>
 </head>
 <body class="auth-page">

@@ -21,27 +21,47 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background: rgba(235, 247, 245, .58);
-      -webkit-backdrop-filter: blur(3px);
-      backdrop-filter: blur(3px);
+      background: rgba(231, 244, 241, .26);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
     }
     body.auth-page > * {
       position: relative;
       z-index: 1;
     }
     body.auth-page .auth-navrow {
-      background: rgba(245, 252, 251, .68);
+      max-width: 500px;
+      background: rgba(245, 252, 251, .72);
+      border: 1px solid rgba(255,255,255,.55);
+      border-top: 0;
       border-radius: 0 0 18px 18px;
-      padding-left: 1rem;
-      padding-right: 1rem;
+      padding: .75rem 1rem;
     }
     body.auth-page .auth-wrapper {
-      padding-top: .25rem;
+      padding-top: .1rem;
       padding-bottom: 2.5rem;
     }
     body.auth-page .auth-card {
+      width: 100%;
+      max-width: 360px !important;
       box-shadow: 0 24px 70px rgba(8, 58, 60, .24), 0 4px 18px rgba(8, 58, 60, .12);
-      border: 1px solid rgba(255,255,255,.75);
+      border: 1px solid rgba(255,255,255,.78);
+    }
+    body.auth-page .lg-head {
+      padding: 1.25rem 1.1rem 1.35rem;
+    }
+    body.auth-page .lg-head-icon {
+      width: 58px;
+      height: 58px;
+      margin-bottom: .65rem;
+      border-width: 2px;
+    }
+    body.auth-page .lg-head h1 {
+      font-size: 1.35rem;
+      margin-bottom: 0;
+    }
+    body.auth-page .auth-body {
+      padding: 1.35rem 1.35rem 1.15rem;
     }
 
     /* Login page — Phase 4 centered one-column design,
@@ -132,13 +152,25 @@
         background-attachment: scroll;
       }
       body.auth-page .auth-navrow {
+        max-width: none;
+        padding: .65rem .75rem;
         border-radius: 0 0 14px 14px;
       }
       body.auth-page .auth-wrapper {
         padding: 0 .75rem 1.5rem;
       }
       body.auth-page .auth-card {
-        width: 100%;
+        width: min(100%, 360px);
+      }
+      body.auth-page .lg-head {
+        padding: 1.1rem .9rem 1.15rem;
+      }
+      body.auth-page .lg-head-icon {
+        width: 54px;
+        height: 54px;
+      }
+      body.auth-page .auth-body {
+        padding: 1.15rem 1rem .95rem;
       }
     }
 
@@ -172,7 +204,7 @@
   </div>
 
   <div class="auth-wrapper">
-    <div class="auth-card" style="max-width:480px; overflow:hidden;">
+      <div class="auth-card" style="max-width:360px; overflow:hidden;">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for cat, msg in messages %}

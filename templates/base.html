@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% if session.get('user_id') and session.get('role') != 'admin' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260826-mobile2') }}">
     {% endif %}
     {% block extra_head %}{% endblock %}
 </head>

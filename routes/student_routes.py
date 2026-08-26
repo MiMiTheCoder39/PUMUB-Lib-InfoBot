@@ -61,6 +61,7 @@ from models.notification_model import (
     notify_borrow_request_submitted,
 )
 from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is_enabled
+from services.text_summary import summarize_pasted_text
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -308,6 +309,48 @@ def serve_book_file(book_id):
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['Cache-Control'] = 'private, no-store'
     return resp
+
+
+# ============================================================
+# SUMMARIZE PASTED TEXT
+# ============================================================
+@student_bp.route("/book/<int:book_id>/summarize", methods=["GET", "POST"])
+@login_required
+@library_user_required
+def summarize_book_text(book_id):
+    """Summarize text copied from an authorized book's online reading session."""
+    book = get_book_by_id(book_id)
+    if not book:
+        abort(404)
+
+    restricted_types = {'thesis', 'research_paper', 'reference_book', 'teachers_guide'}
+    if book.get('resource_type') in restricted_types and session.get('role') != 'teacher':
+        abort(403)
+    if not book.get('pdf_file'):
+        flash(translate('read_online_unavailable'), 'warning')
+        return redirect(url_for('student.book_details', book_id=book_id))
+
+    result = None
+    source_text = ''
+    language = 'my'
+    length = 'medium'
+    if request.method == 'POST':
+        source_text = (request.form.get('text') or '').strip()
+        language = (request.form.get('language') or 'my').strip().lower()
+        length = (request.form.get('length') or 'medium').strip().lower()
+        try:
+            result = summarize_pasted_text(source_text, language=language, length=length)
+        except ValueError as exc:
+            flash(str(exc), 'danger')
+
+    return render_template(
+        'user/summarize_text.html',
+        book=book,
+        result=result,
+        source_text=source_text,
+        selected_language=language,
+        selected_length=length,
+    )
 
 
 # ============================================================

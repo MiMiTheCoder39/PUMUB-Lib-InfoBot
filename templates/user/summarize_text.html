@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ t('summarize_text') }}{% endblock %}
+
+{% block content %}
+<div class="user-page summary-page">
+  <nav class="user-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('student.dashboard') }}">{{ t('home') }}</a>
+    <i class="bi bi-chevron-right"></i>
+    <a href="{{ url_for('student.book_details', book_id=book.book_id) }}">{{ book.title }}</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>{{ t('summarize_text') }}</span>
+  </nav>
+
+  <div class="user-page-heading summary-page-heading">
+    <div>
+      <span class="user-eyebrow"><i class="bi bi-stars"></i>{{ t('summarize_text') }}</span>
+      <h1>{{ t('summarize_text_title') }}</h1>
+      <p>{{ t('summarize_text_intro') }}</p>
+    </div>
+    <div class="summary-page-actions">
+      <a class="user-btn user-btn-outline" href="{{ url_for('student.read_book', book_id=book.book_id) }}">
+        <i class="bi bi-book"></i>{{ t('back_to_pdf') }}
+      </a>
+      <a class="user-btn user-btn-soft" href="{{ url_for('student.dashboard') }}#libinfobot">
+        <i class="bi bi-chat-dots"></i>{{ t('ask_chatbot') }}
+      </a>
+    </div>
+  </div>
+
+  <div class="summary-book-context">
+    <i class="bi bi-file-earmark-text"></i>
+    <span><strong>{{ book.title }}</strong><small>{{ t('summarize_copy_hint') }}</small></span>
+  </div>
+
+  <div class="summary-layout">
+    <section class="user-form-card summary-input-card" aria-labelledby="summary-input-heading">
+      <div class="summary-card-head">
+        <div>
+          <span class="user-eyebrow"><i class="bi bi-clipboard2"></i>{{ t('paste_text') }}</span>
+          <h2 id="summary-input-heading">{{ t('paste_text_title') }}</h2>
+        </div>
+        <span class="summary-limit">{{ t('summary_character_limit') }}</span>
+      </div>
+
+      <form method="POST" class="summary-form">
+        <label class="user-form-label" for="summary-text">{{ t('summary_text_label') }}</label>
+        <textarea id="summary-text" name="text" class="user-form-control summary-textarea" rows="13" maxlength="10000" required placeholder="{{ t('summary_text_placeholder') }}">{{ source_text }}</textarea>
+        <p class="summary-helper"><i class="bi bi-info-circle"></i>{{ t('summary_text_help') }}</p>
+
+        <div class="summary-options">
+          <div>
+            <label class="user-form-label" for="summary-language">{{ t('summary_language') }}</label>
+            <select id="summary-language" name="language" class="user-form-control">
+              <option value="my" {% if selected_language == 'my' %}selected{% endif %}>{{ t('summary_language_my') }}</option>
+              <option value="en" {% if selected_language == 'en' %}selected{% endif %}>{{ t('summary_language_en') }}</option>
+              <option value="both" {% if selected_language == 'both' %}selected{% endif %}>{{ t('summary_language_both') }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="user-form-label" for="summary-length">{{ t('summary_length') }}</label>
+            <select id="summary-length" name="length" class="user-form-control">
+              <option value="short" {% if selected_length == 'short' %}selected{% endif %}>{{ t('summary_length_short') }}</option>
+              <option value="medium" {% if selected_length == 'medium' %}selected{% endif %}>{{ t('summary_length_medium') }}</option>
+              <option value="detailed" {% if selected_length == 'detailed' %}selected{% endif %}>{{ t('summary_length_detailed') }}</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="user-btn user-btn-primary summary-submit">
+          <i class="bi bi-stars"></i>{{ t('summarize_button') }}
+        </button>
+      </form>
+    </section>
+
+    <section class="user-form-card summary-result-card" aria-labelledby="summary-result-heading">
+      <div class="summary-card-head">
+        <div>
+          <span class="user-eyebrow"><i class="bi bi-lightbulb"></i>{{ t('summary_result') }}</span>
+          <h2 id="summary-result-heading">{{ t('summary_result_title') }}</h2>
+        </div>
+        {% if result and result.used_fallback %}<span class="summary-fallback-badge">{{ t('summary_fallback') }}</span>{% endif %}
+      </div>
+      {% if result %}
+      <div class="summary-output" tabindex="0">{{ result.summary }}</div>
+      <button type="button" class="user-btn user-btn-soft summary-copy" data-copy-summary>
+        <i class="bi bi-copy"></i><span>{{ t('copy_summary') }}</span>
+      </button>
+      {% else %}
+      <div class="summary-empty">
+        <i class="bi bi-file-text"></i>
+        <strong>{{ t('summary_empty_title') }}</strong>
+        <p>{{ t('summary_empty_body') }}</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="summary-note"><i class="bi bi-shield-check"></i>{{ t('summary_privacy_note') }}</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var copyButton = document.querySelector('[data-copy-summary]');
+  var output = document.querySelector('.summary-output');
+  if (!copyButton || !output || !navigator.clipboard) return;
+  copyButton.addEventListener('click', function () {
+    navigator.clipboard.writeText(output.innerText).then(function () {
+      var label = copyButton.querySelector('span');
+      if (!label) return;
+      var original = label.textContent;
+      label.textContent = '{{ t('summary_copied') }}';
+      window.setTimeout(function () { label.textContent = original; }, 1600);
+    });
+  });
+})();
+</script>
+{% endblock %}

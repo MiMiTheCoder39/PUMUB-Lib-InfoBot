@@ -330,3 +330,199 @@
 .admin-detail-modal .modal-header {
   align-items: center;
 }
+
+
+/* Admin responsive finish — keep every workspace inside the viewport while
+   allowing wide data tables to scroll inside their own container. */
+.admin-app,
+.admin-main-area,
+.admin-content,
+.admin-topbar,
+.admin-topbar-left,
+.admin-topbar-right,
+.admin-panel,
+.admin-panel-head,
+.admin-page-heading {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.admin-breadcrumb,
+.admin-breadcrumb strong,
+.admin-page-heading > div,
+.admin-panel-head > div {
+  min-width: 0;
+}
+.admin-breadcrumb strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-content {
+  width: 100%;
+  overflow-x: hidden;
+}
+.admin-content .table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-content .table-responsive > table {
+  margin-bottom: 0;
+}
+.admin-content img,
+.admin-content canvas,
+.admin-content svg {
+  max-width: 100%;
+}
+
+@media (max-width: 991.98px) {
+  .admin-topbar {
+    gap: 10px;
+    padding-inline: 16px;
+  }
+  .admin-topbar-left,
+  .admin-topbar-right {
+    gap: 9px;
+  }
+  .admin-breadcrumb {
+    max-width: min(58vw, 420px);
+  }
+  .admin-nav-link span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-content {
+    padding: 18px 12px 28px;
+  }
+  .admin-page-heading {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .admin-page-heading h1 {
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
+    overflow-wrap: anywhere;
+  }
+  .admin-page-heading p {
+    font-size: .8rem;
+    overflow-wrap: anywhere;
+  }
+  .admin-page-actions,
+  .admin-page-heading > .btn {
+    width: 100%;
+  }
+  .admin-page-actions .btn {
+    min-width: 0;
+    white-space: normal;
+  }
+  .admin-panel-head {
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px;
+  }
+  .admin-panel-head h2 {
+    overflow-wrap: anywhere;
+  }
+  .admin-panel-head .admin-text-link {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .admin-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .admin-tabs .admin-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .admin-content .table-responsive {
+    border-radius: 8px;
+  }
+  .admin-content .table {
+    min-width: 680px;
+  }
+  .admin-content .table-responsive .table {
+    min-width: 680px;
+  }
+  .admin-table-wrap {
+    padding-inline: 8px;
+  }
+  .admin-filter-bar,
+  .admin-unified-filter,
+  .admin-report-filters,
+  .admin-fine-filter {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .admin-filter-field,
+  .admin-filter-search,
+  .admin-filter-report {
+    min-width: 0;
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .admin-filter-field .form-control,
+  .admin-filter-field .form-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .admin-report-filter-actions,
+  .admin-filter-actions {
+    width: 100%;
+  }
+  .admin-report-filter-actions .btn,
+  .admin-filter-actions .btn {
+    flex: 1 1 140px;
+    min-width: 0;
+    white-space: normal;
+  }
+  .admin-content .modal-dialog {
+    width: auto;
+    max-width: calc(100% - 20px);
+    margin-inline: 10px;
+  }
+  .admin-content .modal-body {
+    overflow-wrap: anywhere;
+  }
+  .admin-form-actions-bottom {
+    flex-direction: column;
+  }
+  .admin-form-actions-bottom .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .admin-topbar {
+    padding-inline: 10px;
+  }
+  .admin-breadcrumb {
+    max-width: 62vw;
+  }
+  .admin-content {
+    padding-inline: 10px;
+  }
+  .admin-panel-head,
+  .admin-form-grid {
+    padding-inline: 12px;
+  }
+  .admin-content .table {
+    min-width: 620px;
+  }
+  .admin-content .table-responsive .table {
+    min-width: 620px;
+  }
+  .admin-report-filter-actions .btn,
+  .admin-filter-actions .btn {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}

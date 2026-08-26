@@ -14,11 +14,9 @@ Features:
 """
 
 import os
-import re
-from io import BytesIO
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
-    session, flash, send_file, send_from_directory, current_app, abort
+    session, flash, send_from_directory, current_app, abort
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -26,7 +24,7 @@ from utils.decorators import login_required, student_required, library_user_requ
 from utils.file_utils import save_uploaded_file
 from utils.recommender import get_recommendations
 from utils.password_policy import check_password_policy
-from utils.i18n import SUPPORTED_LANGUAGES, current_language, translate
+from utils.i18n import SUPPORTED_LANGUAGES, translate
 from models.db import mysql
 
 from models.book_model import (
@@ -39,8 +37,8 @@ from models.history_model import (
     log_read_history, get_read_history,
 )
 from models.user_model import (
-    get_user_by_id, update_password, update_profile, update_username,
-    update_profile_image, get_all_faculties,
+    get_user_by_id, get_user_by_username, update_password,
+    update_profile, get_all_faculties,
 )
 from models.report_model import (
     get_all_announcements,
@@ -60,8 +58,6 @@ from models.notification_model import (
     get_user_notifications, get_unread_count, mark_all_read, mark_one_read,
     notify_borrow_request_submitted,
 )
-from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is_enabled
-from services.text_summary import summarize_pasted_text
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -288,76 +284,15 @@ def serve_book_file(book_id):
     if book['resource_type'] in restricted_types and session.get("role") != "teacher":
         abort(403)
 
-    if r2_is_enabled():
-        try:
-            pdf_bytes, content_type = download_bytes("books", book["pdf_file"])
-        except R2StorageError:
-            abort(404)
-        resp = send_file(
-            BytesIO(pdf_bytes),
-            mimetype=content_type or "application/pdf",
-            download_name=book["pdf_file"],
-            as_attachment=False,
-        )
-    else:
-        resp = send_from_directory(
-            current_app.config["UPLOAD_FOLDER_BOOKS"], book["pdf_file"], as_attachment=False
-        )
+    resp = send_from_directory(
+        current_app.config["UPLOAD_FOLDER_BOOKS"], book["pdf_file"], as_attachment=False
+    )
     # Defense-in-depth: never offer the PDF as a saved attachment (already
     # guaranteed by as_attachment=False), block proxy/content-sniffing
     # reuse, and keep it out of shared caches.
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['Cache-Control'] = 'private, no-store'
     return resp
-
-
-# ============================================================
-# SUMMARIZE PASTED TEXT
-# ============================================================
-@student_bp.route("/book/<int:book_id>/summarize", methods=["GET", "POST"])
-@login_required
-@library_user_required
-def summarize_book_text(book_id):
-    """Summarize text copied from an authorized book's online reading session."""
-    book = get_book_by_id(book_id)
-    if not book:
-        abort(404)
-
-    restricted_types = {'thesis', 'research_paper', 'reference_book', 'teachers_guide'}
-    if book.get('resource_type') in restricted_types and session.get('role') != 'teacher':
-        abort(403)
-    if not book.get('pdf_file'):
-        flash(translate('read_online_unavailable'), 'warning')
-        return redirect(url_for('student.book_details', book_id=book_id))
-
-    result = None
-    source_text = ''
-    language = current_language()
-    length = 'medium'
-    if request.method == 'POST':
-        source_text = (request.form.get('text') or '').strip()
-        language = (request.form.get('language') or 'my').strip().lower()
-        length = (request.form.get('length') or 'medium').strip().lower()
-        try:
-            result = summarize_pasted_text(source_text, language=language, length=length)
-        except ValueError as exc:
-            error_text = str(exc)
-            if error_text == 'Text is required.':
-                error_message = translate('summary_text_required')
-            elif error_text.startswith('Text exceeds'):
-                error_message = translate('summary_text_too_long')
-            else:
-                error_message = translate('summary_invalid_request')
-            flash(error_message, 'danger')
-
-    return render_template(
-        'user/summarize_text.html',
-        book=book,
-        result=result,
-        source_text=source_text,
-        selected_language=language,
-        selected_length=length,
-    )
 
 
 # ============================================================
@@ -405,59 +340,74 @@ def history():
 # ============================================================
 # PROFILE MANAGEMENT
 # ============================================================
-@student_bp.route("/profile", methods=["GET"])
+@student_bp.route("/profile", methods=["GET", "POST"])
 @login_required
 @library_user_required
 def profile():
     user = get_user_by_id(session["user_id"])
     faculties = get_all_faculties()
-    return render_template("user/profile.html", user=user, faculties=faculties)
 
+    if request.method == "POST":
+        # Name/email/faculty are official-record fields in this UI and are
+        # therefore read-only; retain the stored values when the form omits them.
+        name = request.form.get("name", user.get("name", "")).strip()
+        email = request.form.get("email", user.get("email", "")).strip().lower()
+        faculty_id = request.form.get("faculty_id") if "faculty_id" in request.form else user.get("faculty_id")
+        username = request.form.get("username", "").strip()
 
-@student_bp.route("/profile/update", methods=["POST"])
-@login_required
-@library_user_required
-def profile_update():
-    """Update only the editable username and/or profile picture.
+        if not name or not email or not username:
+            flash(translate("profile_required_fields"), "danger")
+            return redirect(url_for("student.profile"))
 
-    Name, email, faculty, role, and university identity are deliberately
-    not accepted from this form and remain sourced from the official record.
-    """
-    user_id = session["user_id"]
-    username = request.form.get("username", "").strip()
-    profile_file = request.files.get("profile_image")
-    changed = False
-
-    if username:
-        if len(username) < 3 or len(username) > 50 or not re.fullmatch(r"[A-Za-z0-9_]+", username):
+        if not (3 <= len(username) <= 50) or not all(
+            ch.isalnum() or ch == "_" for ch in username
+        ):
             flash(translate("profile_username_invalid"), "danger")
             return redirect(url_for("student.profile"))
-        if username != (session.get("username") or ""):
-            if not update_username(user_id, username):
+
+        existing_username = get_user_by_username(username)
+        if existing_username and int(existing_username["user_id"]) != int(session["user_id"]):
+            flash(translate("profile_username_taken"), "danger")
+            return redirect(url_for("student.profile"))
+
+        profile_image_filename = None
+        if "profile_image" in request.files:
+            uploaded = request.files["profile_image"]
+            if uploaded and uploaded.filename:
+                profile_image_filename = save_uploaded_file(
+                    uploaded,
+                    current_app.config["LIBRARY_STORAGE_PROFILES"],
+                    current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
+                )
+                if not profile_image_filename:
+                    flash(translate("profile_image_invalid"), "danger")
+                    return redirect(url_for("student.profile"))
+
+        try:
+            update_profile(
+                session["user_id"], name, email, faculty_id,
+                profile_image=profile_image_filename,
+                username=username,
+            )
+        except Exception as exc:
+            # MySQL duplicate-key protection remains the final guard in case
+            # another account claims the username between the pre-check and update.
+            if getattr(exc, "args", [None])[0] == 1062:
                 flash(translate("profile_username_taken"), "danger")
                 return redirect(url_for("student.profile"))
-            session["username"] = username
-            changed = True
+            raise
 
-    if profile_file and profile_file.filename:
-        saved = save_uploaded_file(
-            profile_file,
-            current_app.config["LIBRARY_STORAGE_PROFILES"],
-            current_app.config["ALLOWED_IMAGE_EXTENSIONS"],
-        )
-        if not saved:
-            flash(translate("profile_image_invalid"), "danger")
-            return redirect(url_for("student.profile"))
-        update_profile_image(user_id, saved)
-        session["profile_image"] = saved
-        changed = True
+        session["name"] = name
+        session["username"] = username
+        if profile_image_filename:
+            session["profile_image"] = profile_image_filename
+        else:
+            session.setdefault("profile_image", user.get("profile_image"))
 
-    if not changed:
-        flash(translate("profile_required_fields"), "warning")
+        flash(translate("profile_update_success"), "success")
         return redirect(url_for("student.profile"))
 
-    flash(translate("profile_update_success"), "success")
-    return redirect(url_for("student.profile"))
+    return render_template("user/profile.html", user=user, faculties=faculties)
 
 
 @student_bp.route("/profile/change-password", methods=["POST"])

@@ -34,21 +34,16 @@
   const addMessage = (text, kind = 'bot', books = []) => {
     const item = document.createElement('div');
     item.className = `libinfobot-message ${kind}`;
-    const avatar = kind === 'bot'
-      ? '<span class="libinfobot-message-avatar" aria-hidden="true"><img src="/static/images/pumub-libinfobot-logo.png" alt=""></span>'
-      : '';
+    const avatar = kind === 'bot' ? '<span class="libinfobot-message-avatar" aria-hidden="true"><i class="bi bi-robot"></i></span>' : '';
     let html = `<div class="libinfobot-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
-
-    // Search results are deliberately display-only. Users can ask a follow-up
-    // question in the chat instead of using crowded action buttons or links.
     if (Array.isArray(books) && books.length) {
       html += `<div class="libinfobot-results">${books.map((book) => {
+        const id = Number(book.book_id);
         const title = escapeHtml(book.title || copyText('untitled', 'Untitled book'));
         const author = escapeHtml(book.author_name || copyText('author', 'Author unavailable'));
-        return `<div class="libinfobot-result"><strong>${title}</strong><small>${author}</small></div>`;
+        return `<div class="libinfobot-result"><strong>${title}</strong><small>${author}</small>${Number.isInteger(id) ? `<div class="libinfobot-result-actions"><button type="button" class="libinfobot-detail" data-action="book_information" data-book-id="${id}" data-book-title="${title}">${copyText('ask_book', 'Ask about this book')}</button><button type="button" class="libinfobot-detail" data-action="pdf_summary" data-mode="short" data-book-id="${id}" data-book-title="${title}">${copyText('pdf_summary', 'Short PDF summary')}</button><button type="button" class="libinfobot-detail" data-action="pdf_question" data-book-id="${id}" data-book-title="${title}">${copyText('ask_pdf', 'Ask about PDF')}</button></div>` : ''}</div>`;
       }).join('')}</div>`;
     }
-
     item.innerHTML = avatar + html;
     messages.appendChild(item);
     scrollMessages();
@@ -66,7 +61,7 @@
     errorBox.hidden = false;
   };
 
-  const ask = async (question) => {
+  const ask = async (question, bookId = null, action = null, mode = 'medium') => {
     const trimmed = String(question || '').trim();
     if (!trimmed || requestInFlight) return;
     requestInFlight = true;
@@ -74,17 +69,19 @@
     addMessage(trimmed, 'user');
     setLoading(true);
     try {
+      const payload = { question: trimmed };
+      if (bookId) payload.book_id = bookId;
+      if (action) payload.action = action;
+      if (mode) payload.mode = mode;
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ question: trimmed })
+        body: JSON.stringify(payload)
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || copyText('error', 'LibInfoBot could not answer right now.'));
-      const answer = data.answer || data.summary || (data.status === 'not_found'
-        ? copyText('no_book', 'I could not find a matching book in the library database.')
-        : copyText('no_answer', 'I could not find an answer in the authorized library data.'));
+      const answer = data.answer || data.summary || (data.status === 'not_found' ? copyText('no_book', 'I could not find a matching book in the library database.') : copyText('no_answer', 'I could not find an answer in the authorized library data.'));
       addMessage(answer, 'bot', Array.isArray(data.books) ? data.books : []);
     } catch (error) {
       showError(error.message || copyText('error', 'Something went wrong. Please try again.'));
@@ -106,6 +103,20 @@
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       form.requestSubmit();
+    }
+  });
+  messages.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-book-id]');
+    if (!button) return;
+    const action = button.dataset.action || 'book_information';
+    const bookId = Number(button.dataset.bookId);
+    const title = button.dataset.bookTitle || copyText('untitled', 'this book');
+    if (action === 'pdf_summary') {
+      ask(`${copyText('prompt_summary', 'Summarize this PDF.')} “${title}”`, bookId, action, button.dataset.mode || 'short');
+    } else if (action === 'pdf_question') {
+      ask(copyText('prompt_pdf', 'What is this PDF about?'), bookId, action, 'medium');
+    } else {
+      ask(`${copyText('prompt_book', 'Tell me about this book.')} “${title}”`, bookId, action, 'medium');
     }
   });
 })();

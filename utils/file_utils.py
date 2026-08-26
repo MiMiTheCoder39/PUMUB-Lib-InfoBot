@@ -8,9 +8,6 @@ Book PDF, Cover Image, Profile Picture အားလုံး ဒီ helper တ�
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from flask import current_app
-
-from utils.r2_storage import is_enabled as r2_is_enabled, upload_fileobj
 
 
 def allowed_file(filename, allowed_extensions):
@@ -41,24 +38,6 @@ def save_uploaded_file(file_storage, upload_folder, allowed_extensions):
         return None
 
     filename = generate_unique_filename(file_storage.filename)
-
-    # When R2 is configured, keep the database filename unchanged but store
-    # the bytes in the corresponding private R2 prefix. This preserves every
-    # existing caller and keeps local development behavior unchanged.
-    if r2_is_enabled():
-        folder_map = {
-            os.path.abspath(current_app.config.get("LIBRARY_STORAGE_BOOKS", "")): "books",
-            os.path.abspath(current_app.config.get("LIBRARY_STORAGE_COVERS", "")): "covers",
-            os.path.abspath(current_app.config.get("LIBRARY_STORAGE_PROFILES", "")): "profiles",
-            os.path.abspath(current_app.config.get("LIBRARY_STORAGE_QRCODES", "")): "qrcodes",
-        }
-        prefix = folder_map.get(os.path.abspath(upload_folder))
-        if prefix:
-            file_storage.stream.seek(0)
-            upload_fileobj(file_storage.stream, prefix, filename)
-            return filename
-
-    # Local fallback for development or when R2 is not enabled.
     os.makedirs(upload_folder, exist_ok=True)
     filepath = os.path.join(upload_folder, filename)
     file_storage.save(filepath)

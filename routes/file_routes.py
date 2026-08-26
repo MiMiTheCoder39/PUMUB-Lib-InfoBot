@@ -12,16 +12,13 @@ static/uploads/ မှ public static asset အဖြစ် ဆက်မပြတ
 - QR generator (utils/qrcode_gen.py) ကို မပြောင်း။ folder ကို Config မှ
   ထပ်ပို့သောကြောင့် target ပြောင်းရုံဖြင့် အလုပ်လုပ်သည်။
 """
-import mimetypes
 import os
-from io import BytesIO
 from flask import (
-    Blueprint, send_file, send_from_directory, current_app, abort, session
+    Blueprint, send_from_directory, current_app, abort, session
 )
 from werkzeug.utils import secure_filename
 
 from utils.decorators import login_required
-from utils.r2_storage import R2StorageError, download_bytes, is_enabled as r2_is_enabled
 
 file_bp = Blueprint("library_file", __name__, url_prefix="/library/file")
 
@@ -47,22 +44,6 @@ def _serve(bucket_key, name, require_login=True):
     ext = safe.rsplit(".", 1)[1].lower() if "." in safe else ""
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
         abort(400)
-    if r2_is_enabled():
-        prefix = bucket_key.replace("LIBRARY_STORAGE_", "").lower()
-        try:
-            data, content_type = download_bytes(prefix, safe)
-        except R2StorageError:
-            abort(404)
-        response = send_file(
-            BytesIO(data),
-            mimetype=content_type or mimetypes.guess_type(safe)[0] or "application/octet-stream",
-            download_name=safe,
-            as_attachment=False,
-        )
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Cache-Control"] = "private, no-store"
-        return response
-
     folder = current_app.config[bucket_key]
     # Path traversal ကာကွယ် (filename အပေါ် ပထမ စစ်ရမည်)
     real_folder = os.path.realpath(folder)

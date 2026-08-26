@@ -20,7 +20,7 @@
       </section>
       <section class="user-form-card">
         <h2><i class="bi bi-camera me-2"></i>{{ t('profile_picture') }}</h2>
-        <form method="POST" action="{{ url_for('student.profile_update') }}" enctype="multipart/form-data" id="profilePicForm">
+        <form method="POST" action="{{ url_for('student.profile') }}" enctype="multipart/form-data" id="profilePicForm">
           <div class="mb-3">
             <label class="user-form-label" for="profile-username">{{ t('profile_username_label') }}</label>
             <input id="profile-username" class="user-form-control" type="text" name="username" value="{{ user.username }}" minlength="3" maxlength="50" pattern="[A-Za-z0-9_]+" autocomplete="username" required>

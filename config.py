@@ -68,6 +68,7 @@ class Config:
     CEREBRAS_API_BASE = os.environ.get("CEREBRAS_API_BASE", "https://api.cerebras.ai/v1")
     CEREBRAS_MODEL = os.environ.get("CEREBRAS_MODEL", "gpt-oss-120b")
     AI_MAX_QUESTION_CHARS = int(os.environ.get("AI_MAX_QUESTION_CHARS", "2000"))
+    TEXT_SUMMARY_MAX_CHARS = int(os.environ.get("TEXT_SUMMARY_MAX_CHARS", "10000"))
     AI_RATE_LIMIT_REQUESTS = int(os.environ.get("AI_RATE_LIMIT_REQUESTS", "20"))
     AI_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("AI_RATE_LIMIT_WINDOW_SECONDS", "60"))
     AI_HEALTHCHECK_ENABLED = os.environ.get("AI_HEALTHCHECK_ENABLED", "false").lower() == "true"

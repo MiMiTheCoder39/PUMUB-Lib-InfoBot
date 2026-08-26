@@ -26,7 +26,7 @@ from utils.decorators import login_required, student_required, library_user_requ
 from utils.file_utils import save_uploaded_file
 from utils.recommender import get_recommendations
 from utils.password_policy import check_password_policy
-from utils.i18n import SUPPORTED_LANGUAGES, translate
+from utils.i18n import SUPPORTED_LANGUAGES, current_language, translate
 from models.db import mysql
 
 from models.book_model import (
@@ -332,7 +332,7 @@ def summarize_book_text(book_id):
 
     result = None
     source_text = ''
-    language = 'my'
+    language = current_language()
     length = 'medium'
     if request.method == 'POST':
         source_text = (request.form.get('text') or '').strip()
@@ -341,7 +341,14 @@ def summarize_book_text(book_id):
         try:
             result = summarize_pasted_text(source_text, language=language, length=length)
         except ValueError as exc:
-            flash(str(exc), 'danger')
+            error_text = str(exc)
+            if error_text == 'Text is required.':
+                error_message = translate('summary_text_required')
+            elif error_text.startswith('Text exceeds'):
+                error_message = translate('summary_text_too_long')
+            else:
+                error_message = translate('summary_invalid_request')
+            flash(error_message, 'danger')
 
     return render_template(
         'user/summarize_text.html',

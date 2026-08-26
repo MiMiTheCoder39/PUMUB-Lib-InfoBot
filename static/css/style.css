@@ -2426,3 +2426,404 @@ a:hover {
     object-fit: cover;
     border-radius: 7px;
 }
+
+
+/* ============================================================
+   v21 — MOBILE-FIRST RESPONSIVE SAFETY
+   Keeps every page inside the viewport from 320px to 768px.
+   Internal book shelves may scroll horizontally, but the page itself
+   must never create a horizontal scrollbar.
+   ============================================================ */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+.user-main,
+.user-page,
+.user-nav-inner,
+.user-nav-menu,
+.user-nav-links,
+.user-nav-actions,
+.ds-dashboard,
+.ds-hero,
+.ds-hero-inner,
+.ds-section,
+.ds-shelf-container,
+.ds-shelf-row,
+.libinfobot {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ds-dashboard {
+  width: 100%;
+}
+
+.ds-hero-inner {
+  width: 100%;
+}
+
+.ds-hero h1,
+.ds-hero-sub,
+.user-page-heading h1,
+.user-section-heading h2,
+.user-faculty-shelf-name {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.ds-search-bar,
+.user-hero-search {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ds-search-bar input,
+.user-hero-search input {
+  min-width: 0;
+  width: 100%;
+}
+
+.ds-shelf-container {
+  overflow: hidden;
+}
+
+.ds-shelf-row.ds-shelf-scroll,
+.user-faculty-shelf-track {
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
+}
+
+.user-book-grid,
+.user-category-grid,
+.ds-cat-grid,
+.ds-stats,
+.user-stat-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+.user-book-card,
+.user-stat-card,
+.user-category-card,
+.ds-stat-card,
+.ds-cat-card {
+  min-width: 0;
+}
+
+.user-stat-label,
+.user-book-card-title,
+.user-book-card-author,
+.user-category-card,
+.ds-stat-label,
+.ds-cat-name {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 780px) {
+  .user-nav-inner {
+    position: relative;
+    width: 100%;
+    min-height: 64px;
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 8px;
+  }
+
+  .user-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 50px);
+    overflow: hidden;
+  }
+
+  .user-brand > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .user-brand strong,
+  .user-brand small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-brand-mark {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .user-nav-toggle {
+    flex: 0 0 40px;
+    margin-left: auto;
+  }
+
+  .user-nav-menu {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+  }
+
+  .user-page {
+    width: calc(100% - 28px);
+    max-width: calc(100% - 28px);
+  }
+
+  .ds-dashboard {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .ds-hero {
+    width: 100%;
+    padding: 30px 18px 34px;
+    margin-top: 14px;
+    margin-bottom: 26px;
+    border-radius: 18px;
+  }
+
+  .ds-hero h1 {
+    font-size: clamp(1.45rem, 8vw, 2.2rem);
+  }
+
+  .ds-hero-sub {
+    font-size: .84rem;
+    line-height: 1.55;
+  }
+
+  .ds-search-bar {
+    display: flex;
+  }
+
+  .ds-search-bar button.ds-search-btn {
+    flex: 0 0 48px;
+    width: 48px;
+  }
+
+  .ds-shelf-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .ds-shelf-row.ds-shelf-scroll .ds-tile {
+    flex: 0 0 min(43vw, 180px);
+  }
+
+  .ds-row-4.ds-shelf-scroll .ds-tile {
+    flex-basis: min(43vw, 180px);
+  }
+
+  .ds-tile .ds-book {
+    max-width: 100%;
+  }
+
+  .libinfobot {
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 20px);
+  }
+
+  .libinfobot-launcher {
+    max-width: calc(100vw - 20px);
+  }
+
+  .libinfobot-panel {
+    width: min(420px, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+    max-height: min(76vh, 680px);
+  }
+}
+
+@media (max-width: 560px) {
+  .user-nav-inner {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .user-page {
+    width: calc(100% - 22px);
+    max-width: calc(100% - 22px);
+  }
+
+  .ds-dashboard {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .ds-hero {
+    padding: 26px 15px 30px;
+  }
+
+  .ds-hero-eyebrow {
+    max-width: 100%;
+    font-size: .67rem;
+    padding: 5px 10px;
+    white-space: normal;
+    text-transform: none;
+  }
+
+  .ds-search-bar input {
+    padding-left: 10px;
+    padding-right: 8px;
+    font-size: .78rem;
+  }
+
+  .ds-shelf-container {
+    padding: 14px 10px 18px;
+  }
+
+  .ds-shelf-row.ds-shelf-scroll {
+    gap: 12px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .ds-shelf-row.ds-shelf-scroll .ds-tile,
+  .ds-row-4.ds-shelf-scroll .ds-tile {
+    flex-basis: min(48vw, 170px);
+  }
+
+  .ds-shelf-plank {
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+
+  .ds-stats,
+  .user-stat-grid {
+    gap: 9px;
+  }
+
+  .ds-stat-card,
+  .user-stat-card {
+    padding: 11px 10px;
+  }
+
+  .ds-stat-label,
+  .user-stat-label {
+    font-size: .63rem;
+    line-height: 1.35;
+  }
+
+  .ds-stat-value,
+  .user-stat-value {
+    font-size: 1.05rem;
+  }
+
+  .libinfobot-panel {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .user-brand strong {
+    font-size: .76rem;
+  }
+
+  .user-brand small {
+    font-size: .58rem;
+  }
+
+  .user-brand-mark {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .ds-stats,
+  .user-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-row-5,
+  .ds-row-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-shelf-row.ds-shelf-scroll .ds-tile,
+  .ds-row-4.ds-shelf-scroll .ds-tile {
+    flex-basis: min(62vw, 170px);
+  }
+
+  .ds-cat-grid,
+  .user-category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-section-title {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .libinfobot-launcher {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (max-width: 320px) {
+  .ds-dashboard {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .user-page {
+    width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
+  }
+
+  .ds-hero {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .ds-hero h1 {
+    font-size: 1.38rem;
+  }
+
+  .ds-search-bar button.ds-search-btn {
+    flex-basis: 44px;
+    width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Logo images must remain visible and contained on narrow screens. */
+.user-brand-mark img,
+.libinfobot-avatar img,
+.libinfobot-message-avatar img {
+  max-width: 100%;
+  object-fit: contain;
+}

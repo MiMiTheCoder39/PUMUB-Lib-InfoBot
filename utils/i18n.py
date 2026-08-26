@@ -2929,3 +2929,7 @@ TRANSLATIONS["en"].update({
     "member_login": "Member Login",
     "verify_to_register": "Verify to register",
 })
+
+# Compact navigation label: keep the full rules title for the Rules page itself.
+TRANSLATIONS["my"].update({"rules_nav_label": "စည်းကမ်းချက်များ"})
+TRANSLATIONS["en"].update({"rules_nav_label": "Rules"})

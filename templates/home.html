@@ -44,7 +44,7 @@
             </div>
           </div>
           <a class="user-nav-link" href="#announcements-heading"><i class="bi bi-megaphone"></i>{{ t('announcements') }}</a>
-          <a class="user-nav-link {% if request.endpoint == 'library_rules_public' %}is-active{% endif %}" href="{{ url_for('library_rules_public') }}"><i class="bi bi-shield-check"></i>{{ t('rules') }}</a>
+          <a class="user-nav-link {% if request.endpoint == 'library_rules_public' %}is-active{% endif %}" href="{{ url_for('library_rules_public') }}"><i class="bi bi-shield-check"></i><span class="user-nav-label">{{ t('rules_nav_label') }}</span></a>
         </div>
         <div class="user-nav-actions">
           <a class="user-icon-link" href="{{ url_for('auth.login') }}" aria-label="{{ t('search') }}"><i class="bi bi-search"></i></a>

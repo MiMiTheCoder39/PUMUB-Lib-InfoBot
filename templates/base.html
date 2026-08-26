@@ -39,7 +39,7 @@
         <a class="user-nav-link {% if request.endpoint == 'student.recommendations' %}is-active{% endif %}" href="{{ url_for('student.recommendations') }}"><i class="bi bi-stars"></i>{{ t('recommendations_nav') }}</a>
         <a class="user-nav-link {% if request.endpoint in ('student.announcements','student.announcement_detail') %}is-active{% endif %}" href="{{ url_for('student.announcements') }}"><i class="bi bi-megaphone"></i>{{ t('announcements') }}</a>
         <a class="user-nav-link {% if request.endpoint in ('student.bookmarks','student.my_library','student.history','student.reading_history','student.borrow_history','student.fines') %}is-active{% endif %}" href="{{ url_for('student.my_library') }}"><i class="bi bi-bookshelf"></i>{{ t('my_library') }}</a>
-        <a class="user-nav-link {% if request.endpoint in ('student.library_rules','library_rules_public') %}is-active{% endif %}" href="{{ url_for('student.library_rules') }}"><i class="bi bi-shield-check"></i><span class="user-nav-label">Rules</span></a>
+        <a class="user-nav-link {% if request.endpoint in ('student.library_rules','library_rules_public') %}is-active{% endif %}" href="{{ url_for('student.library_rules') }}"><i class="bi bi-shield-check"></i><span class="user-nav-label">{{ t('rules_nav_label') }}</span></a>
       {% elif session.get('user_id') and session.get('role') == 'admin' %}
         <a class="user-nav-link" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>{{ t('admin_panel') }}</a>
       {% else %}

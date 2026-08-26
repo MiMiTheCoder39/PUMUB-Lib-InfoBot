@@ -17,7 +17,7 @@
 <nav class="user-navbar" aria-label="{{ t('library_footer') }}">
   <div class="user-nav-inner">
     <a href="{{ url_for('student.dashboard') if session.get('user_id') and session.get('role') != 'admin' else url_for('home') }}" class="user-brand">
-      <span class="user-brand-mark"><i class="bi bi-book-half"></i></span>
+      <span class="user-brand-mark"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt="PUMUB LibInfoBot logo"></span>
       <span><strong>PUMUB</strong><small>{{ t('library_footer') }}</small></span>
     </a>
     <button class="user-nav-toggle" type="button" aria-controls="userNavMenu" aria-expanded="false" data-user-nav-toggle>
@@ -106,6 +106,7 @@
   document.addEventListener('click',e=>{if(!e.target.closest('.user-nav-dropdown')){document.querySelectorAll('.user-nav-dropdown.is-open').forEach(w=>{w.classList.remove('is-open');const b=w.querySelector('[data-nav-dropdown-toggle]');if(b)b.setAttribute('aria-expanded','false');});}});
   if(menu&&toggle){const closeMenuOnOutside=(e)=>{if(!menu.contains(e.target)&&!toggle.contains(e.target)){menu.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');}};document.addEventListener('click',closeMenuOnOutside);}
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.user-nav-dropdown.is-open').forEach(w=>{w.classList.remove('is-open');const b=w.querySelector('[data-nav-dropdown-toggle]');if(b)b.setAttribute('aria-expanded','false');});if(panel)panel.classList.remove('is-open');if(menu)menu.classList.remove('is-open');}});
+  if(location.hash==='#libinfobot'){const botToggle=document.querySelector('[data-libinfobot-toggle]');if(botToggle){window.setTimeout(()=>botToggle.click(),120);}}
 })();
 </script>
 {% block extra_scripts %}{% endblock %}

@@ -43,7 +43,7 @@ class Config:
     # provider changes rather than repeated calls to the same endpoint.
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
     GROQ_API_BASE = os.environ.get("GROQ_API_BASE", "https://api.groq.com/openai/v1")
-    GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+    GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 
     # ---------------- Gemini Secondary Provider (key2) ----------------
     # ဒီ project က primary key (Groq) + secondary key (Gemini) နှစ်ကြိမ် setup ကို
@@ -55,12 +55,12 @@ class Config:
     GEMINI_API_BASE = os.environ.get(
         "GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta/openai/"
     )
-    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.7-flash")
     # Primary provider ရွေးချယ်ရန်: "primary" (default, Groq) သို့မဟုတ် "gemini"
     AI_PROVIDER = os.environ.get("AI_PROVIDER", "primary").lower()
     OPENAI_TIMEOUT_SECONDS = float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "20"))
     OPENAI_MAX_INPUT_CHARS = int(os.environ.get("OPENAI_MAX_INPUT_CHARS", "12000"))
-    OPENAI_MAX_OUTPUT_TOKENS = int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "1600"))
+    OPENAI_MAX_OUTPUT_TOKENS = int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "700"))
     # Optional native OpenAI Responses API switch. Keep false for compatible
     # OpenAI-style providers such as OpenRouter/Groq/Gemini/Cerebras.
     AI_USE_RESPONSES_API = os.environ.get("AI_USE_RESPONSES_API", "false").lower() == "true"
@@ -68,6 +68,7 @@ class Config:
     CEREBRAS_API_BASE = os.environ.get("CEREBRAS_API_BASE", "https://api.cerebras.ai/v1")
     CEREBRAS_MODEL = os.environ.get("CEREBRAS_MODEL", "gpt-oss-120b")
     AI_MAX_QUESTION_CHARS = int(os.environ.get("AI_MAX_QUESTION_CHARS", "2000"))
+    TEXT_SUMMARY_MAX_CHARS = int(os.environ.get("TEXT_SUMMARY_MAX_CHARS", "10000"))
     AI_RATE_LIMIT_REQUESTS = int(os.environ.get("AI_RATE_LIMIT_REQUESTS", "20"))
     AI_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("AI_RATE_LIMIT_WINDOW_SECONDS", "60"))
     AI_HEALTHCHECK_ENABLED = os.environ.get("AI_HEALTHCHECK_ENABLED", "false").lower() == "true"

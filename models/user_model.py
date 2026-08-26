@@ -96,6 +96,47 @@ def update_profile(user_id, name, email, faculty_id, profile_image=None, usernam
     mysql.connection.commit()
     cur.close()
 
+def update_username(user_id, username):
+    """Update only the user's login username after a uniqueness check."""
+    username = (username or "").strip()
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT user_id FROM users WHERE username = %s AND user_id <> %s LIMIT 1",
+        (username, user_id),
+    )
+    if cur.fetchone():
+        cur.close()
+        return False
+    cur.execute("UPDATE users SET username = %s WHERE user_id = %s", (username, user_id))
+    mysql.connection.commit()
+    cur.close()
+    return True
+
+
+def update_profile_image(user_id, profile_image):
+    """Update only profile_image; name/email/faculty remain untouched."""
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "UPDATE users SET profile_image = %s WHERE user_id = %s",
+        (profile_image, user_id),
+    )
+    mysql.connection.commit()
+    cur.close()
+
+
+def reset_user_password_admin(user_id, hashed_password):
+    """Admin-only password reset for non-admin library users."""
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "UPDATE users SET password = %s WHERE user_id = %s AND role <> 'admin'",
+        (hashed_password, user_id),
+    )
+    changed = cur.rowcount == 1
+    mysql.connection.commit()
+    cur.close()
+    return changed
+
+
 def update_last_login(user_id):
     """Login ဝင်ချိန်တိုင်း last_login column ကို update လုပ်သည်."""
     cur = mysql.connection.cursor()

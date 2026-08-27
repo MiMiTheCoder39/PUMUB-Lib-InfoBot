@@ -1,5 +1,5 @@
 {% if session.get('user_id') and session.get('role') != 'admin' %}
-<div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book")}|tojson }}'>
+<div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "category": t("widget_category"), "availability": t("widget_availability"), "available": t("widget_available"), "unavailable": t("widget_unavailable"), "view_details": t("widget_view_details"), "copy_summary": t("widget_copy_summary"), "summary_copied": t("widget_summary_copied"), "pdf_summary_title": t("widget_pdf_summary_title"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book")}|tojson }}'>
     <button class="libinfobot-launcher" type="button" data-libinfobot-toggle aria-controls="libinfobot-panel" aria-expanded="false" aria-label="{{ t('widget_open') }}">
         <span class="libinfobot-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
         <span class="libinfobot-launcher-label">{{ t('widget_ask') }}</span>
@@ -21,6 +21,11 @@
             <div class="libinfobot-message bot">
                 <span class="libinfobot-message-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
                 <div class="libinfobot-bubble">{{ t('widget_greeting')|safe }}</div>
+            </div>
+            <div class="libinfobot-quick-actions" aria-label="{{ t('widget_quick_actions') }}">
+                <button type="button" class="libinfobot-quick-action" data-libinfobot-quick data-question="{{ t('widget_quick_search_question') }}"><i class="bi bi-search" aria-hidden="true"></i>{{ t('widget_quick_search') }}</button>
+                <button type="button" class="libinfobot-quick-action" data-libinfobot-quick data-question="{{ t('widget_quick_recommend_question') }}"><i class="bi bi-stars" aria-hidden="true"></i>{{ t('widget_quick_recommend') }}</button>
+                <button type="button" class="libinfobot-quick-action" data-libinfobot-quick data-question="{{ t('widget_quick_pdf_question') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>{{ t('widget_quick_pdf') }}</button>
             </div>
         </div>
 

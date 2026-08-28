@@ -526,3 +526,76 @@
     width: 100%;
   }
 }
+
+
+/* ─── ADMIN SCROLL LOCK — fixed shell, content-only scrolling ─── */
+html:has(body.admin-body),
+body.admin-body {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+body.admin-body .admin-app {
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+body.admin-body .admin-sidebar {
+  position: relative;
+  top: auto;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+body.admin-body .admin-main-area {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.admin-body .admin-topbar {
+  position: relative;
+  top: auto;
+  flex: 0 0 var(--admin-topbar-height);
+}
+
+body.admin-body .admin-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.admin-body .admin-nav {
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 991.98px) {
+  body.admin-body .admin-main-area {
+    width: 100%;
+  }
+
+  body.admin-body .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  body.admin-body .admin-content {
+    overflow-x: hidden;
+  }
+}

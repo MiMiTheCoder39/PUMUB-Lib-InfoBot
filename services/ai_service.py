@@ -12,10 +12,14 @@ from typing import Any, Optional, Sequence
 
 from flask import current_app
 from openai import OpenAI, OpenAIError
+import logging
 
 
 class AIServiceError(RuntimeError):
     """Safe application-level error for AI configuration/API failures."""
+
+
+logger = logging.getLogger(__name__)
 
 
 def _provider_order() -> list[str]:
@@ -23,13 +27,33 @@ def _provider_order() -> list[str]:
         "AI_PROVIDER_ORDER",
         "openrouter,openai,groq,gemini,cerebras",
     )
-    return [item.strip().lower() for item in str(configured).split(",") if item.strip()]
+    order = [item.strip().lower() for item in str(configured).split(",") if item.strip()]
+    # Older Railway deployments used AI_PROVIDER=primary and stored the Groq
+    # credentials in OPENAI_* variables. Keep those deployments compatible.
+    normalized = []
+    for provider in order:
+        if provider in {"primary", "legacy", "legacy_openai"}:
+            provider = "legacy"
+        if provider not in normalized:
+            normalized.append(provider)
+    if not normalized:
+        normalized = ["legacy", "openrouter", "openai", "groq", "gemini", "cerebras"]
+    return normalized
 
 
 def _provider_specs() -> dict[str, dict[str, Any]]:
     """Return provider settings without exposing credential values."""
+
     return {
+
+        "legacy": {
+            "key": current_app.config.get("OPENAI_API_KEY"),
+            "base_url": current_app.config.get("OPENAI_API_BASE", "https://api.openai.com/v1"),
+            "model": current_app.config.get("OPENAI_MODEL", "gpt-5-mini"),
+            "headers": {},
+        },
         "openrouter": {
+
             "key": current_app.config.get("OPENROUTER_API_KEY"),
             "base_url": current_app.config.get("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1"),
             "model": current_app.config.get("OPENROUTER_MODEL", "openai/gpt-oss-120b"),
@@ -119,6 +143,7 @@ def generate_response(
 
     for provider_name in _provider_order():
         spec = specs.get(provider_name)
+
         if not spec or not spec.get("key"):
             failures.append(f"{provider_name}: not configured")
             continue
@@ -148,8 +173,12 @@ def generate_response(
             failures.append(f"{provider_name}: empty response")
         except OpenAIError as exc:
             message = getattr(exc, "message", None) or str(exc)
+            # Keep the client response generic, but leave a useful, credential-safe
+            # reason in Railway logs for quota/key/model/network diagnosis.
+            logger.warning("AI provider %s failed: %s", provider_name, message)
             failures.append(f"{provider_name}: {message}")
         except Exception as exc:  # defensive fallback for SDK/provider differences
+            logger.warning("AI provider %s failed with unexpected error: %s", provider_name, exc)
             failures.append(f"{provider_name}: {exc}")
 
     if attempted == 0:

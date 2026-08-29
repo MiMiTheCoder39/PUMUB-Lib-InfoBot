@@ -2855,13 +2855,23 @@ canvas {
   .user-nav-actions { padding-left: 5px; }
   .user-nav-actions .user-icon-link { flex-basis: 32px; width: 32px; }
 }
-
 .pdf-reader-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
+  position: sticky;
+  top: 72px;
+  z-index: 1050;
+  padding: 10px 12px;
+  margin-top: -4px;
+  margin-bottom: 12px !important;
+  background: rgba(255, 255, 255, .97);
+  border: 1px solid var(--user-line, #d9e8e8);
+  border-radius: 12px;
+  box-shadow: 0 7px 18px rgba(23, 67, 71, .10);
+  backdrop-filter: blur(8px);
 }
 .pdf-reader-title {
   min-width: 0;
@@ -2881,8 +2891,10 @@ canvas {
     padding-left: 0;
   }
   .pdf-reader-header {
+    top: 64px;
     align-items: stretch;
     flex-direction: column;
+    padding: 10px;
   }
   .pdf-reader-actions {
     justify-content: stretch;

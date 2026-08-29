@@ -31,6 +31,7 @@ from models.db import mysql
 
 from models.book_model import (
     search_books, get_all_books, get_book_by_id, get_popular_books,
+    get_collection_page,
     increment_view_count, 
     get_all_categories, get_all_authors,
 )
@@ -198,15 +199,36 @@ def search():
 @login_required
 @library_user_required
 def collection(kind, collection_id):
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
     if kind == "category":
-        books = search_books(category_id=collection_id, primary_only=True)
+        books_page = get_collection_page(category_id=collection_id, page=page, per_page=12)
         title = next((row.get("category_name") for row in get_all_categories() if str(row.get("category_id")) == str(collection_id)), "Category Collection")
     elif kind == "faculty":
-        books = search_books(faculty_id=collection_id, primary_only=True)
+        books_page = get_collection_page(faculty_id=collection_id, page=page, per_page=12)
         title = next((row.get("faculty_name") for row in get_all_faculties() if str(row.get("faculty_id")) == str(collection_id)), "Faculty Collection")
     else:
         abort(404)
-    return render_template("user/collection.html", books=books, collection_title=title)
+
+    if page != books_page["page"]:
+        return redirect(url_for(
+            "student.collection",
+            kind=kind,
+            collection_id=collection_id,
+            page=books_page["page"],
+        ))
+
+    return render_template(
+        "user/collection.html",
+        books=books_page["records"],
+        books_page=books_page,
+        collection_title=title,
+        collection_kind=kind,
+        collection_id=collection_id,
+    )
 
 
 @student_bp.route("/most-borrowed")

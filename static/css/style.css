@@ -2956,45 +2956,6 @@ canvas {
   .summary-page-actions .user-btn { width: 100%; }
 }
 
-
-/* ============================================================
-   v23 — USER NAVIGATION STAYS VISIBLE WHILE SCROLLING
-   The shared user navbar is fixed to the viewport. Main content and
-   flash messages receive offsets so nothing is hidden underneath it.
-   ============================================================ */
-html {
-  scroll-padding-top: 82px;
-}
-
-.user-navbar {
-  position: fixed;
-  inset: 0 0 auto 0;
-  width: 100%;
-}
-
-.user-main {
-  padding-top: 72px;
-}
-
-body.user-app > .user-flash-stack {
-  margin-top: 88px;
-}
-
-@media (max-width: 780px) {
-  html {
-    scroll-padding-top: 74px;
-  }
-
-  .user-main {
-    padding-top: 64px;
-  }
-
-  body.user-app > .user-flash-stack {
-    margin-top: 80px;
-  }
-}
-
-
 /* Collection page pagination — keeps long faculty/category shelves compact. */
 .collection-pagination{
   display:flex;

@@ -25,14 +25,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils.decorators import login_required, student_required, library_user_required
 from utils.file_utils import save_uploaded_file
 from utils.recommender import get_recommendations
-from services.ai_recommender import get_smart_recommendations
 from utils.password_policy import check_password_policy
 from utils.i18n import SUPPORTED_LANGUAGES, current_language, translate
 from models.db import mysql
 
 from models.book_model import (
     search_books, get_all_books, get_book_by_id, get_popular_books,
-    get_collection_page,
     increment_view_count, 
     get_all_categories, get_all_authors,
 )
@@ -84,7 +82,7 @@ def dashboard():
     user_id = session["user_id"]
     recent_books    = get_all_books(limit=8)
     popular_books   = get_popular_books(limit=10)
-    recommended     = get_smart_recommendations(user_id, top_n=8)
+    recommended     = get_recommendations(user_id, top_n=8)
     unread_count    = get_unread_count(user_id)
     faculties       = get_all_faculties()
     categories      = get_all_categories()
@@ -200,36 +198,15 @@ def search():
 @login_required
 @library_user_required
 def collection(kind, collection_id):
-    try:
-        page = max(1, int(request.args.get("page", 1)))
-    except (TypeError, ValueError):
-        page = 1
-
     if kind == "category":
-        books_page = get_collection_page(category_id=collection_id, page=page, per_page=12)
+        books = search_books(category_id=collection_id, primary_only=True)
         title = next((row.get("category_name") for row in get_all_categories() if str(row.get("category_id")) == str(collection_id)), "Category Collection")
     elif kind == "faculty":
-        books_page = get_collection_page(faculty_id=collection_id, page=page, per_page=12)
+        books = search_books(faculty_id=collection_id, primary_only=True)
         title = next((row.get("faculty_name") for row in get_all_faculties() if str(row.get("faculty_id")) == str(collection_id)), "Faculty Collection")
     else:
         abort(404)
-
-    if page != books_page["page"]:
-        return redirect(url_for(
-            "student.collection",
-            kind=kind,
-            collection_id=collection_id,
-            page=books_page["page"],
-        ))
-
-    return render_template(
-        "user/collection.html",
-        books=books_page["records"],
-        books_page=books_page,
-        collection_title=title,
-        collection_kind=kind,
-        collection_id=collection_id,
-    )
+    return render_template("user/collection.html", books=books, collection_title=title)
 
 
 @student_bp.route("/most-borrowed")
@@ -560,7 +537,7 @@ def notification_read(notif_id):
 def recommendations():
     user_id = session["user_id"]
     # The existing TF-IDF + cosine similarity engine is used as-is.
-    recommended = get_smart_recommendations(user_id, top_n=8)
+    recommended = get_recommendations(user_id, top_n=8)
 
     # Honest cold-start detection: the engine already falls back to popular
     # books when the user has no read/download/bookmark activity. We label it

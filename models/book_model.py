@@ -77,6 +77,55 @@ def search_books(keyword=None, category_id=None, faculty_id=None, author_id=None
     return books
 
 
+def get_collection_page(category_id=None, faculty_id=None, page=1, per_page=12):
+    """Return one page of active books for a faculty/category collection."""
+    import math
+
+    page = max(1, int(page or 1))
+    per_page = max(1, min(int(per_page or 12), 100))
+    filters = ["COALESCE(b.is_archived, 0) = 0"]
+    params = []
+    if category_id:
+        filters.append("b.category_id = %s")
+        params.append(category_id)
+    if faculty_id:
+        filters.append("b.faculty_id = %s")
+        params.append(faculty_id)
+    where_sql = " AND ".join(filters)
+
+    cur = mysql.connection.cursor()
+    cur.execute(f"SELECT COUNT(*) AS total FROM books b WHERE {where_sql}", tuple(params))
+    total = int((cur.fetchone() or {}).get("total") or 0)
+    pages = max(1, math.ceil(total / per_page))
+    page = min(page, pages)
+    offset = (page - 1) * per_page
+
+    cur.execute(
+        f"""SELECT b.*, COALESCE(b.author_name, a.author_name) AS author_name,
+                   c.category_name, f.faculty_name
+            FROM books b
+            LEFT JOIN authors a ON b.author_id = a.author_id
+            LEFT JOIN categories c ON b.category_id = c.category_id
+            LEFT JOIN faculties f ON b.faculty_id = f.faculty_id
+            WHERE {where_sql}
+            ORDER BY b.upload_date DESC, b.book_id DESC
+            LIMIT %s OFFSET %s""",
+        tuple(params + [per_page, offset]),
+    )
+    records = cur.fetchall()
+    cur.close()
+
+    return {
+        "records": records,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pages,
+        "start": offset + 1 if total else 0,
+        "end": min(offset + len(records), total),
+    }
+
+
 def get_all_books(limit=None):
     """Search filter မပါဘဲ Book အားလုံးကို ပြသည် (Browse page)."""
     query = """

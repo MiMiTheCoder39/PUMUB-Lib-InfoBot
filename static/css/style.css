@@ -2955,3 +2955,52 @@ canvas {
   .summary-page-actions { flex-direction: column; }
   .summary-page-actions .user-btn { width: 100%; }
 }
+
+/* Collection page pagination — keeps long faculty/category shelves compact. */
+.collection-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:48px auto 12px;
+  padding:16px 18px;
+  border:1px solid rgba(13,115,119,.14);
+  border-radius:16px;
+  background:rgba(255,255,255,.78);
+  box-shadow:0 8px 24px rgba(4,74,77,.07);
+}
+.collection-page-numbers{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.collection-page-link,.collection-page-number{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:38px;
+  min-height:36px;
+  padding:7px 11px;
+  border:1px solid #cfe4e2;
+  border-radius:9px;
+  background:#fff;
+  color:#0b686b;
+  text-decoration:none;
+  font-size:.78rem;
+  font-weight:750;
+  transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease;
+}
+.collection-page-link{gap:6px}
+.collection-page-link:hover,.collection-page-number:hover,.collection-page-number:focus-visible{
+  border-color:#0d7377;
+  background:#e9f7f5;
+  color:#07575b;
+  transform:translateY(-1px);
+  outline:none;
+}
+.collection-page-number.is-active{border-color:#0d7377;background:#0d7377;color:#fff;box-shadow:0 4px 10px rgba(13,115,119,.22)}
+.collection-page-link.is-disabled{pointer-events:none;opacity:.42;background:#f4f7f7}
+@media(max-width:560px){
+  .collection-pagination{gap:7px;margin-top:34px;padding:12px 8px}
+  .collection-page-link{min-width:36px;padding-inline:8px}
+  .collection-page-link span{display:none}
+  .collection-page-numbers{gap:4px}
+  .collection-page-number{min-width:34px;min-height:34px;padding:6px 8px;font-size:.72rem}
+}

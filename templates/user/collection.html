@@ -21,10 +21,32 @@
   <section class="ds-list-title-row">
     <h2 class="ds-list-title">{{ collection_title }}</h2>
     {% if collection_dept %}<p class="ds-list-title-dept"><i class="bi bi-building"></i> {{ collection_dept }}</p>{% endif %}
-    <p class="ds-list-title-sub">{{ books|length }} {{ t('books_found') }}</p>
+    <p class="ds-list-title-sub">{% if books_page %}{{ books_page.start }}–{{ books_page.end }} / {{ books_page.total }} {{ t('books_found') }}{% else %}{{ books|length }} {{ t('books_found') }}{% endif %}</p>
   </section>
 
   {# ══════ PANNSATTLANN-STYLE CLEAN GRID ══════ #}
   {% if books %}<div class="psl-grid" aria-live="polite">{% for book in books %}{{ book_card(book) }}{% endfor %}</div>{% else %}<div class="user-empty"><i class="bi bi-collection"></i><strong>{{ t('no_search_results') }}</strong><p>{{ t('search_empty_help') }}</p><a class="user-btn user-btn-primary" href="{{ url_for('student.search') }}">{{ t('browse_books') }}</a></div>{% endif %}
+
+  {% if books_page and books_page.pages > 1 %}
+  <nav class="collection-pagination" aria-label="{{ t('page') }} navigation">
+    <a class="collection-page-link collection-page-prev{% if books_page.page <= 1 %} is-disabled{% endif %}"
+       href="{% if books_page.page > 1 %}{{ url_for('student.collection', kind=collection_kind, collection_id=collection_id, page=books_page.page - 1) }}{% else %}#{% endif %}"
+       {% if books_page.page <= 1 %}aria-disabled="true" tabindex="-1"{% endif %}>
+      <i class="bi bi-chevron-left" aria-hidden="true"></i><span>{{ t('previous') }}</span>
+    </a>
+    <div class="collection-page-numbers" aria-label="{{ t('page') }}">
+      {% for page_number in range(1, books_page.pages + 1) %}
+        <a class="collection-page-number{% if page_number == books_page.page %} is-active{% endif %}"
+           href="{{ url_for('student.collection', kind=collection_kind, collection_id=collection_id, page=page_number) }}"
+           {% if page_number == books_page.page %}aria-current="page"{% endif %}>{{ page_number }}</a>
+      {% endfor %}
+    </div>
+    <a class="collection-page-link collection-page-next{% if books_page.page >= books_page.pages %} is-disabled{% endif %}"
+       href="{% if books_page.page < books_page.pages %}{{ url_for('student.collection', kind=collection_kind, collection_id=collection_id, page=books_page.page + 1) }}{% else %}#{% endif %}"
+       {% if books_page.page >= books_page.pages %}aria-disabled="true" tabindex="-1"{% endif %}>
+      <span>{{ t('next') }}</span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </a>
+  </nav>
+  {% endif %}
 </div>
 {% endblock %}

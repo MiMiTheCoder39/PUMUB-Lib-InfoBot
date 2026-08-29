@@ -6,7 +6,7 @@
     <title>{% block title %}{{ t('library_footer') }}{% endblock %} | {{ t('university_name') }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260829-sticky-nav') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260829-fixed-nav3') }}">
     {% if session.get('user_id') and session.get('role') != 'admin' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260826-mobile2') }}">
     {% endif %}

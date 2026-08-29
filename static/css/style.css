@@ -3004,3 +3004,52 @@ canvas {
   .collection-page-numbers{gap:4px}
   .collection-page-number{min-width:34px;min-height:34px;padding:6px 8px;font-size:.72rem}
 }
+
+/* ============================================================
+   USER NAVBAR — stays visible while scrolling
+   Appended override: existing layout rules remain unchanged.
+   ============================================================ */
+html {
+  scroll-padding-top: 82px;
+}
+
+.user-navbar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  min-height: 72px;
+  z-index: 1100 !important;
+  display: block !important;
+  visibility: visible !important;
+  transform: none !important;
+  background: var(--nav-bg, #ffffff) !important;
+}
+
+.user-main {
+  padding-top: 72px;
+}
+
+body.user-app > .user-flash-stack {
+  margin-top: 88px;
+}
+
+@media (max-width: 780px) {
+  html {
+    scroll-padding-top: 74px;
+  }
+
+  .user-navbar {
+    min-height: 64px;
+    z-index: 1100 !important;
+  }
+
+  .user-main {
+    padding-top: 64px;
+  }
+
+  body.user-app > .user-flash-stack {
+    margin-top: 80px;
+  }
+}

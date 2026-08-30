@@ -13,7 +13,6 @@ import re
 from typing import Any, Dict, List
 
 from services.ai_service import AIServiceError, generate_response
-from services.retrieval_orchestrator import get_user_profile_context
 from utils.recommender import get_recommendations
 
 logger = logging.getLogger(__name__)
@@ -97,7 +96,13 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
     candidate_by_id = {int(book["book_id"]): book for book in candidates if book.get("book_id") is not None}
     fallback = list(candidate_by_id.values())[:top_n]
     try:
-        profile = get_user_profile_context(user_id)
+        # Keep recommendation startup-safe when an older deployment lacks
+        # the optional profile-context helper; ranking will still use candidates.
+        try:
+            from services.retrieval_orchestrator import get_user_profile_context
+            profile = get_user_profile_context(user_id)
+        except (ImportError, AttributeError):
+            profile = ""
         raw = generate_response(
             _candidate_prompt(profile, list(candidate_by_id.values()), top_n),
             system_prompt=(

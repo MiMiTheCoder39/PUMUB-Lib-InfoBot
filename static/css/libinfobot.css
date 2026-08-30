@@ -445,3 +445,19 @@
 @media (max-height: 620px) {
   .libinfobot-panel { height: calc(100dvh - 104px) !important; }
 }
+
+
+/* v26 — laptop/desktop: anchor the panel below the sticky navbar. */
+@media (min-width: 769px) {
+  .libinfobot-panel {
+    position: fixed !important;
+    top: clamp(78px, 10vh, 104px) !important;
+    right: 18px !important;
+    bottom: auto !important;
+    width: min(360px, calc(100vw - 36px)) !important;
+    height: min(560px, calc(100dvh - 168px)) !important;
+    max-height: calc(100dvh - 150px) !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

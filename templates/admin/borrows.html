@@ -225,46 +225,71 @@ function openBorrowDetail(button) { const data=JSON.parse(button.dataset.borrowD
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="{{ url_for('static', filename='js/html5-qrcode.min.js') }}"></script>
 <script>
-let html5QrCode;
+let html5QrCode = null;
+let scannerStarting = false;
 
-function startScanner() {
-    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+async function startScanner() {
+    const scannerElement = document.getElementById('reader');
+    const modalElement = document.getElementById('scannerModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    if (scannerStarting || (html5QrCode && html5QrCode.isScanning)) return;
+    if (typeof Html5Qrcode === 'undefined') {
+        console.error('html5-qrcode library is not available.');
+        alert({{ t('camera_access_error')|tojson }});
+        return;
+    }
+
+    scannerStarting = true;
+    scannerElement.innerHTML = '';
     modal.show();
-    
-    html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
-    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-        .catch(err => {
-            console.error(err);
-            alert({{ t('camera_access_error')|tojson }});
-            modal.hide();
-        });
+
+    try {
+        html5QrCode = new Html5Qrcode('reader');
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const cameras = await Html5Qrcode.getCameras();
+        const cameraId = cameras && cameras.length
+            ? cameras[cameras.length - 1].id
+            : { facingMode: 'environment' };
+        await html5QrCode.start(cameraId, config, onScanSuccess);
+    } catch (err) {
+        console.error('Unable to start QR scanner:', err);
+        await stopScanner();
+        modal.hide();
+        alert({{ t('camera_access_error')|tojson }});
+    } finally {
+        scannerStarting = false;
+    }
 }
 
-function onScanSuccess(decodedText, decodedResult) {
-    // Expected format: http://.../admin/borrows/scan/BR-XXXX-XXXX or just BR-XXXX-XXXX
-    let code = decodedText;
-    if (code.includes('/scan/')) {
-        code = code.split('/scan/').pop();
-    }
-    
+function onScanSuccess(decodedText) {
+    const rawCode = String(decodedText || '').trim();
+    const code = rawCode.includes('/scan/')
+        ? rawCode.split('/scan/').pop().split(/[?#]/)[0]
+        : rawCode;
+    if (!code) return;
+
     stopScanner();
-    bootstrap.Modal.getInstance(document.getElementById('scannerModal')).hide();
-    
-    // Redirect to lookup or scan route
-    window.location.href = `/admin/borrows/scan/${code}`;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide();
+    window.location.href = `/admin/borrows/scan/${encodeURIComponent(code)}`;
 }
 
-function stopScanner() {
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-            console.log("Scanner stopped.");
-        }).catch(err => console.error(err));
+async function stopScanner() {
+    if (!html5QrCode) return;
+    try {
+        if (html5QrCode.isScanning) await html5QrCode.stop();
+        html5QrCode.clear();
+    } catch (err) {
+        console.error('Unable to stop QR scanner:', err);
+    } finally {
+        html5QrCode = null;
+        scannerStarting = false;
     }
 }
+
+document.getElementById('scannerModal').addEventListener('hidden.bs.modal', stopScanner);
 </script>
 
 {% endblock %}

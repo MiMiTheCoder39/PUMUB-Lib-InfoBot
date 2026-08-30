@@ -13,6 +13,10 @@
   const errorBox = root.querySelector('[data-libinfobot-error]');
   const sendButton = root.querySelector('[data-libinfobot-send]');
   const clearButton = root.querySelector('[data-libinfobot-clear]');
+  const confirmBox = root.querySelector('[data-libinfobot-confirm]');
+  const confirmCancel = root.querySelector('[data-libinfobot-confirm-cancel]');
+  const confirmOk = root.querySelector('[data-libinfobot-confirm-ok]');
+  const toast = root.querySelector('[data-libinfobot-toast]');
   const initialMessagesHtml = messages.innerHTML;
   const copy = (() => {
     try { return JSON.parse(root.dataset.libinfobotCopy || '{}'); }
@@ -120,9 +124,26 @@
     }
   };
 
+  let toastTimer;
+  const showToast = (message, isError = false) => {
+    if (!toast) return;
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.toggle('is-error', isError);
+    toast.hidden = false;
+    toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
+  };
+
+  const setConfirmOpen = (open) => {
+    if (!confirmBox) return;
+    confirmBox.hidden = !open;
+    if (open) confirmOk?.focus();
+    else clearButton?.focus();
+  };
+
   const clearHistory = async () => {
-    const confirmed = window.confirm(copyText('clear_confirm', 'Clear this chat history?'));
-    if (!confirmed || requestInFlight) return;
+    if (requestInFlight || !clearButton) return;
+    setConfirmOpen(false);
     clearButton.disabled = true;
     errorBox.hidden = true;
     try {
@@ -136,16 +157,25 @@
       messages.innerHTML = initialMessagesHtml;
       input.value = '';
       scrollMessages();
-      addMessage(copyText('clear_done', 'Chat history cleared.'), 'bot');
+      showToast(copyText('clear_done', 'Chat history cleared.'));
     } catch (error) {
-      showError(error.message || copyText('error', 'Could not clear chat history.'));
+      showToast(error.message || copyText('error', 'Could not clear chat history.'), true);
     } finally {
       clearButton.disabled = false;
       input.focus();
     }
   };
 
-  if (clearButton) clearButton.addEventListener('click', clearHistory);
+  if (clearButton) clearButton.addEventListener('click', () => setConfirmOpen(true));
+  confirmCancel?.addEventListener('click', () => setConfirmOpen(false));
+  confirmOk?.addEventListener('click', clearHistory);
+  confirmBox?.addEventListener('click', (event) => {
+    if (event.target === confirmBox) setConfirmOpen(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && confirmBox && !confirmBox.hidden) setConfirmOpen(false);
+  });
+
   toggles.forEach((toggle) => toggle.addEventListener('click', () => setOpen(panel.hidden)));
   messages.addEventListener('click', (event) => {
     const viewButton = event.target.closest('[data-libinfobot-view]');

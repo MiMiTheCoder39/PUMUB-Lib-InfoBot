@@ -94,7 +94,26 @@ def ai_chat():
         return _ai_unavailable_response(question)
 
 
+@ai_bp.post("/clear-history")
+@login_required
+@library_user_required
+def clear_chat_history():
+    """Delete only the signed-in user's chatbot conversation messages."""
+    try:
+        from services.memory_service import MemoryService
+    except ImportError:
+        current_app.logger.exception("Chat history service is unavailable")
+        return jsonify({"error": "Chat history service is temporarily unavailable."}), 503
+    try:
+        MemoryService.clear_history(int(session["user_id"]))
+    except Exception:
+        current_app.logger.exception("Could not clear chat history")
+        return jsonify({"error": "Could not clear chat history right now. Please try again."}), 503
+    return jsonify({"status": "ok"})
+
+
 @ai_bp.get("/health")
+
 def ai_health():
     """Verify Flask -> AI service -> OpenAI -> response when explicitly enabled."""
     from services.ai_service import generate_response

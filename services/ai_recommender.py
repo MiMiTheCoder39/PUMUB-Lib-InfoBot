@@ -29,6 +29,28 @@ def _parse_ranked_response(raw: str) -> list[dict[str, Any]]:
     return rows if isinstance(rows, list) else []
 
 
+RECOMMENDATION_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "recommendations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "book_id": {"type": "integer"},
+                    "reason": {"type": "string"},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["book_id", "reason", "confidence"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["recommendations"],
+    "additionalProperties": False,
+}
+
+
 def _candidate_prompt(profile: str, candidates: list[dict[str, Any]], top_n: int) -> str:
     # The model needs faculty/borrow context, not the user's name.
     safe_profile = "\n".join(
@@ -45,6 +67,7 @@ def _candidate_prompt(profile: str, candidates: list[dict[str, Any]], top_n: int
                     "author": book.get("author_name") or "",
                     "category": book.get("category_name") or "",
                     "description": (book.get("description") or "")[:500],
+                    "resource_type": book.get("resource_type") or "",
                 },
                 ensure_ascii=False,
             )
@@ -65,7 +88,8 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
     """Return AI-ranked recommendations, with the existing engine as fallback."""
     top_n = max(1, min(int(top_n), 20))
     # Generate a wider deterministic candidate pool so AI can choose among real books.
-    candidate_pool_size = min(12, max(8, top_n + 4))
+    # A wider real-book pool gives the model room to diversify categories/authors.
+    candidate_pool_size = min(24, max(12, top_n * 2 + 4))
     candidates = get_recommendations(user_id, top_n=candidate_pool_size)
     if not candidates:
         return []
@@ -77,10 +101,13 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
         raw = generate_response(
             _candidate_prompt(profile, list(candidate_by_id.values()), top_n),
             system_prompt=(
-                "Return valid JSON only. Ground every recommendation in the supplied candidate list. "
-                "Do not include markdown or commentary outside the JSON."
+                "Return only the supplied JSON schema. Ground every recommendation in the supplied candidate list. "
+                "Do not include markdown or commentary outside the JSON. Keep each reason under 160 characters. "
+                "Set confidence between 0 and 1; use a lower confidence when evidence is weak."
             ),
             max_output_tokens=700,
+            response_schema=RECOMMENDATION_RESPONSE_SCHEMA,
+            schema_name="book_recommendations",
         )
         ranked_rows = _parse_ranked_response(raw)
     except (AIServiceError, ValueError, TypeError, json.JSONDecodeError) as exc:
@@ -106,6 +133,10 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
         if reason:
             book = dict(book)
             book["ai_hook"] = reason[:320]
+            try:
+                book["ai_confidence"] = max(0.0, min(1.0, float(row.get("confidence", 0.0))))
+            except (TypeError, ValueError):
+                book["ai_confidence"] = 0.0
         ranked.append(book)
         used_ids.add(book_id)
         if len(ranked) >= top_n:

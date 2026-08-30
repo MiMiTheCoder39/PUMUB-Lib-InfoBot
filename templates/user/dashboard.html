@@ -10,7 +10,7 @@
 
 {# ── reusable cover-only tile ─────────────────────────── #}
 {% macro ds_tile(book) %}
-<a class="ds-tile" href="{{ url_for('student.book_details', book_id=book.book_id) }}" title="{{ book.title }}">
+<a class="ds-tile" href="{{ url_for('student.book_details', book_id=book.book_id) }}" title="{{ book.ai_hook or book.title }}" aria-label="{{ book.title }}{% if book.ai_hook %} — {{ book.ai_hook }}{% endif %}">
   <span class="ds-book">
   {% if book.cover_image %}
     <img src="{{ url_for('library_file.file_cover', filename=book.cover_image) }}" alt="{{ book.title }}" loading="lazy">

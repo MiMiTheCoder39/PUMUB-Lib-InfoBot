@@ -154,9 +154,14 @@ def generate_response(
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": prompt},
             ],
-            "max_tokens": bounded_output,
         }
+        # GPT-5-compatible endpoints expect max_completion_tokens; most
+        # OpenAI-compatible providers use max_tokens.
+        token_key = "max_completion_tokens" if str(spec["model"]).lower().startswith("gpt-5") else "max_tokens"
+        chat_kwargs[token_key] = bounded_output
+
         if response_schema:
+
             chat_kwargs["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {

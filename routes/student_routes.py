@@ -25,6 +25,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils.decorators import login_required, student_required, library_user_required
 from utils.file_utils import save_uploaded_file
 from utils.recommender import get_recommendations
+from services.ai_recommender import get_smart_recommendations
 from utils.password_policy import check_password_policy
 from utils.i18n import SUPPORTED_LANGUAGES, current_language, translate
 from models.db import mysql
@@ -83,7 +84,8 @@ def dashboard():
     user_id = session["user_id"]
     recent_books    = get_all_books(limit=8)
     popular_books   = get_popular_books(limit=10)
-    recommended     = get_recommendations(user_id, top_n=8)
+    # AI ranks a real deterministic candidate pool; it falls back safely when unavailable.
+    recommended     = get_smart_recommendations(user_id, top_n=8)
     unread_count    = get_unread_count(user_id)
     faculties       = get_all_faculties()
     categories      = get_all_categories()
@@ -558,8 +560,8 @@ def notification_read(notif_id):
 @library_user_required
 def recommendations():
     user_id = session["user_id"]
-    # The existing TF-IDF + cosine similarity engine is used as-is.
-    recommended = get_recommendations(user_id, top_n=8)
+    # AI ranks real catalog candidates and preserves deterministic fallback behavior.
+    recommended = get_smart_recommendations(user_id, top_n=8)
 
     # Honest cold-start detection: the engine already falls back to popular
     # books when the user has no read/download/bookmark activity. We label it

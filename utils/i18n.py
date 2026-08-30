@@ -30,6 +30,9 @@ TRANSLATIONS = {
         "search_button": "ရှာရန်",
         "recommended_for_you": "သင့်အတွက် အကြံပြုထားသောစာအုပ်များ",
         "recommendation_intro": "သင်ဖတ်ဖူးသော၊ Download လုပ်ဖူးသော၊ Bookmark လုပ်ထားသော စာအုပ်များကို အခြေခံ၍ အကြံပြုပေးထားပါသည်။",
+        "recommendation_ai_reason": "AI အကြံပြုရသည့်အကြောင်း",
+        "recommendation_ai_badge": "AI ဖြင့်ရွေးချယ်ထားသည်",
+
         "more": "ပိုမိုရှာရန်",
         "most_borrowed": "အငှားအများဆုံးစာအုပ်များ",
         "departments": "ဌာနများ",
@@ -333,6 +336,9 @@ TRANSLATIONS = {
         "search_button": "Search",
         "recommended_for_you": "Recommended For You",
         "recommendation_intro": "Recommendations based on books you have read, downloaded, or bookmarked.",
+        "recommendation_ai_reason": "Why AI recommended this",
+        "recommendation_ai_badge": "AI-ranked",
+
         "more": "See More",
         "most_borrowed": "Most Borrowed Books",
         "departments": "Departments",

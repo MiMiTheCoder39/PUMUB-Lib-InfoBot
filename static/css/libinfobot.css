@@ -480,3 +480,34 @@
 @keyframes libinfobot-confirm-in { from { opacity: 0; transform: translateY(5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .libinfobot-confirm-card, .libinfobot-confirm-actions button, .libinfobot-header-actions .libinfobot-clear { animation: none; transition: none; } }
 @media (max-width: 520px) { .libinfobot-confirm-card { width: min(300px, calc(100% - 12px)); } }
+
+
+/* v29 — desktop/laptop containment: keep the open panel below the app navbar. */
+@media (min-width: 769px) {
+  .libinfobot {
+    right: 18px;
+    bottom: 18px;
+    z-index: 2000;
+  }
+
+  .libinfobot-panel {
+    position: fixed !important;
+    top: 128px !important;
+    right: 18px !important;
+    bottom: 24px !important;
+    width: min(360px, calc(100vw - 36px)) !important;
+    height: min(560px, calc(100vh - 160px)) !important;
+    max-height: calc(100vh - 160px) !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 769px) and (max-height: 720px) {
+  .libinfobot-panel {
+    top: 112px !important;
+    bottom: 16px !important;
+    height: calc(100vh - 128px) !important;
+    max-height: calc(100vh - 128px) !important;
+  }
+}

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260829-sticky-nav') }}">
     {% if session.get('user_id') and session.get('role') != 'admin' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260830-desktop4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260830-persist5') }}">
     {% endif %}
     {% block extra_head %}{% endblock %}
 </head>
@@ -94,7 +94,7 @@
 
 {% include 'partials/libinfobot.html' %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-{% if session.get('user_id') and session.get('role') != 'admin' %}<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>{% endif %}
+{% if session.get('user_id') and session.get('role') != 'admin' %}<script src="{{ url_for('static', filename='js/libinfobot.js', v='20260830-persist5') }}"></script>{% endif %}
 <script>
 (function(){
   const toggle=document.querySelector('[data-user-nav-toggle]'), menu=document.querySelector('[data-user-nav-menu]');

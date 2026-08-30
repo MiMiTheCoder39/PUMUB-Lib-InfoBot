@@ -11,7 +11,7 @@
 {% block footer %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260830-desktop4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/libinfobot.css', v='20260830-persist5') }}">
 <style>
 /* tiny home-only tweaks on top of the shared dashboard CSS */
 .ds-guest-footer{margin-top:44px}
@@ -266,7 +266,7 @@
 {% endmacro %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/libinfobot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/libinfobot.js', v='20260830-persist5') }}"></script>
 <script>
 (function(){
   function scrollRow(el, dir){

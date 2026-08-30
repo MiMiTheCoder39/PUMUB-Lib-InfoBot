@@ -90,6 +90,29 @@
     if (loading) scrollMessages();
   };
 
+  const loadHistory = async () => {
+    try {
+      const response = await fetch('/api/ai/history', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+      if (!response.ok) return;
+      const data = await response.json().catch(() => ({}));
+      const history = Array.isArray(data.messages) ? data.messages : [];
+      if (!history.length) return;
+      messages.querySelector('.libinfobot-quick-actions')?.remove();
+      history.forEach((message) => {
+        const role = message?.role === 'user' ? 'user' : 'bot';
+        const content = String(message?.content || '').trim();
+        if (content) addMessage(content, role);
+      });
+      scrollMessages();
+    } catch (_) {
+      // History restore is best-effort; the greeting and new chat remain usable.
+    }
+  };
+
   const showError = (message) => {
     errorBox.textContent = message;
     errorBox.hidden = false;
@@ -218,4 +241,6 @@
       form.requestSubmit();
     }
   });
+
+  void loadHistory();
 })();

@@ -72,7 +72,7 @@ def ai_chat():
     except (TypeError, ValueError):
         return jsonify({"error": "book_id must be an integer"}), 400
     try:
-        return jsonify(handle_chat(
+        result = handle_chat(
             question,
             user_id=int(session["user_id"]),
             role=session.get("role"),
@@ -80,7 +80,17 @@ def ai_chat():
             action=payload.get("action"),
             mode=payload.get("mode", "medium"),
             language=detect_message_language(question),
-        ))
+        )
+        # Conversation persistence must never make a successful AI response fail.
+        try:
+            from services.memory_service import MemoryService
+            MemoryService.save_message(int(session["user_id"]), "user", question)
+            answer = result.get("answer") or result.get("summary") if isinstance(result, dict) else ""
+            if answer:
+                MemoryService.save_message(int(session["user_id"]), "assistant", str(answer))
+        except Exception:
+            current_app.logger.exception("Could not persist LibInfoBot conversation")
+        return jsonify(result)
     except LookupError as exc:
         return jsonify({"error": str(exc)}), 404
     except PermissionError as exc:
@@ -92,6 +102,23 @@ def ai_chat():
     except AIServiceError as exc:
         current_app.logger.exception("LibInfoBot AI request failed: %s", exc)
         return _ai_unavailable_response(question)
+
+
+@ai_bp.get("/history")
+@login_required
+@library_user_required
+def chat_history():
+    """Return only the signed-in user's recent chatbot messages for UI restore."""
+    try:
+        from services.memory_service import MemoryService
+        history = MemoryService.get_recent_history(
+            int(session["user_id"]),
+            limit=int(current_app.config.get("AI_CHAT_HISTORY_LIMIT", 40)),
+        )
+    except Exception:
+        current_app.logger.exception("Could not load chat history")
+        return jsonify({"messages": []})
+    return jsonify({"messages": history})
 
 
 @ai_bp.post("/clear-history")

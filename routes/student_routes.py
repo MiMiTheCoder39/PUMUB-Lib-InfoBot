@@ -68,6 +68,22 @@ from services.text_summary import summarize_pasted_text
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
 
+def _ensure_recommendation_reasons(books):
+    """Keep an honest explanation visible even when AI ranking falls back."""
+    fallback_reason = translate(
+        "recommendation_fallback_reason",
+        "သင့်စာကြည့်တိုက်အသုံးပြုမှုနှင့် ကိုက်ညီနိုင်သော အမျိုးအစားများကို အခြေခံ၍ အကြံပြုထားသည်။",
+    )
+    enriched = []
+    for book in books or []:
+        item = dict(book)
+        if not str(item.get("ai_hook") or "").strip():
+            item["ai_hook"] = fallback_reason
+            item["recommendation_source"] = "deterministic_fallback"
+        enriched.append(item)
+    return enriched
+
+
 # ============================================================
 # DASHBOARD
 # ============================================================
@@ -85,7 +101,7 @@ def dashboard():
     recent_books    = get_all_books(limit=8)
     popular_books   = get_popular_books(limit=10)
     # AI ranks a real deterministic candidate pool; it falls back safely when unavailable.
-    recommended     = get_smart_recommendations(user_id, top_n=8)
+    recommended     = _ensure_recommendation_reasons(get_smart_recommendations(user_id, top_n=8))
     unread_count    = get_unread_count(user_id)
     faculties       = get_all_faculties()
     categories      = get_all_categories()
@@ -561,7 +577,7 @@ def notification_read(notif_id):
 def recommendations():
     user_id = session["user_id"]
     # AI ranks real catalog candidates and preserves deterministic fallback behavior.
-    recommended = get_smart_recommendations(user_id, top_n=8)
+    recommended = _ensure_recommendation_reasons(get_smart_recommendations(user_id, top_n=8))
 
     # Honest cold-start detection: the engine already falls back to popular
     # books when the user has no read/download/bookmark activity. We label it

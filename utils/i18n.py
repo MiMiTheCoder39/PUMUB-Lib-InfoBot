@@ -338,6 +338,7 @@ TRANSLATIONS = {
         "recommendation_intro": "Recommendations based on books you have read, downloaded, or bookmarked.",
         "recommendation_ai_reason": "Why AI recommended this",
         "recommendation_ai_badge": "AI-ranked",
+        "recommendation_fallback_reason": "Shown from your library activity and matching categories when AI ranking is unavailable.",
 
         "more": "See More",
         "most_borrowed": "Most Borrowed Books",
@@ -1716,6 +1717,9 @@ TRANSLATIONS["my"].update({
 })
 TRANSLATIONS["en"].update({"recently_added": "Recently Added"})
 TRANSLATIONS["my"].update({
+    "recommendation_ai_reason": "AI က ဘာကြောင့် အကြံပြုသလဲ",
+    "recommendation_ai_badge": "AI ဖြင့် အဆင့်သတ်မှတ်ထားသည်",
+    "recommendation_fallback_reason": "သင့်စာကြည့်တိုက်အသုံးပြုမှုနှင့် ကိုက်ညီနိုင်သော အမျိုးအစားများကို အခြေခံ၍ အကြံပြုထားသည်။",
     "rec_trending": "ရေပန်းစားသောစာအုပ်များ",
     "rec_because_you_read": "သင့်ဖတ်ရှုမှုအလိုက်",
     "rec_cold_start_title": "စာအုပ်များကို စတင်လေ့လာကြည့်ပါ",

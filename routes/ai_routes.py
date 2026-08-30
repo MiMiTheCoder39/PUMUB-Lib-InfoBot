@@ -11,8 +11,6 @@ from services.book_information_ai import answer_book_information
 from services.pdf_ai import answer_pdf_question, summarize_pdf
 from services.pdf_text import PDFExtractionError
 from services.chat_orchestrator import detect_message_language, handle_chat
-from services.memory_service import MemoryService
-
 from utils.decorators import library_user_required, login_required
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
@@ -96,17 +94,7 @@ def ai_chat():
         return _ai_unavailable_response(question)
 
 
-@ai_bp.post("/clear-history")
-@login_required
-@library_user_required
-def clear_chat_history():
-    """Delete only the signed-in user's chatbot conversation messages."""
-    MemoryService.clear_history(int(session["user_id"]))
-    return jsonify({"status": "ok"})
-
-
 @ai_bp.get("/health")
-
 def ai_health():
     """Verify Flask -> AI service -> OpenAI -> response when explicitly enabled."""
     from services.ai_service import generate_response

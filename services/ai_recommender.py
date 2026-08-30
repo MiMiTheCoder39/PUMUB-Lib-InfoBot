@@ -1,8 +1,9 @@
-"""AI-primary personalized book recommendations with deterministic fallback.
+"""AI-ranked book recommendations with deterministic fallback.
 
 The deterministic recommender remains the candidate generator and fallback. AI is
-used once to rank those real database books and provide short explanations; it
-cannot invent books because returned IDs are validated against the candidate set.
+used once to rank real database books and provide short explanations; returned
+book IDs are validated against the candidate set so the model cannot invent
+books.
 """
 
 from __future__ import annotations
@@ -18,17 +19,9 @@ from utils.recommender import get_recommendations
 logger = logging.getLogger(__name__)
 
 
-def _parse_ranked_response(raw: str) -> list[dict[str, Any]]:
-    """Parse the model's JSON without trusting any fields from it."""
-    text = (raw or "").strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
-    payload = json.loads(text)
-    rows = payload.get("recommendations", []) if isinstance(payload, dict) else []
-    return rows if isinstance(rows, list) else []
-
-
-RECOMMENDATION_RESPONSE_SCHEMA = {
+# Strict JSON schema is supported by the current Groq structured-output models
+# and also gives other OpenAI-compatible providers a predictable response shape.
+RECOMMENDATION_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "recommendations": {
@@ -38,9 +31,8 @@ RECOMMENDATION_RESPONSE_SCHEMA = {
                 "properties": {
                     "book_id": {"type": "integer"},
                     "reason": {"type": "string"},
-                    "confidence": {"type": "number"},
                 },
-                "required": ["book_id", "reason", "confidence"],
+                "required": ["book_id", "reason"],
                 "additionalProperties": False,
             },
         }
@@ -50,13 +42,55 @@ RECOMMENDATION_RESPONSE_SCHEMA = {
 }
 
 
-def _candidate_prompt(profile: str, candidates: list[dict[str, Any]], top_n: int) -> str:
-    # The model needs faculty/borrow context, not the user's name.
+def _get_profile_context(user_id: int) -> str:
+    """Load profile context without making the app fail at import time.
+
+    Some Railway deployments may not contain the optional retrieval module.
+    Recommendations must still work with an empty profile and the deterministic
+    candidate list in that case.
+    """
+    try:
+        from services.retrieval_orchestrator import get_user_profile_context
+    except (ImportError, ModuleNotFoundError):
+        logger.info("Optional retrieval context unavailable; using empty profile")
+        return ""
+
+    try:
+        return str(get_user_profile_context(user_id) or "")
+    except Exception as exc:
+        logger.warning("Could not load user profile context: %s", exc)
+        return ""
+
+
+def _parse_ranked_response(raw: str) -> list[dict[str, Any]]:
+    """Parse the model JSON without trusting any fields from it."""
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = re.sub(
+            r"^```(?:json)?\s*|\s*```$",
+            "",
+            text,
+            flags=re.IGNORECASE | re.DOTALL,
+        ).strip()
+
+    payload = json.loads(text)
+    rows = payload.get("recommendations", []) if isinstance(payload, dict) else []
+    return rows if isinstance(rows, list) else []
+
+
+def _candidate_prompt(
+    profile: str,
+    candidates: list[dict[str, Any]],
+    top_n: int,
+) -> str:
+    """Build a bounded prompt containing only real database candidates."""
     safe_profile = "\n".join(
-        line for line in (profile or "").splitlines()
+        line
+        for line in (profile or "").splitlines()
         if not line.lower().startswith("user name:")
     )
-    candidate_lines = []
+
+    candidate_lines: list[str] = []
     for book in candidates:
         candidate_lines.append(
             json.dumps(
@@ -66,49 +100,48 @@ def _candidate_prompt(profile: str, candidates: list[dict[str, Any]], top_n: int
                     "author": book.get("author_name") or "",
                     "category": book.get("category_name") or "",
                     "description": (book.get("description") or "")[:500],
-                    "resource_type": book.get("resource_type") or "",
                 },
                 ensure_ascii=False,
             )
         )
+
     return (
         "You are a careful university librarian. Rank real books for this user.\n"
         "Use ONLY the candidate books below. Never invent a book_id, title, author, or fact.\n"
-        f"Return at most {top_n} recommendations in JSON only, with this exact shape:\n"
-        '{"recommendations":[{"book_id":123,"reason":"one short Burmese sentence"}]}\n'
+        f"Return at most {top_n} recommendations. The response must match the supplied JSON schema.\n"
+        "Give each selected book one short Burmese reason explaining why it may be useful.\n"
         "Prefer books matching the user's activity/profile and diversify categories when reasonable. "
         "If evidence is weak, give a neutral reason rather than claiming the user read a book.\n\n"
         f"USER PROFILE:\n{safe_profile or 'No profile details available.'}\n\n"
-        "CANDIDATE BOOKS:\n" + "\n".join(candidate_lines)
+        "CANDIDATE BOOKS:\n"
+        + "\n".join(candidate_lines)
     )
 
 
 def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, Any]]:
-    """Return AI-ranked recommendations, with the existing engine as fallback."""
+    """Return AI-ranked recommendations, with deterministic fallback."""
     top_n = max(1, min(int(top_n), 20))
+
     # Generate a wider deterministic candidate pool so AI can choose among real books.
-    # A wider real-book pool gives the model room to diversify categories/authors.
-    candidate_pool_size = min(24, max(12, top_n * 2 + 4))
+    candidate_pool_size = min(12, max(8, top_n + 4))
     candidates = get_recommendations(user_id, top_n=candidate_pool_size)
     if not candidates:
         return []
 
-    candidate_by_id = {int(book["book_id"]): book for book in candidates if book.get("book_id") is not None}
+    candidate_by_id = {
+        int(book["book_id"]): book
+        for book in candidates
+        if book.get("book_id") is not None
+    }
     fallback = list(candidate_by_id.values())[:top_n]
+
     try:
-        # Keep recommendation startup-safe when an older deployment lacks
-        # the optional profile-context helper; ranking will still use candidates.
-        try:
-            from services.retrieval_orchestrator import get_user_profile_context
-            profile = get_user_profile_context(user_id)
-        except (ImportError, AttributeError):
-            profile = ""
+        profile = _get_profile_context(user_id)
         raw = generate_response(
             _candidate_prompt(profile, list(candidate_by_id.values()), top_n),
             system_prompt=(
-                "Return only the supplied JSON schema. Ground every recommendation in the supplied candidate list. "
-                "Do not include markdown or commentary outside the JSON. Keep each reason under 160 characters. "
-                "Set confidence between 0 and 1; use a lower confidence when evidence is weak."
+                "Return JSON only. Follow the response schema exactly. "
+                "Use only candidate book IDs and include a short Burmese reason for each item."
             ),
             max_output_tokens=700,
             response_schema=RECOMMENDATION_RESPONSE_SCHEMA,
@@ -116,14 +149,21 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
         )
         ranked_rows = _parse_ranked_response(raw)
     except (AIServiceError, ValueError, TypeError, json.JSONDecodeError) as exc:
-        logger.warning("AI recommendation ranking unavailable; using deterministic fallback: %s", exc)
+        logger.warning(
+            "AI recommendation ranking unavailable; using deterministic fallback: %s",
+            exc,
+        )
         return fallback
-    except Exception as exc:  # defensive provider/parser fallback
-        logger.warning("Unexpected AI recommendation error; using deterministic fallback: %s", exc)
+    except Exception as exc:  # defensive fallback for provider/parser differences
+        logger.warning(
+            "Unexpected AI recommendation error; using deterministic fallback: %s",
+            exc,
+        )
         return fallback
 
     ranked: list[dict[str, Any]] = []
     used_ids: set[int] = set()
+
     for row in ranked_rows:
         if not isinstance(row, dict):
             continue
@@ -131,17 +171,16 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
             book_id = int(row.get("book_id"))
         except (TypeError, ValueError):
             continue
+
         book = candidate_by_id.get(book_id)
         if not book or book_id in used_ids:
             continue
+
         reason = str(row.get("reason") or "").strip()
         if reason:
             book = dict(book)
             book["ai_hook"] = reason[:320]
-            try:
-                book["ai_confidence"] = max(0.0, min(1.0, float(row.get("confidence", 0.0))))
-            except (TypeError, ValueError):
-                book["ai_confidence"] = 0.0
+
         ranked.append(book)
         used_ids.add(book_id)
         if len(ranked) >= top_n:
@@ -153,4 +192,5 @@ def get_smart_recommendations(user_id: int, top_n: int = 8) -> List[Dict[str, An
             ranked.append(book)
             if len(ranked) >= top_n:
                 break
+
     return ranked[:top_n]

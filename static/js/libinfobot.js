@@ -12,6 +12,8 @@
   const typing = root.querySelector('[data-libinfobot-typing]');
   const errorBox = root.querySelector('[data-libinfobot-error]');
   const sendButton = root.querySelector('[data-libinfobot-send]');
+  const clearButton = root.querySelector('[data-libinfobot-clear]');
+  const initialMessagesHtml = messages.innerHTML;
   const copy = (() => {
     try { return JSON.parse(root.dataset.libinfobotCopy || '{}'); }
     catch (_) { return {}; }
@@ -118,6 +120,32 @@
     }
   };
 
+  const clearHistory = async () => {
+    const confirmed = window.confirm(copyText('clear_confirm', 'Clear this chat history?'));
+    if (!confirmed || requestInFlight) return;
+    clearButton.disabled = true;
+    errorBox.hidden = true;
+    try {
+      const response = await fetch('/api/ai/clear-history', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || copyText('error', 'Could not clear chat history.'));
+      messages.innerHTML = initialMessagesHtml;
+      input.value = '';
+      scrollMessages();
+      addMessage(copyText('clear_done', 'Chat history cleared.'), 'bot');
+    } catch (error) {
+      showError(error.message || copyText('error', 'Could not clear chat history.'));
+    } finally {
+      clearButton.disabled = false;
+      input.focus();
+    }
+  };
+
+  if (clearButton) clearButton.addEventListener('click', clearHistory);
   toggles.forEach((toggle) => toggle.addEventListener('click', () => setOpen(panel.hidden)));
   messages.addEventListener('click', (event) => {
     const viewButton = event.target.closest('[data-libinfobot-view]');

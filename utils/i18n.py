@@ -30,9 +30,6 @@ TRANSLATIONS = {
         "search_button": "ရှာရန်",
         "recommended_for_you": "သင့်အတွက် အကြံပြုထားသောစာအုပ်များ",
         "recommendation_intro": "သင်ဖတ်ဖူးသော၊ Download လုပ်ဖူးသော၊ Bookmark လုပ်ထားသော စာအုပ်များကို အခြေခံ၍ အကြံပြုပေးထားပါသည်။",
-        "recommendation_ai_reason": "AI အကြံပြုရသည့်အကြောင်း",
-        "recommendation_ai_badge": "AI ဖြင့်ရွေးချယ်ထားသည်",
-
         "more": "ပိုမိုရှာရန်",
         "most_borrowed": "အငှားအများဆုံးစာအုပ်များ",
         "departments": "ဌာနများ",
@@ -336,9 +333,6 @@ TRANSLATIONS = {
         "search_button": "Search",
         "recommended_for_you": "Recommended For You",
         "recommendation_intro": "Recommendations based on books you have read, downloaded, or bookmarked.",
-        "recommendation_ai_reason": "Why AI recommended this",
-        "recommendation_ai_badge": "AI-ranked",
-
         "more": "See More",
         "most_borrowed": "Most Borrowed Books",
         "departments": "Departments",
@@ -2720,6 +2714,10 @@ TRANSLATIONS["my"].update({
     "widget_chat": "LibInfoBot စကားပြောခန်း",
     "widget_assistant": "စာကြည့်တိုက်အကူ",
     "widget_minimize": "LibInfoBot ကို ခေါက်သိမ်းရန်",
+    "widget_clear_history": "Chat မှတ်တမ်းရှင်းရန်",
+    "widget_clear_confirm": "ဒီ chatbot conversation မှတ်တမ်းကို ရှင်းမလား?",
+    "widget_clear_done": "Chat မှတ်တမ်းကို ရှင်းပြီးပါပြီ။",
+
     "widget_greeting": "မင်္ဂလာပါ။ ကျွန်ုပ်သည် LibInfoBot ဖြစ်ပါသည်။<br>စာအုပ်ရှာဖွေခြင်း၊ စာကြည့်တိုက်အရင်းအမြစ်များနှင့် PDF များအကြောင်း ကူညီပေးနိုင်ပါသည်။",
     "widget_thinking": "LibInfoBot က စဉ်းစားနေပါသည်…",
     "widget_message_label": "LibInfoBot ထံ စာပို့ရန်",
@@ -2769,6 +2767,10 @@ TRANSLATIONS["en"].update({
     "widget_chat": "LibInfoBot Chat",
     "widget_assistant": "Library Assistant",
     "widget_minimize": "Minimize LibInfoBot",
+    "widget_clear_history": "Clear chat history",
+    "widget_clear_confirm": "Clear this chatbot conversation history?",
+    "widget_clear_done": "Chat history cleared.",
+
     "widget_greeting": "Hi! I'm LibInfoBot.<br>I can help you find books, understand library resources, summarize PDFs, and answer library questions.",
     "widget_thinking": "LibInfoBot is thinking…",
     "widget_message_label": "Message LibInfoBot",

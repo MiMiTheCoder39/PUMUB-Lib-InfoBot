@@ -1,5 +1,5 @@
 {% if session.get('user_id') and session.get('role') != 'admin' %}
-<div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "category": t("widget_category"), "availability": t("widget_availability"), "available": t("widget_available"), "unavailable": t("widget_unavailable"), "view_details": t("widget_view_details"), "copy_summary": t("widget_copy_summary"), "summary_copied": t("widget_summary_copied"), "pdf_summary_title": t("widget_pdf_summary_title"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book")}|tojson }}'>
+<div class="libinfobot" data-libinfobot data-libinfobot-copy='{{ {"untitled": t("widget_untitled_book"), "author": t("widget_author_unavailable"), "category": t("widget_category"), "availability": t("widget_availability"), "available": t("widget_available"), "unavailable": t("widget_unavailable"), "view_details": t("widget_view_details"), "copy_summary": t("widget_copy_summary"), "summary_copied": t("widget_summary_copied"), "pdf_summary_title": t("widget_pdf_summary_title"), "ask_book": t("widget_ask_book"), "pdf_summary": t("widget_pdf_summary"), "ask_pdf": t("widget_ask_pdf"), "error": t("widget_error"), "no_answer": t("widget_no_answer"), "no_book": t("widget_no_book"), "clear_history": t("widget_clear_history"), "clear_confirm": t("widget_clear_confirm"), "clear_done": t("widget_clear_done")}|tojson }}'>
     <button class="libinfobot-launcher" type="button" data-libinfobot-toggle aria-controls="libinfobot-panel" aria-expanded="false" aria-label="{{ t('widget_open') }}">
         <span class="libinfobot-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='images/pumub-libinfobot-logo.png') }}" alt=""></span>
         <span class="libinfobot-launcher-label">{{ t('widget_ask') }}</span>
@@ -14,7 +14,11 @@
                     <small><span class="libinfobot-status-dot"></span> {{ t('widget_assistant') }}</small>
                 </div>
             </div>
-            <button class="libinfobot-close" type="button" data-libinfobot-toggle aria-label="{{ t('widget_minimize') }}"><i class="bi bi-dash-lg"></i></button>
+                        <div class="libinfobot-header-actions">
+                <button class="libinfobot-clear" type="button" data-libinfobot-clear aria-label="{{ t('widget_clear_history') }}" title="{{ t('widget_clear_history') }}"><i class="bi bi-trash3" aria-hidden="true"></i><span class="visually-hidden">{{ t('widget_clear_history') }}</span></button>
+                <button class="libinfobot-close" type="button" data-libinfobot-toggle aria-label="{{ t('widget_minimize') }}"><i class="bi bi-dash-lg"></i></button>
+            </div>
+
         </header>
 
         <div class="libinfobot-messages" data-libinfobot-messages aria-live="polite">

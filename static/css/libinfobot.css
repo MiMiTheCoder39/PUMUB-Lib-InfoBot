@@ -511,3 +511,11 @@
     max-height: calc(100vh - 128px) !important;
   }
 }
+
+
+/* v30 — slightly wider desktop/laptop panel; preserve the verified safe height and top offset. */
+@media (min-width: 769px) {
+  .libinfobot-panel {
+    width: min(400px, calc(100vw - 36px)) !important;
+  }
+}

@@ -415,12 +415,8 @@
   .libinfobot-form { padding-left: 8px; padding-right: 8px; }
 }
 
-
-/* v25 — keep the assistant below the sticky navbar and compact the open panel. */
-.libinfobot {
-  z-index: 1030;
-}
-
+/* v25 — compact panel and safe separation from the sticky navbar. */
+.libinfobot { z-index: 1030; }
 .libinfobot-panel {
   width: min(380px, calc(100vw - 32px));
   height: min(600px, calc(100dvh - 150px));
@@ -428,38 +424,6 @@
   bottom: max(84px, calc(env(safe-area-inset-bottom) + 84px));
   z-index: 1030;
 }
-
-.libinfobot-header-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex: 0 0 auto;
-}
-
-.libinfobot-clear,
-.libinfobot-close {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: #fff;
-  cursor: pointer;
-}
-
-.libinfobot-clear:hover,
-.libinfobot-clear:focus-visible,
-.libinfobot-close:hover,
-.libinfobot-close:focus-visible {
-  background: rgba(255,255,255,.16);
-  outline: 2px solid rgba(255,255,255,.35);
-  outline-offset: 1px;
-}
-
-.libinfobot-clear:disabled { opacity: .55; cursor: wait; }
-
 @media (max-width: 768px) {
   .libinfobot-panel {
     left: max(8px, env(safe-area-inset-left)) !important;
@@ -471,7 +435,6 @@
     min-height: 0 !important;
   }
 }
-
 @media (max-width: 390px) {
   .libinfobot-panel {
     left: 6px !important;
@@ -479,9 +442,6 @@
     height: min(520px, calc(100dvh - 132px)) !important;
   }
 }
-
 @media (max-height: 620px) {
-  .libinfobot-panel {
-    height: calc(100dvh - 104px) !important;
-  }
+  .libinfobot-panel { height: calc(100dvh - 104px) !important; }
 }

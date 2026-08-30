@@ -15,7 +15,7 @@
                 </div>
             </div>
             <div class="libinfobot-header-actions">
-                <button class="libinfobot-clear" type="button" data-libinfobot-clear aria-label="{{ t('widget_clear_history') }}" title="{{ t('widget_clear_history') }}"><i class="bi bi-trash3" aria-hidden="true"></i><span class="visually-hidden">{{ t('widget_clear_history') }}</span></button>
+                <button class="libinfobot-clear" type="button" data-libinfobot-clear aria-label="{{ t('widget_clear_history') }}" title="{{ t('widget_clear_history') }}"><i class="bi bi-eraser" aria-hidden="true"></i><span class="visually-hidden">{{ t('widget_clear_history') }}</span></button>
                 <button class="libinfobot-close" type="button" data-libinfobot-toggle aria-label="{{ t('widget_minimize') }}"><i class="bi bi-dash-lg"></i></button>
             </div>
         </header>
@@ -36,12 +36,12 @@
         <div class="libinfobot-error" data-libinfobot-error role="alert" hidden></div>
         <div class="libinfobot-confirm" data-libinfobot-confirm hidden role="dialog" aria-modal="true" aria-labelledby="libinfobot-confirm-title">
             <div class="libinfobot-confirm-card">
-                <div class="libinfobot-confirm-icon"><i class="bi bi-trash3" aria-hidden="true"></i></div>
-                <strong id="libinfobot-confirm-title">{{ t('widget_clear_history') }}</strong>
+                <div class="libinfobot-confirm-icon"><i class="bi bi-eraser" aria-hidden="true"></i></div>
+                <strong id="libinfobot-confirm-title">{{ t('widget_clear_title') }}</strong>
                 <p>{{ t('widget_clear_confirm') }}</p>
                 <div class="libinfobot-confirm-actions">
                     <button type="button" class="libinfobot-confirm-cancel" data-libinfobot-confirm-cancel>{{ t('widget_cancel') }}</button>
-                    <button type="button" class="libinfobot-confirm-ok" data-libinfobot-confirm-ok>{{ t('widget_clear_history') }}</button>
+                    <button type="button" class="libinfobot-confirm-ok" data-libinfobot-confirm-ok><i class="bi bi-check2" aria-hidden="true"></i> {{ t('widget_clear_action') }}</button>
                 </div>
             </div>
         </div>
